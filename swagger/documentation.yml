@@ -1,9 +1,6 @@
 documentation:
   version: '1'
-  summary: 'Lemon Backbone Service'
+  summary: 'Lemon Hello API'
   description: |
-    # A Lemon Core API service documented with OpenAPI specification
-    문서 내용
-
-    
-      
+    # API Service documented with OpenAPI specification
+    Bla Bla Bla....
