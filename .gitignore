@@ -1,6 +1,9 @@
 # recommended but not necessary
 package-lock.json
 
+# serverless
+.serverlesss
+
 # Logs
 logs
 *.log
