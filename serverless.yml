@@ -149,6 +149,7 @@ package:
 #    - include-me.js
 #    - include-me-dir/**
   exclude:
+    # - src/**          # un-comment this if use gulp build.
     - env/**
     - bin/**
     - data/**

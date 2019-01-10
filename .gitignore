@@ -2,8 +2,8 @@
 package-lock.json
 
 # serverless
-.serverlesss
-.serverlesss/
+.serverless
+.serverless/
 
 # Logs
 logs
