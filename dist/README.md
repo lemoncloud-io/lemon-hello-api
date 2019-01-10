@@ -1,7 +1,7 @@
 # lemoncloud-backbone-js
 
 @version: 0.1.0
-@date:    1/10/2019, 5:16:03 PM
+@date:    1/10/2019, 11:19:36 PM
 
 Shared Backbone module by [lemoncloud](https://lemoncloud.io)
 
@@ -35,4 +35,6 @@ app.delete('/dynamo/:type/:id',     middle, handle_dynamo);
 ----------------
 # VERSION INFO #
 
-Version Infor
+Version History
+
+

@@ -24,25 +24,30 @@ module.exports = (function ($root, options) {
 	//! load configuration.
 	const ROOT_NAME = options.name || 'lemon';
 	const STAGE = _get_env('STAGE', '');
-	const LC = (STAGE === 'local'||STAGE === 'express'||_get_env('LC', '')==='1');
+    const TS = (_get_env('TS', '1') === '1');                                                   // PRINT TIME-STAMP.
+    const LC = (STAGE === 'local'||STAGE === 'express'||_get_env('LC', '')==='1');              // COLORIZE LOG.
+    
+    const RED = "\x1b[31m";
+    const BLUE = "\x1b[32m";
+    const YELLOW = "\x1b[33m";
 
 	//! common function for logging.
-	var $console = {thiz: console, log: console.log, error: console.error, auto_ts: LC, auto_color: LC};
+	var $console = {thiz: console, log: console.log, error: console.error, auto_ts: TS, auto_color: LC};
 	var _log = function () {
-		let args = $console.auto_ts && !Array.isArray(arguments) && Array.prototype.slice.call(arguments) || arguments;
-		if ($console.auto_color) args.unshift("\x1b[0m"), $console.auto_ts && args.unshift(_ts(), 'L'), args.unshift("\x1b[32m");       // BLUE
+		let args = !Array.isArray(arguments) && Array.prototype.slice.call(arguments) || arguments;
+		if ($console.auto_color) args.unshift("\x1b[0m"), $console.auto_ts && args.unshift(_ts(), 'L') || args.unshift('L'), args.unshift(BLUE);
 		else $console.auto_ts && args.unshift(_ts(), 'L');
 		return $console.log.apply($console.thiz, args)
 	}
 	var _inf = function () {
-		let args = $console.auto_ts && !Array.isArray(arguments) && Array.prototype.slice.call(arguments) || arguments;
-		if ($console.auto_color) args.unshift(""), args.push("\x1b[0m"), $console.auto_ts && args.unshift(_ts(), 'I'), args.unshift("\x1b[33m");       	// YELLOW in line.
+		let args = !Array.isArray(arguments) && Array.prototype.slice.call(arguments) || arguments;
+		if ($console.auto_color) args.unshift(""), args.push("\x1b[0m"), $console.auto_ts && args.unshift(_ts(), 'I') || args.unshift('I'), args.unshift(YELLOW);
 		else $console.auto_ts && args.unshift(_ts(), 'I');
 		return $console.log.apply($console.thiz, args)
 	}
 	var _err = function () {
-		let args = $console.auto_ts && !Array.isArray(arguments) && Array.prototype.slice.call(arguments) || arguments;
-		if ($console.auto_color) args.unshift("\x1b[0m"), $console.auto_ts && args.unshift(_ts(), 'E'), args.unshift("\x1b[31m");       // RED
+		let args = !Array.isArray(arguments) && Array.prototype.slice.call(arguments) || arguments;
+		if ($console.auto_color) args.unshift(""), args.push("\x1b[0m"), $console.auto_ts && args.unshift(_ts(), 'E') || args.unshift('E'), args.unshift(RED);
 		else $console.auto_ts && args.unshift(_ts(), 'E');
 		return $console.error.apply($console.thiz, args)
 	}
@@ -64,9 +69,7 @@ module.exports = (function ($root, options) {
 		const env =  options.env || (process && process.env) || {};
 		const val = env && env[name] || undefined;
 		// throw Error if value is not set.
-		if (defVal && defVal instanceof Error && val === undefined){
-			throw defVal;
-		}
+		if (defVal && defVal instanceof Error && val === undefined) throw defVal;
 		// returns default.
 		return val === undefined ? defVal : val;
 	}

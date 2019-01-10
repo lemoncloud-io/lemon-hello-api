@@ -233,7 +233,13 @@ exports = module.exports = (function (_$, name) {
 	function do_list_hello(ID, $param, $body, $ctx){
         _log(NS, `do_list_hello(${ID})....`);
         
-        return Promise.resolve(NODES);
+        const that = {};
+        that.name = _$.environ('NAME');                     // read via process.env
+        return Promise.resolve(that)
+        .then(_ => {
+            _.list = NODES;
+            return _;
+        })
 	}
 
 	/**
@@ -305,7 +311,8 @@ exports = module.exports = (function (_$, name) {
         .then(node => {
             const id = node._id;
             if (id === undefined) return Promise.reject(new Error('._id is required!'));
-            NODES.splice(id, 1);                // remove single node.
+            // NODES.splice(id, 1);                // remove single node.
+            delete NODES[i];                    // set null in order to keep id.
             return node;
         })
 	}

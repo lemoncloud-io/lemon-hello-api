@@ -11,6 +11,7 @@
  */
 const CONF = (serverless) => {
     // console.log('serverless=', serverless);
+    serverless.cli.consoleLog('loading config settings...');
     return {
         "lemon": {
             name: "lemon-app",
@@ -19,6 +20,14 @@ const CONF = (serverless) => {
             env: "lemon.yml",                                   // environment file
             securityGroupIds: ["sg-ea6afa81"],                  // securityGroupIds
             subnetIds: ["subnet-24b60e4c","subnet-a252baee"],   // subnetIds
+        },
+        "none": {
+            name: "none-app",
+            runtime: "nodejs6.10",
+            region: "ap-northeast-2",
+            env: "none.yml",                                    // environment file
+            securityGroupIds: undefined,                        // securityGroupIds
+            subnetIds: undefined,                               // subnetIds
         },
     };
 }

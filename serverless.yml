@@ -12,12 +12,13 @@ plugins:
   - serverless-aws-documentation
 
 #------------------------------------------------
-# Custome: 초기 환경 설정 로딩을 위한 핵심 설정. 
+# Custome: 초기 환경 설정 로딩을 위한 핵심 설정.
+# - config.js 에서 profile별 core 정보를 얻음.
 #------------------------------------------------
 custom:
   CORE:                                         # Core Configuration.
     profile: ${opt:profile, 'none'}             # run option `--profile`
-    region: ${opt:region, 'ap-northeast-1'}     # run option `--region` `-r`
+    region: ${opt:region, 'ap-northeast-2'}     # run option `--region` `-r`
     stage: ${opt:stage, 'dev'}                  # run option `--stage` `-s`
     env: ${opt:env, 'env.yml'}                  # run option `--env`
   CONF: ${file(./config.js):CONF}               # config.js 에서 CONF() 함수 호출하여 가져옴.
@@ -80,7 +81,7 @@ provider:
   # -------------------------------------------------------
   # you can define service wide environment variables here
   # WARN! - 환경변수에는 object/null 으로 설정할 수 없음.
-  environment: ${file(.env/${self:custom.CONF.${self:custom.CORE.profile}.env}):${self:provider.stage}}
+  environment: ${file(./env/${self:custom.CONF.${self:custom.CORE.profile}.env}):${self:provider.stage}}
 
 #------------------------------------------------
 # Functions
@@ -88,7 +89,6 @@ provider:
 functions:
   # REST API : /hello
   hello:
-    name: hello-${opt:stage, self:provider.stage}
     handler: handler.hello
     events:
       - http:
@@ -149,7 +149,7 @@ package:
 #    - include-me.js
 #    - include-me-dir/**
   exclude:
-    - .env/**
+    - env/**
     - bin/**
     - data/**
     - docs/**

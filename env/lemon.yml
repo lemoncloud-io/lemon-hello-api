@@ -4,13 +4,14 @@
 # default
 default_env: &default_env
   LC: 1
+  NAME: 'lemon'
 
 #-----------------------------------
 # local development configuration.
 local:
   <<: *default_env
   STAGE: 'local'
-
+  
 #-----------------------------------
 # development server
 dev:
@@ -22,6 +23,7 @@ dev:
 prod:
   <<: *default_env
   STAGE: 'production'
+  TS: 0
 
 #-----------------------------------
 # proxy mode configuration.
