@@ -1,3 +1,6 @@
+# recommended but not necessary
+package-lock.json
+
 # Logs
 logs
 *.log
