@@ -134,7 +134,7 @@ functions:
           documentation:
             summary: "action for item with payload"
       - http:
-          path: /hello/{type}/{id}
+          path: /hello/{id}
           method: delete
           cors: true
           # authorizer: aws_iam
