@@ -1,0 +1,185 @@
+#------------------------------------------------
+# Serverless Configuration.
+#------------------------------------------------
+service: lemon-hello-api
+
+# You can pin your service to only deploy with a specific Serverless version
+# Check out our docs for more details
+# frameworkVersion: "=X.X.X"
+
+plugins:
+  - serverless-offline
+  - serverless-aws-documentation
+
+#------------------------------------------------
+# Custome: 초기 환경 설정 로딩을 위한 핵심 설정. 
+#------------------------------------------------
+custom:
+  CORE:                                         # Core Configuration.
+    profile: ${opt:profile, 'none'}             # run option `--profile`
+    region: ${opt:region, 'ap-northeast-1'}     # run option `--region` `-r`
+    stage: ${opt:stage, 'dev'}                  # run option `--stage` `-s`
+    env: ${opt:env, 'env.yml'}                  # run option `--env`
+  CONF: ${file(./config.js):CONF}               # config.js 에서 CONF() 함수 호출하여 가져옴.
+#------------------------------------------------
+# Documentation
+#   - https://github.com/9cookies/serverless-aws-documentation
+#------------------------------------------------
+  documentation: ${file(./swagger/documentation.yml):documentation}
+
+#------------------------------------------------
+# Provider
+#------------------------------------------------
+provider:
+  name: aws
+  profile: ${opt:profile, 'none'}
+  stage: ${opt:stage, 'dev'}
+
+  # Lambda Runtime Environment
+  memorySize: 128
+  timeout: 30
+  cfLogs: true
+  runtime: ${self:custom.CONF.${self:custom.CORE.profile}.runtime, 'nodejs6.10'}
+  region: ${self:custom.CONF.${self:custom.CORE.profile}.region, self:custom.CORE.region}      # profile의 region를 먼저 사용하고, 없으면 실행 옵션값.
+
+  # VPC Configuration for Lambda. 
+  vpc:
+    securityGroupIds: ${self:custom.CONF.${self:custom.CORE.profile}.securityGroupIds}
+    subnetIds: ${self:custom.CONF.${self:custom.CORE.profile}.subnetIds}
+
+  # Lambda function's IAM Role here
+  iamRoleStatements:
+    #NOTE! - remove할때 lambda ENI Interface를 제거하지 못해서 블럭당하고 있을때, EC2 콘솔에서 강제 지우기 하면 됨!.. (VPC 안쓰면 관계 없음!)
+    - Effect: Allow
+      Action:
+        - cloudwatch:PutMetricData
+        - lambda:InvokeFunction
+        - ec2:CreateNetworkInterface
+        - ec2:DescribeNetworkInterfaces
+        - ec2:AttachNetworkInterface
+        - ec2:DescribeNetworkInterfaces
+        - ec2:DeleteNetworkInterface
+        - ec2:DetachNetworkInterface
+        - ec2:ModifyNetworkInterfaceAttribute
+        - ec2:ResetNetworkInterfaceAttribute
+      Resource: "*"
+    - Effect: Allow
+      Action:
+        - dynamodb:Query
+        - dynamodb:Scan
+        - dynamodb:GetItem
+        - dynamodb:PutItem
+        - dynamodb:UpdateItem
+        - dynamodb:DeleteItem
+        - dynamodb:GetRecords
+        - dynamodb:GetShardIterator
+        - dynamodb:DescribeStream
+        - dynamodb:ListStreams
+      Resource: "arn:aws:dynamodb:${self:provider.region}:*:table/*"
+      
+  # -------------------------------------------------------
+  # you can define service wide environment variables here
+  # WARN! - 환경변수에는 object/null 으로 설정할 수 없음.
+  environment: ${file(.env/${self:custom.CONF.${self:custom.CORE.profile}.env}):${self:provider.stage}}
+
+#------------------------------------------------
+# Functions
+#------------------------------------------------
+functions:
+  # REST API : /hello
+  hello:
+    name: hello-${opt:stage, self:provider.stage}
+    handler: handler.hello
+    events:
+      - http:
+          path: /hello
+          method: get
+          cors: true
+          # authorizer: aws_iam
+          documentation:
+            summary: "list items"
+      - http:
+          path: /hello/{id}
+          method: get
+          cors: true
+          # authorizer: aws_iam
+          documentation:
+            summary: "read single item"
+      - http:
+          path: /hello/{id}/{cmd}
+          method: get
+          cors: true
+          # authorizer: aws_iam
+          documentation:
+            summary: "action for item."
+      - http:
+          path: /hello/{id}
+          method: put
+          cors: true
+          # authorizer: aws_iam
+          documentation:
+            summary: "update item."
+      - http:
+          path: /hello/{id}
+          method: post
+          cors: true
+          # authorizer: aws_iam
+          documentation:
+            summary: "create(or update) item by id"
+      - http:
+          path: /hello/{id}/{cmd}
+          method: post
+          cors: true
+          # authorizer: aws_iam
+          documentation:
+            summary: "action for item with payload"
+      - http:
+          path: /hello/{type}/{id}
+          method: delete
+          cors: true
+          # authorizer: aws_iam
+          documentation:
+            summary: "delete item"
+
+#------------------------------------------------
+# you can add packaging information here
+#------------------------------------------------
+package:
+#  include:
+#    - include-me.js
+#    - include-me-dir/**
+  exclude:
+    - .env/**
+    - bin/**
+    - data/**
+    - docs/**
+    - test/**
+  excludeDevDependencies: true
+
+#------------------------------------------------
+# ## 리소스 생성.
+#   - 리소스를 deploy 시점에 생성할 수 있다
+#   - 주위! 테스트 목적으로 자동 생성하도록 함.
+#   - 운영시, 이 항목은 안쓰일듯.
+#------------------------------------------------
+resources:
+  # 리소스 지정.
+  Resources:
+    # TABLE CREATED MANUALLY.
+    # ## Dynamo Table : 
+    # DynamoAtemCoreTable:
+    #   Type: 'AWS::DynamoDB::Table'
+    #   #DeletionPolicy: Retain
+    #   Properties:
+    #     TableName: BotItemTable
+    #     AttributeDefinitions:
+    #       - AttributeName: id
+    #         AttributeType: S
+    #     KeySchema:
+    #       - AttributeName: id
+    #         KeyType: HASH
+    #     ProvisionedThroughput:
+    #       ReadCapacityUnits: 20
+    #       WriteCapacityUnits: 20
+    #     StreamSpecification:
+    #       StreamViewType: "NEW_AND_OLD_IMAGES"
