@@ -210,6 +210,7 @@ exports = module.exports = (function (_$, name) {
 	 *  Local Functions.
 	 ** ********************************************************************************************************************/
     //! shared memory.
+    //WARN! - `serverless offline`는 상태를 유지하지 않으므로, NODES값들이 실행때마다 리셋이될 수 있음.
     const NODES = [
         {
             name:'lemon'
@@ -274,8 +275,9 @@ exports = module.exports = (function (_$, name) {
 
         return do_get_hello(ID, null, null, $ctx)
         .then(node => {
-            node = Object.assign(node, $body||{})
-            return node;
+            const id = node._id;
+            Object.assign(NODES[id], $body||{});
+            return Object.assign(node, $body||{});
         })
 	}
 
@@ -305,14 +307,14 @@ exports = module.exports = (function (_$, name) {
 	 * $ http DELETE ':8888/hello/1'
 	 */
 	function do_delete_hello(ID, $param, $body, $ctx){
-        _log(NS, `do_delete_hello(${ID})....`);
+        _log(NS, `do_delete_hello(${ID})....`); 
         
         return do_get_hello(ID, null, null, $ctx)
         .then(node => {
             const id = node._id;
             if (id === undefined) return Promise.reject(new Error('._id is required!'));
             // NODES.splice(id, 1);                // remove single node.
-            delete NODES[i];                    // set null in order to keep id.
+            delete NODES[id];                    // set null in order to keep id.
             return node;
         })
 	}
