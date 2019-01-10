@@ -1,7 +1,7 @@
 # lemoncloud-backbone-js
 
-@version: 0.1.0
-@date:    1/10/2019, 11:19:36 PM
+@version: 1.0.0
+@date:    1/11/2019, 1:06:35 AM
 
 Shared Backbone module by [lemoncloud](https://lemoncloud.io)
 
@@ -14,21 +14,20 @@ Shared Backbone module by [lemoncloud](https://lemoncloud.io)
 $ npm install express body-parser
 ```
 
-express에서 라우터 등록하기. (example for dynamo)
+express에서 라우터 등록하기. (example for `hello`)
 
 ```js
 //! handle request to handler.
-const handle_dynamo = (req, res) =>     handler.dynamo(req.$event, req.$context, req.$callback);
+const handle_hello = (req, res) =>     handler.hello(req.$event, req.$context, req.$callback);
 
-//! router: dynamo
-app.get('/dynamo',                  middle, handle_dynamo);
-app.get('/dynamo/:type',            middle, handle_dynamo);
-app.get('/dynamo/:type/:id',        middle, handle_dynamo);
-app.get('/dynamo/:type/:id/:cmd',   middle, handle_dynamo);
-app.put('/dynamo/:type/:id',        middle, handle_dynamo);
-app.put('/dynamo/:type/:id/:cmd',   middle, handle_dynamo);
-app.post('/dynamo/:type/:id',       middle, handle_dynamo);
-app.delete('/dynamo/:type/:id',     middle, handle_dynamo);
+//! router: hello
+app.get('/hello',                   middle, handle_hello);
+app.get('/hello/:id',               middle, handle_hello);
+app.get('/hello/:id/:cmd',          middle, handle_hello);
+app.put('/hello/:id',               middle, handle_hello);
+app.post('/hello/:id',              middle, handle_hello);
+app.post('/hello/:id/:cmd',         middle, handle_hello);
+app.delete('/hello/:id',            middle, handle_hello);
 ```
 
 
@@ -37,4 +36,6 @@ app.delete('/dynamo/:type/:id',     middle, handle_dynamo);
 
 Version History
 
-
+| Version   | Description
+|--         |--
+| 1.0.0     | initial version with full deploy by profile+stage

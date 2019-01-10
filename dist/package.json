@@ -1,6 +1,6 @@
 {
   "name": "lemoncloud-backbone-js",
-  "version": "0.1.0",
+  "version": "1.0.0",
   "description": "Shared Backbone module by [lemoncloud](https://lemoncloud.io)",
   "main": "index.js",
   "scripts": {

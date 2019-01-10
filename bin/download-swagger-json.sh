@@ -3,13 +3,13 @@
 # - based on https://github.com/dujung/serverless-aws-documentation
 cd `dirname $0`
 set -e
-stage=dev
+stage=prod
 profile=lemon
 region=ap-northeast-2
-name=lemon-hello
+name=lemon-hello-api
 apiId=`bash -c "aws apigateway get-rest-apis --output=json --region=$region --profile=$profile | /usr/bin/env node ./extract-rest-api-id.js $stage $name"`
 fileType=json
-outputFileName=swagger/$name-$stage.$fileType
+outputFileName=../swagger/$name-$stage.$fileType
 printf "Downloading Swagger definition to ./$outputFileName
   API ID: $apiId
     Name: $name
