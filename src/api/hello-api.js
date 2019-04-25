@@ -97,6 +97,8 @@ exports = module.exports = (function (_$, name) {
                 if (false);
                 else if (ID !== '!' && CMD === '')
                     next = do_post_hello;
+                else if (ID !== '!' && CMD === 'slack')
+                    next = do_post_hello_slack;
 				break;
 			case 'DELETE':
                 if (false);
@@ -132,6 +134,57 @@ exports = module.exports = (function (_$, name) {
         }
     ]
 
+    /**
+     * POST message to hookUrl.
+     * 
+     * @param {*} hookUrl       URL
+     * @param {*} message       Object or String.
+     */
+    const postMessage = async function(hookUrl, message) {
+        const url = require('url');
+        const https = require('https');
+
+        const body = typeof message == 'string' ? message : JSON.stringify(message);
+        const options = url.parse(hookUrl);
+        options.method = 'POST';
+        options.headers = {
+            'Content-Type': 'application/json',
+            'Content-Length': Buffer.byteLength(body),
+        };
+        return new Promise((resolve, reject)=>{
+            const postReq = https.request(options, (res)=>{
+                var chunks = [];
+                res.setEncoding('utf8');
+                res.on('data', (chunk)=>{
+                    return chunks.push(chunk);
+                });
+                res.on('end', function() {
+                    const body = chunks.join('');
+                    const statusCode = res.statusCode||200;
+                    if (statusCode < 400){
+                        resolve({
+                            body: body,
+                            statusCode: res.statusCode,
+                            statusMessage: res.statusMessage
+                        });
+                    } else {
+                        reject({
+                            body: body,
+                            statusCode: res.statusCode,
+                            statusMessage: res.statusMessage
+                        });
+                    }
+                });
+                return res;
+            });
+            postReq.write(body);
+            postReq.end();
+        })
+    };
+
+	/** ********************************************************************************************************************
+	 *  Public API Functions.
+	 ** ********************************************************************************************************************/
 	/**
 	 * Search by params
 	 * 
@@ -210,6 +263,32 @@ exports = module.exports = (function (_$, name) {
             NODES.push(node);
             return NODES.length - 1;            // returns ID.
         })
+    }
+
+    
+    /**
+     * Post message via Slack Web Hook
+     * 
+     * 
+     * ```sh
+     * # post message to slack/general
+     * $ echo '{"text":"hello"}' | http ':8888/hello/public/slack'
+     * ```
+     * @param {*} ID                slack-channel id (see environment)
+     * @param {*} $param            (optional)
+     * @param {*} $body             {error?:'', message:'', data:{...}}
+     * @param {*} $ctx              context
+     */
+	async function do_post_hello_slack(ID, $param, $body, $ctx){
+		_log(NS, `do_post_hello_slack(${ID})....`);
+        if (ID !== 'public') return Promise.reject(new Error('404 NOT FOUND - Channel:'+ID));
+        $param = $param||{};
+
+        const WEBHOOK = 'https://hooks.slack.com/services/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';            // channel: lemoncloud/public
+        const message = $body;
+
+        const res = await postMessage(WEBHOOK, message);
+        return res;
     }
     
 	/**
