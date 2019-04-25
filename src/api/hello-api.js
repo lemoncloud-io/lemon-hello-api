@@ -87,6 +87,8 @@ exports = module.exports = (function (_$, name) {
                 if (false);
                 else if (ID !== '!' && CMD === '')
                     next = do_get_hello;
+                else if (ID !== '!' && CMD === 'test')
+                    next = do_get_test;
 				break;
 			case 'PUT':
                 if (false);
@@ -118,7 +120,9 @@ exports = module.exports = (function (_$, name) {
 	main.do_get_hello       = do_get_hello;
 	main.do_put_hello       = do_put_hello;
 	main.do_post_hello      = do_post_hello;
-	main.do_delete_hello    = do_delete_hello;
+    main.do_delete_hello    = do_delete_hello;
+    
+	main.do_post_slack      = do_post_hello_slack;
 
 	/** ********************************************************************************************************************
 	 *  Local Functions.
@@ -315,7 +319,40 @@ exports = module.exports = (function (_$, name) {
             return node;
         })
 	}
-	
+    
+
+	/**
+	 * Read the detailed object.
+	 * 
+	 * ```sh
+	 * $ http ':8888/hello/SNS/test'
+	 */
+	function do_get_test(ID, $param, $body, $ctx){
+        _log(NS, `do_get_test(${ID})....`);
+
+        if (ID == 'SNS'){
+            const $SNS = require('../../SNS')(_$);
+            if (!$SNS) throw new Error('.SNS is required!');
+            const data = require('../../data/alarm.json');
+            const event = {
+                Records:[{
+                    Sns:{
+                        Subject: 'ALARM: "...." in Asia Pacific (Seoul)',
+                        Message: data
+                    }
+                }]
+            }
+            return new Promise((resolve, reject)=>{
+                $SNS(event, $ctx, (err,res)=>{
+                    if (err) reject(err)
+                    else resolve(res)
+                })
+            })
+            // _log(NS, '> data=', data);
+        }
+        return Promise.reject(new Error('404 NOT FOUND - ID:'+ID));
+    }
+        
 	//! return fially.
 	return main;
 //////////////////////////

@@ -18,17 +18,77 @@ exports = module.exports = (function (_$) {
     const _inf = _$.inf;
     const _err = _$.err;
 
-    //! process each record.
-    const local_process_record = (record, i) => {
-        const sns = record.Sns || {};
-        const subject = sns.Subject || '';
-        const message = sns.Message || '';
-        const data = typeof message === 'string' && message.startsWith('{') && message.endsWith('}') ? JSON.parse(message) : message || {};
-        _log('! record['+i+'].'+subject+' =', typeof data, JSON.stringify(data));
+    //! load api services.
+    const $hello = function() {
+        if(!_$.hello) throw new Error('$hello(hello-api) is required!');
+        return _$.hello;
+    }
 
-        //! validate & filter inputs.
-        if (!data) return Promise.resolve({error: 'empty data!'});
+    //! chain for ALARM type. (see data/alarm.jsonc)
+    const chain_process_alarm = ({subject, data, context}) => {
+        _log('chain_process_alarm()...')
+        data = data || {};
+        _log('> data=', data);
 
+        const AlarmName = data.AlarmName||'';
+        const AlarmDescription = data.AlarmDescription||'';
+
+        //!  build fields.
+        const Fields = [];
+        const pop_to_fields = (param, short = true)=>{
+            short = short === undefined ? true : short;
+            const [name, nick] = param.split('/',2);
+            const val = data[name];
+            if (val !== undefined && val !== ''){
+                Fields.push({
+                    "title": nick||name,
+                    "value": typeof val === 'object' ? JSON.stringify(val) : val,
+                    "short": short
+                })
+            }
+            delete data[name];
+        }
+        pop_to_fields('AlarmName', false)
+        pop_to_fields('AlarmDescription')
+        pop_to_fields('AWSAccountId')
+        pop_to_fields('NewStateValue')
+        pop_to_fields('NewStateReason', false)
+        pop_to_fields('StateChangeTime')
+        pop_to_fields('Region')
+        pop_to_fields('OldStateValue')
+        pop_to_fields('Trigger', false)
+
+        const asText = (data)=>{
+            const keys = data && Object.keys(data) || [];
+            return (keys.length > 0) ? JSON.stringify(data) : ''
+        }
+
+        // Set the request body
+        const now       = new Date().getTime();
+
+        //! build attachment.
+        const attachment = {
+            "username"  : "hello-alarm",
+            "color"     : "#FFB71B",
+            "pretext"   : `Alarm: ${AlarmName}`,
+            "title"     : AlarmDescription||'',
+            "text"      : asText(data),
+            "ts"        : Math.floor(now / 1000),
+            // "title_link": link||'',
+            // "thumb_url" : thumb || '',
+            // "image_url" : image || '',
+            "fields"    : Fields,
+        }
+        //! build body for slack.
+        const body = {"attachments": [attachment]};
+
+        //! call post-slack
+        return $hello().do_post_slack('public', {}, body, context)
+    }
+
+    //! chain for HTTP type.
+    const chain_process_http = ({subject, data, context}) => {
+        _log('chain_process_http()...')
         //! extract parameters....
         const TYPE          = data.type||'';
         const METHOD        = (data.method||'get').toUpperCase();
@@ -36,7 +96,6 @@ exports = module.exports = (function (_$) {
         const CMD           = data.cmd;
         const PARAM         = data.param;
         const BODY          = data.body;
-        // const CALLBACK      = data.callback;            // callback url (WARN! must be called w/ lambda) SNS -> SNS -> SNS 부르는 무한반복 문제?!!
 
         // transform to APIGatewayEvent;
         const event = {      // : APIGatewayEvent
@@ -56,17 +115,37 @@ exports = module.exports = (function (_$) {
         if (PARAM) event.queryStringParameters = PARAM;
         if (BODY)  event.body                  = BODY;
 
-        //! lookup by type....................
+        //! lookup target-api by name.
+        const API = _$(TYPE);
+        if (!API) return Promise.reject(new Error('404 NOT FOUND - API.type:'+TYPE));
+
+        //! returns promised
         return new Promise((resolve, reject)=>{
-            //! lookup target-api by name.
-            const API = _$(TYPE);
-            if (!API) return reject(new Error('404 NOT FOUND - API.type:'+TYPE));
             //! basic handler type. (see bootload.main)
             return API(event, {}, (err, res)=>{
                 err && reject(err);
                 !err && resolve(res);
             })
         })
+    }
+
+    //! process each record.
+    const local_process_record = (record, i, context) => {
+        const sns = record.Sns || {};
+        const subject = sns.Subject || '';
+        const message = sns.Message || '';
+        const data = typeof message === 'string' && message.startsWith('{') && message.endsWith('}') ? JSON.parse(message) : message || {};
+        _log('! record['+i+'].'+subject+' =', typeof data, JSON.stringify(data));
+
+        //! validate & filter inputs.
+        if (!data) return Promise.resolve({error: 'empty data!'});
+
+        //! determin main chain process.
+        const chain_next = subject.startsWith('ALARM: ') ? chain_process_alarm : chain_process_http;
+
+        //! start chain processing.
+        return Promise.resolve({subject, data, context})
+        .then(chain_next)
         .then(res => {
             const statusCode = res.statusCode||200;
             const body = (typeof res.body === 'string' && (res.body.startsWith('{') && res.body.endsWith('}')) ? JSON.parse(res.body) : res.body);
@@ -78,19 +157,6 @@ exports = module.exports = (function (_$) {
             const msg = e && e.message || `${e}`;
             return {error: msg};
         })
-        // .then(body =>{
-        //     if (!CALLBACK) return body;                 // ignore
-        //     return $protocol().do_post_execute(CALLBACK, body)
-        //     .then(_ => {
-        //         _log('! CALLBACK['+CALLBACK+'] =', typeof _, $U.json(_));
-        //         return _;
-        //     })
-        //     .catch(e => {
-        //         _err('! ERR['+CALLBACK+'] =', e);
-        //         const msg = e && e.message || `${e}`;
-        //         return {error: msg};
-        //     })
-        // })
     }
 
     //! Common SNS Handler for lemon-protocol integration.
@@ -103,7 +169,9 @@ exports = module.exports = (function (_$) {
         if (!records.length) return callback && callback(null, 0);
 
         //! resolve all.
-        return Promise.all(records.map(local_process_record))
+        return Promise.all(records.map((_, i) => {
+            return local_process_record(_, i, context)
+        }))
         .then(_ => callback && callback(null, _.length))
     }
 
