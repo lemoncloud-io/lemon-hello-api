@@ -4,8 +4,10 @@
  * ex:
  * const $env = require('environ')(process)
  * 
+ * NOTE! - may required for `express`
+ * 
  * @author Steve Jung <steve@lemoncloud.io>
- * @date   2019.JAN.10
+ * @date   2019.JAN.30
  */
 exports = module.exports = (process)=>{
     ////////////////////////////////////////////////////////////////////////
@@ -14,10 +16,10 @@ exports = module.exports = (process)=>{
     //  2. STAGE 로부터, `env.yml`내 로딩할 환경 그룹을 지정함.
     //  ex: ENV=lemon STAGE=dev nodemon express.js --port 8081
     const $env  = process && process.env || {};
-    const ENV   = $env['ENV'] || 'env.yml';
-    const STAGE = $env['STAGE'] || 'local';
-    const IS_OP = 0;                                        //TODO - select build target.
-    const SRC   = 0 && IS_OP ? './dist/' : './src/';        //WARN! - do not load dist yet.
+    const ENV   = $env['ENV'] || 'none.yml';                                 // Environment file.
+    const STAGE = $env['STAGE'] || $env['NODE_ENV'] || 'local';             // Global STAGE/NODE_ENV For selecting.
+    const IS_OP = STAGE === 'prod' || STAGE === 'production';               //NOTE! - use 'dist' for production.
+    const SRC   = $env['SRC'] && ($env['SRC'].startsWith('./') ? $env['SRC'] : `./${$env['SRC']}/`) || (IS_OP ? './dist/' : './src/');
     console.log('! ENV=', ENV,', STAGE=', STAGE,', SRC=', SRC);
     $env.SRC    = SRC;
 
@@ -33,8 +35,8 @@ exports = module.exports = (process)=>{
             const $doc = yaml.safeLoad(fs.readFileSync(path, 'utf8'));
             const $src = $doc && $doc[STAGE]||{};
             const $new = Object.keys($src).reduce(($O, key)=>{
-                const val = $src[key]||'';
-                // console.log('!',key,'=', typeof val, val);
+                const val = $src[key];
+                // console.log('!',key,':=', typeof val, val);
                 if (typeof val == 'string' && val.startsWith('!')){         //! force to update environ.
                     $O[key] = val.substring(1);
                 } else if (typeof val == 'object' && Array.isArray(val)){   //! 배열 데이터인경우, 호환성을 위해서 ', ' 으로 붙여준다.

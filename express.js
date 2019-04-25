@@ -14,7 +14,7 @@
  */
 ////////////////////////////////////////////////////////////////////////
 // COMMON ENVIRONMENT LOADER
-const $env = require('./environ')(process);
+const $env = require('./env/environ')(process);
 const package = require('./package.json');
 
 ////////////////////////////////////////////////////////////////////////
@@ -131,7 +131,7 @@ if (server)
     }).on('error', function(e){
         _err(NS, '!ERR - listen.err = ', e);
     })
-    
+
 	// get running parameter like -h api.
 	function _get_run_param(o, defval){
 		var argv = process.argv || [];		// use scope.

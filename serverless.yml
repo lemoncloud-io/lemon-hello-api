@@ -20,8 +20,8 @@ custom:
     profile: ${opt:profile, 'none'}             # run option `--profile`
     region: ${opt:region, 'ap-northeast-2'}     # run option `--region` `-r`
     stage: ${opt:stage, 'dev'}                  # run option `--stage` `-s`
-    env: ${opt:env, 'env.yml'}                  # run option `--env`
-  CONF: ${file(./config.js):CONF}               # config.js 에서 CONF() 함수 호출하여 가져옴.
+    env: ${opt:env, './env/none.yml'}           # run option `--env`
+  CONF: ${file(./env/config.js):CONF}           # `config.js` 에서 CONF() 함수 호출하여 가져옴.
 #------------------------------------------------
 # Documentation
 #   - https://github.com/9cookies/serverless-aws-documentation
@@ -91,6 +91,7 @@ functions:
   hello:
     handler: handler.hello
     events:
+      - stream: ${self:custom.CONF.${self:custom.CORE.profile}.stream}
       - http:
           path: /hello
           method: get
