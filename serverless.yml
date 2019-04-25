@@ -131,7 +131,7 @@ functions:
           path: /hello/{id}/{cmd}
           method: post
           cors: true
-          authorizer: aws_iam
+          # authorizer: aws_iam
           documentation:
             summary: "action for item with payload"
       - http:

@@ -22,6 +22,15 @@ const CONF = (serverless) => {
             securityGroupIds: undefined,                        // securityGroupIds in VPC
             subnetIds: undefined,                               // subnetIds in VPC
         },
+        "ssocio": {
+            name: "ssocio-app",
+            runtime: "nodejs8.10",
+            region: "ap-northeast-2",
+            env: "ssocio.yml",                                  // environment file
+            stream: undefined,                                  // Table Stream ARN
+            securityGroupIds: undefined,                        // securityGroupIds in VPC
+            subnetIds: undefined,                               // subnetIds in VPC
+        },
         "none": {
             name: "none-app",
             runtime: "nodejs6.10",
