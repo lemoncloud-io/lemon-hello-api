@@ -13,6 +13,11 @@ exports = module.exports = (function (_$) {
 	const $U = _$.U;                                // re-use global instance (utils).
 	if(!$U) throw new Error('$U(utillities) is required!');
     
+    //! load common functions
+    const _log = _$.log;
+    const _inf = _$.inf;
+    const _err = _$.err;
+
     //! process each record.
     const local_process_record = (record, i) => {
         const sns = record.Sns || {};

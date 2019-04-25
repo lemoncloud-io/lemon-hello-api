@@ -61,7 +61,8 @@
     "mocha": "^4.0.1",
     "multer": "^1.4.1",
     "serverless-aws-documentation": "^0.8.0",
-    "serverless-offline": "^3.24.5"
+    "serverless-offline": "^3.24.5",
+    "serverless-pseudo-parameters": "^2.4.0"
   },
   "private": false,
   "repository": {

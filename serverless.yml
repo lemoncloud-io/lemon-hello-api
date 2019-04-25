@@ -10,6 +10,7 @@ service: lemon-hello-api
 plugins:
   - serverless-offline
   - serverless-aws-documentation
+  - serverless-pseudo-parameters
 
 #------------------------------------------------
 # Custome: 초기 환경 설정 로딩을 위한 핵심 설정.
@@ -79,19 +80,6 @@ provider:
         - ec2:ModifyNetworkInterfaceAttribute
         - ec2:ResetNetworkInterfaceAttribute
       Resource: "*"
-    # - Effect: Allow
-    #   Action:
-    #     - dynamodb:Query
-    #     - dynamodb:Scan
-    #     - dynamodb:GetItem
-    #     - dynamodb:PutItem
-    #     - dynamodb:UpdateItem
-    #     - dynamodb:DeleteItem
-    #     - dynamodb:GetRecords
-    #     - dynamodb:GetShardIterator
-    #     - dynamodb:DescribeStream
-    #     - dynamodb:ListStreams
-    #   Resource: "arn:aws:dynamodb:${self:provider.region}:*:table/*"
     - Effect: "Allow"
       Action:
         - "sns:Publish"
@@ -106,6 +94,11 @@ provider:
 # Functions
 #------------------------------------------------
 functions:
+  # Common SNS Decoder.
+  SNS:
+    handler: handler.SNS
+    events:
+      - sns: 'arn:aws:sns:${self:provider.region}:#{AWS::AccountId}:${self:custom.topicName}'
   # REST API : /hello
   hello:
     handler: handler.hello

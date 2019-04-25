@@ -24,7 +24,7 @@ const $scope = {
 const handler = require(SRC+'index')(0 ? global : $scope);
 
 //! Common SNS Handler for lemon-protocol integration.
-const SNS      = require('./SNS')(_$);
+const SNS      = require('./SNS')(handler._$);
 
 //! export serverless handlers.
 module.exports = Object.assign(handler, {SNS})
