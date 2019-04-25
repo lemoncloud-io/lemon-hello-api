@@ -9,10 +9,10 @@ Basic Serverless Lambda API Example
 
 ```bash
 $ npm install
+
 # by use serverless-offline
-$ npm run server.lemon
-# by use express.
-$ npm run express.lemon
+$ npm run server
+
 # call API
 $ http ':8888/hello/'
 ```
@@ -24,13 +24,7 @@ $ http ':8888/hello/'
 
 ```bash
 # deploy profile lemon
-$ npm run deploy.lemon
-# show sls deploy info of lemon profile
-$ npm run info.lemon
-# show CloudWatch logs of lemon/hello function.
-$ npm run logs.lemon hello
-# un-deploy(remove) profile lemon
-$ npm run remove.lemon
+$ npm run deploy
 ```
 
 ----------------
@@ -41,3 +35,5 @@ Version History
 | Version   | Description
 |--         |--
 | 1.0.0     | initial version with full deploy by profile+stage
+| 1.0.1     | support `SNS` with CloudWatch Event, and post to `Slack`
+
