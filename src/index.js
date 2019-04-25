@@ -159,7 +159,10 @@ function initialize($export, options) {
 	_$('U', $U);            // register: Utilities.
 	
 	//! load api functions......
-	const hello = require('./api/hello-api')(_$);
+    const hello = require('./api/hello-api')(_$);
+    
+    //! register api
+    _$('hello', hello)
     
 	//! export.
     return Object.assign($export, {hello});

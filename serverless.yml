@@ -22,11 +22,26 @@ custom:
     stage: ${opt:stage, 'dev'}                  # run option `--stage` `-s`
     env: ${opt:env, './env/none.yml'}           # run option `--env`
   CONF: ${file(./env/config.js):CONF}           # `config.js` 에서 CONF() 함수 호출하여 가져옴.
-#------------------------------------------------
-# Documentation
-#   - https://github.com/9cookies/serverless-aws-documentation
-#------------------------------------------------
+  #------------------------------------------------
+  # Documentation
+  #   - https://github.com/9cookies/serverless-aws-documentation
+  #------------------------------------------------
   documentation: ${file(./swagger/documentation.yml):documentation}
+  #------------------------------------------------
+  # SNS Registration
+  #------------------------------------------------
+  topicName: lemon-hello-sns
+  topicArn:
+    Fn::Join:
+      - ''
+      - - 'arn:aws:sns:'
+        - Ref: AWS::Region
+        - ':'
+        - Ref: AWS::AccountId
+        - ':'
+        - Fn::GetAtt:
+          - MyInputTopic
+          - TopicName
 
 #------------------------------------------------
 # Provider
@@ -77,6 +92,10 @@ provider:
     #     - dynamodb:DescribeStream
     #     - dynamodb:ListStreams
     #   Resource: "arn:aws:dynamodb:${self:provider.region}:*:table/*"
+    - Effect: "Allow"
+      Action:
+        - "sns:Publish"
+      Resource: ${self:custom.topicArn}
       
   # -------------------------------------------------------
   # you can define service wide environment variables here
@@ -185,3 +204,11 @@ resources:
     #       WriteCapacityUnits: 20
     #     StreamSpecification:
     #       StreamViewType: "NEW_AND_OLD_IMAGES"
+
+    # -------------------------------
+    # This SNS Topic
+    # -------------------------------
+    MyInputTopic:
+      Type: 'AWS::SNS::Topic'
+      Properties:
+        TopicName: '${self:custom.topicName}'

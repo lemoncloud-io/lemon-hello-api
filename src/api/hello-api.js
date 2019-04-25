@@ -50,7 +50,7 @@ exports = module.exports = (function (_$, name) {
 	//! load services (_$ defined in global)
 	const $_ = _$._;                                // re-use global instance (lodash).
 	const $U = _$.U;                                // re-use global instance (utils).
-	if(!$U) throw new Error('$U is required!');
+	if(!$U) throw new Error('$U(utillities) is required!');
 
 	//! Name Space.
 	const NS = $U.NS(name||'GOOD', "yellow");		// NAMESPACE TO BE PRINTED. (4자리 문자 추천)
