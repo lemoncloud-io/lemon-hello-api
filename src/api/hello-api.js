@@ -161,18 +161,13 @@ exports = module.exports = (function (_$, name) {
                 res.on('end', function() {
                     const body = chunks.join('');
                     const statusCode = res.statusCode||200;
+                    const statusMessage = res.statusMessage||'';
+                    const result = {body, statusCode, statusMessage};
+                    _log(NS, `> post(${hookUrl}) =`, result);
                     if (statusCode < 400){
-                        resolve({
-                            body: body,
-                            statusCode: res.statusCode,
-                            statusMessage: res.statusMessage
-                        });
+                        resolve(result);
                     } else {
-                        reject({
-                            body: body,
-                            statusCode: res.statusCode,
-                            statusMessage: res.statusMessage
-                        });
+                        reject(result);
                     }
                 });
                 return res;
@@ -273,6 +268,7 @@ exports = module.exports = (function (_$, name) {
      * ```sh
      * # post message to slack/general
      * $ echo '{"text":"hello"}' | http ':8888/hello/public/slack'
+     * $ echo 'hahah' | http ':8888/hello/public/slack'
      * ```
      * @param {*} ID                slack-channel id (see environment)
      * @param {*} $param            (optional)
@@ -284,10 +280,20 @@ exports = module.exports = (function (_$, name) {
         if (ID !== 'public') return Promise.reject(new Error('404 NOT FOUND - Channel:'+ID));
         $param = $param||{};
 
-        const WEBHOOK = 'https://hooks.slack.com/services/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';            // channel: lemoncloud/public
-        const message = $body;
+        //! basic configuration.
+        const WEBHOOK = 'https://hooks.slack.com/services/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';            // channel: `lemoncloud-io/public`
+        const message = typeof $body == 'string' ? {text: $body} : $body;
 
-        const res = await postMessage(WEBHOOK, message);
+        //1. load target webhook via environ.
+        const $env = process.env||{};
+        const ENV_NAME = `SLACK_${ID}`.toUpperCase();
+        const webhook = $env[ENV_NAME]||WEBHOOK;
+        _log(NS, '> webhook :=', webhook);
+
+        //2. post message.
+        const res = await postMessage(webhook, message);
+
+        //3. returns
         return res;
     }
     
