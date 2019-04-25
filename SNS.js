@@ -89,6 +89,8 @@ exports = module.exports = (function (_$) {
     //! chain for HTTP type.
     const chain_process_http = ({subject, data, context}) => {
         _log('chain_process_http()...')
+        _log('> data=', data);
+        
         //! extract parameters....
         const TYPE          = data.type||'';
         const METHOD        = (data.method||'get').toUpperCase();
