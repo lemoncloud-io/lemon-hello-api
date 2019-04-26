@@ -24,9 +24,39 @@ exports = module.exports = (function (_$) {
         return _$.hello;
     }
 
+    const asText = (data)=>{
+        const keys = data && Object.keys(data) || [];
+        return (keys.length > 0) ? JSON.stringify(data) : ''
+    }
+
+    //! post to slack channel.
+    const do_post_slack = (pretext='', title='', text='', fields=[])=>{
+        // Set the request body
+        const now       = new Date().getTime();
+
+        //! build attachment.
+        const attachment = {
+            "username"  : "hello-alarm",
+            "color"     : "#FFB71B",
+            "pretext"   : pretext,
+            "title"     : title,
+            "text"      : text,
+            "ts"        : Math.floor(now / 1000),
+            // "title_link": link||'',
+            // "thumb_url" : thumb || '',
+            // "image_url" : image || '',
+            "fields"    : fields,
+        }
+        //! build body for slack.
+        const body = {"attachments": [attachment]};
+
+        //! call post-slack
+        return $hello().do_post_slack('public', {}, body)
+    }
+
     //! chain for ALARM type. (see data/alarm.jsonc)
     const chain_process_alarm = ({subject, data, context}) => {
-        _log('chain_process_alarm()...')
+        _log(`chain_process_alarm(${subject})...`)
         data = data || {};
         _log('> data=', data);
 
@@ -58,32 +88,21 @@ exports = module.exports = (function (_$) {
         pop_to_fields('OldStateValue')
         pop_to_fields('Trigger', false)
 
-        const asText = (data)=>{
-            const keys = data && Object.keys(data) || [];
-            return (keys.length > 0) ? JSON.stringify(data) : ''
-        }
+        const pretext=`Alarm: ${AlarmName}`;
+        const title=AlarmDescription||'';
+        const text=asText(data);
+        const fields=Fields;
 
-        // Set the request body
-        const now       = new Date().getTime();
+        return do_post_slack(pretext, title, text, fields)
+    }
 
-        //! build attachment.
-        const attachment = {
-            "username"  : "hello-alarm",
-            "color"     : "#FFB71B",
-            "pretext"   : `Alarm: ${AlarmName}`,
-            "title"     : AlarmDescription||'',
-            "text"      : asText(data),
-            "ts"        : Math.floor(now / 1000),
-            // "title_link": link||'',
-            // "thumb_url" : thumb || '',
-            // "image_url" : image || '',
-            "fields"    : Fields,
-        }
-        //! build body for slack.
-        const body = {"attachments": [attachment]};
+    //! chain for ALARM type. (see data/alarm.jsonc)
+    const chain_process_error = ({subject, data, context}) => {
+        _log(`chain_process_error(${subject})...`)
+        data = data || {};
+        _log('> data=', data);
 
-        //! call post-slack
-        return $hello().do_post_slack('public', {}, body, context)
+        return do_post_slack('', 'error-report', text=asText(data), [])
     }
 
     //! chain for HTTP type.
@@ -143,7 +162,10 @@ exports = module.exports = (function (_$) {
         if (!data) return Promise.resolve({error: 'empty data!'});
 
         //! determin main chain process.
-        const chain_next = subject.startsWith('ALARM: ') ? chain_process_alarm : chain_process_http;
+        const chain_next = None ? null
+            : subject.startsWith('ALARM: ') ? chain_process_alarm 
+            : subject === 'error' ? chain_process_error 
+            : chain_process_http;
 
         //! start chain processing.
         return Promise.resolve({subject, data, context})
