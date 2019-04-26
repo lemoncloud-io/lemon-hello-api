@@ -92,7 +92,7 @@ exports = module.exports = (function (_$) {
         _log('> data=', data);
         
         //! extract parameters....
-        const TYPE          = data.type||'';
+        const TYPE          = data.type||'hello';                       //NOTE - default API name.
         const METHOD        = (data.method||'get').toUpperCase();
         const ID            = data.id;
         const CMD           = data.cmd;
@@ -100,7 +100,7 @@ exports = module.exports = (function (_$) {
         const BODY          = data.body;
 
         // transform to APIGatewayEvent;
-        const event = {      // : APIGatewayEvent
+        const event = {
             httpMethod: METHOD,
             path: CMD ? `/${ID}/${CMD}` : ID !== undefined ? `/${ID}` : `/`,
             headers: {},
