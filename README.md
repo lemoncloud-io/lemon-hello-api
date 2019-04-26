@@ -2,8 +2,9 @@
 
 Basic Serverless Lambda API Example
 
+# Basic Usage (기본 사용법)
 
-# Quick Start
+## Quick Start
 
 - run API sever in local
 
@@ -17,8 +18,7 @@ $ npm run server
 $ http ':8888/hello/'
 ```
 
-
-# Deploy to AWS
+## Deploy to AWS
 
 - by profile + stage, use different configuration
 
@@ -26,6 +26,21 @@ $ http ':8888/hello/'
 # deploy profile lemon
 $ npm run deploy
 ```
+
+
+# Functions (기능들)
+
+## Post Message to Slack Channel (슬랙 채널에 메세지 보내기)
+
+Send "hello" text message to slack's public channel.
+
+`$ echo '{"text":"hello"}' | http ':8888/hello/public/slack'`
+
+- config `SLACK_PUBLIC` environment to override webhook address.
+
+
+
+
 
 ----------------
 # VERSION INFO #
