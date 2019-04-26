@@ -88,11 +88,11 @@ exports = module.exports = (function (_$) {
 
     //! chain for HTTP type.
     const chain_process_http = ({subject, data, context}) => {
-        _log('chain_process_http()...')
+        _log(`chain_process_http(${subject})...`)
         _log('> data=', data);
         
         //! extract parameters....
-        const TYPE          = data.type||'hello';                       //NOTE - default API name.
+        const TYPE          = data.type||subject||'hello';                   //NOTE - default API name.
         const METHOD        = (data.method||'get').toUpperCase();
         const ID            = data.id;
         const CMD           = data.cmd;
