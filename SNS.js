@@ -8,10 +8,10 @@
 exports = module.exports = (function (_$) {
     if (!_$) throw new Error('_$(global instance pool) is required!');
     
-	//! load services (_$ defined in global)
-	const $_ = _$._;                                // re-use global instance (lodash).
-	const $U = _$.U;                                // re-use global instance (utils).
-	if(!$U) throw new Error('$U(utillities) is required!');
+    //! load services (_$ defined in global)
+    const $_ = _$._;                                // re-use global instance (lodash).
+    const $U = _$.U;                                // re-use global instance (utils).
+    if(!$U) throw new Error('$U(utillities) is required!');
     
     //! load common functions
     const _log = _$.log;
@@ -92,7 +92,7 @@ exports = module.exports = (function (_$) {
         _log('> data=', data);
         
         //! extract parameters....
-        const TYPE          = data.type||subject||'hello';                   //NOTE - default API name.
+        const TYPE          = data.type||subject||'';                       //NOTE - default API name.
         const METHOD        = (data.method||'get').toUpperCase();
         const ID            = data.id;
         const CMD           = data.cmd;
@@ -163,7 +163,7 @@ exports = module.exports = (function (_$) {
 
     //! Common SNS Handler for lemon-protocol integration.
     const SNS = function(event, context, callback){
-		//!WARN! allows for using callbacks as finish/error-handlers
+        //!WARN! allows for using callbacks as finish/error-handlers
         context.callbackWaitsForEmptyEventLoop = false;
 
         //! for each SNS record. do service.
