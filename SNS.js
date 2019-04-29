@@ -162,7 +162,7 @@ exports = module.exports = (function (_$) {
         if (!data) return Promise.resolve({error: 'empty data!'});
 
         //! determin main chain process.
-        const chain_next = None ? null
+        const chain_next = false ? null
             : subject.startsWith('ALARM: ') ? chain_process_alarm 
             : subject === 'error' ? chain_process_error 
             : chain_process_http;
