@@ -333,6 +333,12 @@ exports = module.exports = (function (_$, name) {
 
         //! build event body, then start promised
         const build_event_chain = (subject, data)=>{
+            //! clear internals
+            data = Object.keys(data).reduce((N, key)=>{
+                if (!key.startsWith('!')) N[key] = data[key]
+                return N;
+            }, {})
+            //! prepare event body.
             const event = {
                 Records:[{
                     Sns:{
