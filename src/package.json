@@ -1,34 +1,5 @@
 {
-  "name": "lemoncloud-backbone-js",
+  "name": "hello",
   "version": "0.0.0",
-  "description": "Shared Backbone module by [lemoncloud](https://lemoncloud.io)",
-  "main": "index.js",
-  "scripts": {
-    "test": "test"
-  },
-  "repository": {
-    "type": "git",
-    "url": "git+ssh://git@github.com/lemoncloud-io/lemoncloud-backbone-js.git"
-  },
-  "keywords": [
-    "lemoncloud",
-    "backbone"
-  ],
-  "author": "Steve (steve@lemoncloud.io)",
-  "license": "MIT",
-  "dependencies": {
-    "aws-sdk": "^2.170.0",
-    "crypto": "^1.0.1",
-    "dynamodb-value": "^1.0.5",
-    "elasticsearch": "^13.2.0",
-    "ioredis": "^3.1.2",
-    "lodash": "^4.17.4",
-    "mysql": "^2.13.0",
-    "query-string": "^6.0.0",
-    "request": "^2.81.0"
-  },
-  "bugs": {
-    "url": "https://github.com/lemoncloud-io/lemoncloud-backbone-js/issues"
-  },
-  "homepage": "https://github.com/lemoncloud-io/lemoncloud-backbone-js#readme"
+  "description": "..."
 }
