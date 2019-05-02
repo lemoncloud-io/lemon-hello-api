@@ -156,7 +156,7 @@ exports = module.exports = (function (_$) {
         const subject = sns.Subject || '';
         const message = sns.Message || '';
         const data = typeof message === 'string' && message.startsWith('{') && message.endsWith('}') ? JSON.parse(message) : message || {};
-        _log('! record['+i+'].'+subject+' =', typeof data, JSON.stringify(data));
+        _log('! record['+i+']."'+subject+'" =', typeof data, JSON.stringify(data));
 
         //! validate & filter inputs.
         if (!data) return Promise.resolve({error: 'empty data!'});

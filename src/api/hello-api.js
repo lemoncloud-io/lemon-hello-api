@@ -87,8 +87,8 @@ exports = module.exports = (function (_$, name) {
                 if (false);
                 else if (ID !== '!' && CMD === '')
                     next = do_get_hello;
-                else if (ID !== '!' && CMD === 'test')
-                    next = do_get_test;
+                else if (ID !== '!' && CMD === 'test-sns')
+                    next = do_get_test_sns;
 				break;
 			case 'PUT':
                 if (false);
@@ -325,32 +325,53 @@ exports = module.exports = (function (_$, name) {
 	 * Read the detailed object.
 	 * 
 	 * ```sh
-	 * $ http ':8888/hello/SNS/test'
+	 * $ http ':8888/hello/alarm/test-sns'
 	 */
-	function do_get_test(ID, $param, $body, $ctx){
-        _log(NS, `do_get_test(${ID})....`);
+	function do_get_test_sns(ID, $param, $body, $ctx){
+        _log(NS, `do_get_test_sns(${ID})....`);
 
-        if (ID == 'SNS'){
-            const $SNS = require('../../SNS')(_$);
-            if (!$SNS) throw new Error('.SNS is required!');
-            const data = require('../../data/alarm.json');
+        //! build event body, then start promised
+        const build_event_chain = (subject, data)=>{
             const event = {
                 Records:[{
                     Sns:{
-                        Subject: 'ALARM: "...." in Asia Pacific (Seoul)',
+                        Subject: subject||'ALARM: "...." in Asia Pacific (Seoul)',
                         Message: data
                     }
                 }]
             }
+            return Promise.resolve(event);
+        }
+
+        //! call sns handler.
+        const local_chain_handle_sns = (event)=>{
+            const $SNS = require('../../SNS')(_$);
+            if (!$SNS) return Promise.reject(new Error('.SNS is required!'));
+
+            //! validate event
+            event = event || {};
+            if (!event.Records || !Array.isArray(event.Records)) return Promise.reject(new Error('.Records[] is required!'));
+            if (!event.Records[0] || !event.Records[0].Sns) return Promise.reject(new Error('.Records[0].Sns is required!'));
+            if (!event.Records[0].Sns.Subject || !event.Records[0].Sns.Message) return Promise.reject(new Error('.Records[0].Sns.Subject is required!'));
+
+            //! call handler.
             return new Promise((resolve, reject)=>{
                 $SNS(event, $ctx, (err,res)=>{
                     if (err) reject(err)
                     else resolve(res)
                 })
             })
-            // _log(NS, '> data=', data);
         }
-        return Promise.reject(new Error('404 NOT FOUND - ID:'+ID));
+
+        //! decode by ID
+        return (()=>{
+            if (ID == 'alarm'){
+                const data = require('../../data/alarm.json');
+                return build_event_chain('ALARM: "...." in Asia Pacific (Seoul)', data)
+            }
+            return Promise.reject(new Error('404 NOT FOUND - test-sns:'+ID));
+        })()
+        .then(local_chain_handle_sns)
     }
         
 	//! return fially.
