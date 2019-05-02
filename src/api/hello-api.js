@@ -326,6 +326,7 @@ exports = module.exports = (function (_$, name) {
 	 * 
 	 * ```sh
 	 * $ http ':8888/hello/alarm/test-sns'
+	 * $ http ':8888/hello/failure/test-sns'
 	 */
 	function do_get_test_sns(ID, $param, $body, $ctx){
         _log(NS, `do_get_test_sns(${ID})....`);
@@ -368,6 +369,10 @@ exports = module.exports = (function (_$, name) {
             if (ID == 'alarm'){
                 const data = require('../../data/alarm.json');
                 return build_event_chain('ALARM: "...." in Asia Pacific (Seoul)', data)
+            }
+            if (ID == 'failure'){
+                const data = require('../../data/delivery-failure.json');
+                return build_event_chain(data['!Subject']||'DeliveryFailure', data)
             }
             return Promise.reject(new Error('404 NOT FOUND - test-sns:'+ID));
         })()

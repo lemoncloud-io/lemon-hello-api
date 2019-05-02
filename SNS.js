@@ -96,6 +96,52 @@ exports = module.exports = (function (_$) {
         return do_post_slack(pretext, title, text, fields)
     }
 
+    //! chain for DeliveryFailure type. (see data/delivery-failure.json)
+    const chain_process_delivery_failure = ({subject, data, context}) => {
+        _log(`chain_process_delivery_failure(${subject})...`)
+        data = data || {};
+        _log('> data=', data);
+
+        const FailName = data.EventType||'';
+        const FailDescription = data.FailureMessage||'';
+        delete data.EventType;
+        delete data.FailureMessage;
+
+        //!  build fields.
+        const Fields = [];
+        const pop_to_fields = (param, short = true)=>{
+            short = short === undefined ? true : short;
+            const [name, nick] = param.split('/',2);
+            const val = data[name];
+            if (val !== undefined && val !== '' && nick !== ''){
+                Fields.push({
+                    "title": nick||name,
+                    "value": typeof val === 'object' ? JSON.stringify(val) : val,
+                    "short": short
+                })
+            }
+            delete data[name];
+        }
+        pop_to_fields('EventType/')                             // clear this
+        pop_to_fields('FailureMessage/')                        // clear this
+        pop_to_fields('FailureType')
+        pop_to_fields('DeliveryAttempts')
+        pop_to_fields('Service')
+        pop_to_fields('MessageId')
+        pop_to_fields('EndpointArn', false)
+        pop_to_fields('Resource', false)
+        pop_to_fields('Time/', false)                           // clear this
+
+        const pretext = `SNS: ${FailName}`;
+        const title = FailDescription||'';
+        const text = asText(data);
+        const fields = Fields;
+
+        return do_post_slack(pretext, title, text, fields)
+    }
+
+
+
     //! chain for ALARM type. (see data/alarm.jsonc)
     const chain_process_error = ({subject, data, context}) => {
         _log(`chain_process_error(${subject})...`)
@@ -164,6 +210,7 @@ exports = module.exports = (function (_$) {
         //! determin main chain process.
         const chain_next = false ? null
             : subject.startsWith('ALARM: ') ? chain_process_alarm 
+            : subject.startsWith('DeliveryFailure event') ? chain_process_delivery_failure 
             : subject === 'error' ? chain_process_error 
             : chain_process_http;
 
