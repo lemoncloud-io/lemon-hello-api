@@ -104,8 +104,7 @@ exports = module.exports = (function (_$) {
 
         const FailName = data.EventType||'';
         const FailDescription = data.FailureMessage||'';
-        delete data.EventType;
-        delete data.FailureMessage;
+        const EndpointArn = data.EndpointArn||'';
 
         //!  build fields.
         const Fields = [];
@@ -134,7 +133,8 @@ exports = module.exports = (function (_$) {
 
         const pretext = `SNS: ${FailName}`;
         const title = FailDescription||'';
-        const text = asText(data);
+        // const text = asText(data);
+        const text = 'For more details, run below. \n```aws sns get-endpoint-attributes --endpoint-arn "'+EndpointArn+'"```';
         const fields = Fields;
 
         return do_post_slack(pretext, title, text, fields)
