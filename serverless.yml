@@ -53,7 +53,7 @@ provider:
   stage: ${opt:stage, 'dev'}
 
   # Lambda Runtime Environment
-  memorySize: 128
+  memorySize: 256
   timeout: 30
   cfLogs: true
   runtime: ${self:custom.CONF.${self:custom.CORE.profile}.runtime, 'nodejs6.10'}
