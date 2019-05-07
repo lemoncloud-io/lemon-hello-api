@@ -12,7 +12,9 @@ exports = module.exports = (function (_$) {
     const $_ = _$._;                                // re-use global instance (lodash).
     const $U = _$.U;                                // re-use global instance (utils).
     if(!$U) throw new Error('$U(utillities) is required!');
-    
+
+	const NS = $U.NS('SNS', "yellow");              // NAMESPACE TO BE PRINTED.
+
     //! load common functions
     const _log = _$.log;
     const _inf = _$.inf;
@@ -31,6 +33,13 @@ exports = module.exports = (function (_$) {
 
     //! post to slack channel.
     const do_post_slack = (pretext='', title='', text='', fields=[])=>{
+        if (pretext && typeof pretext == 'object'){
+            const args = pretext||{};
+            pretext = args.pretext||'';
+            title = args.title||'';
+            text = args.text||'';
+            fields = args.fields||[];
+        }
         // Set the request body
         const now       = new Date().getTime();
 
@@ -124,8 +133,8 @@ exports = module.exports = (function (_$) {
         pop_to_fields('EventType/')                             // clear this
         pop_to_fields('FailureMessage/')                        // clear this
         pop_to_fields('FailureType')
-        pop_to_fields('DeliveryAttempts')
-        pop_to_fields('Service')
+        pop_to_fields('DeliveryAttempts/')                      // DeliveryAttempts=1
+        pop_to_fields('Service/')                               // Service=SNS
         pop_to_fields('MessageId')
         pop_to_fields('EndpointArn', false)
         pop_to_fields('Resource', false)
@@ -137,9 +146,30 @@ exports = module.exports = (function (_$) {
         const text = 'For more details, run below. \n```aws sns get-endpoint-attributes --endpoint-arn "'+EndpointArn+'"```';
         const fields = Fields;
 
-        return do_post_slack(pretext, title, text, fields)
-    }
+        //! get get-endpoint-attributes
+        const local_chain_endpoint_attrs = (that)=>{
+            const aws = require('aws-sdk');                                    // AWS module.
+            const SNS = new aws.SNS();
+            return SNS.getEndpointAttributes({EndpointArn}).promise()
+            .then(_ => {
+                _log(NS, '> EndpointAttributes=', _);
+                const Attr = _ && _.Attributes||{};
+                that.fields.push({title: 'Enabled', value: Attr.Enabled||'', short: true})
+                that.fields.push({title: 'CustomUserData', value: Attr.CustomUserData||'', short: true})
+                that.fields.push({title: 'Token', value: Attr.Token||'', short: false})
+                return that;
+            })
+            .catch(e => {
+                _err(NS, '!ERR EndpointAttributes=', e);
+                return that;
+            })
+        }
 
+        // return do_post_slack(pretext, title, text, fields)
+        return Promise.resolve({pretext, title, text, fields})
+        .then(local_chain_endpoint_attrs)
+        .then(do_post_slack)
+    }
 
 
     //! chain for ALARM type. (see data/alarm.jsonc)
