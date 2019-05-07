@@ -79,6 +79,7 @@ provider:
         - ec2:DetachNetworkInterface
         - ec2:ModifyNetworkInterfaceAttribute
         - ec2:ResetNetworkInterfaceAttribute
+        - SNS:GetEndpointAttributes
       Resource: "*"
     - Effect: "Allow"
       Action:
