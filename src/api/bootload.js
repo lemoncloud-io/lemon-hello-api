@@ -135,7 +135,7 @@ exports = module.exports = (function (_$, NS, decode_next_handler) {
 		const CMD = decodeURIComponent($path.cmd || event.action || '');                 // cmd in path (2nd parameter).
 
 		//! decoding mode.
-		const MODE = METHOD_MODE_MAP[METHOD] || (event.Records ? 'EVENT' : event.Sns ? 'SNS' : 'CRON');       // updated @180710
+		const MODE = METHOD_MODE_MAP[METHOD] || (event.Records ? 'EVENT' : event.Sns ? 'SNS' : 'CALL');
 		//! safe decode body if it has json format. (TODO - support url-encoded post body)
 		const $body = event.body 
 				&& (typeof event.body === 'string' && (event.body.startsWith('{') || event.body.startsWith('[')) ? JSON.parse(event.body) : event.body) 
