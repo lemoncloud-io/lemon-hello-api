@@ -85,7 +85,16 @@ provider:
       Action:
         - "sns:Publish"
       Resource: ${self:custom.topicArn}
+    # [WSS] send message vis web-socket.
+    - Effect: Allow
+      Action:
+        - "execute-api:ManageConnections"
+      Resource:
+        - "arn:aws:execute-api:*:*:**/@connections/*"
       
+  # [WSS] custom routes are selected by the value of the action property in the body
+  websocketApiRouteSelectionExpression: $request.body.action
+
   # -------------------------------------------------------
   # you can define service wide environment variables here
   # WARN! - 환경변수에는 object/null 으로 설정할 수 없음.
@@ -95,11 +104,33 @@ provider:
 # Functions
 #------------------------------------------------
 functions:
-  # Common SNS Decoder.
+  #------------------
+  # Common SNS Service.
   SNS:
     handler: handler.SNS
     events:
       - sns: 'arn:aws:sns:${self:provider.region}:#{AWS::AccountId}:${self:custom.topicName}'
+  #------------------
+  # Common WSS (WebSocket Server).
+  # - see: https://serverless.com/framework/docs/providers/aws/events/websocket/
+  WSS:
+    handler: handler.WSS
+    events:
+      - websocket:
+          route: $connect
+      - websocket:
+          route: $disconnect
+      - websocket:
+          route: $default
+          # authorizer: auth
+          # authorizer:
+          #   name: auth
+          #   identitySource:
+          #     - 'route.request.header.Auth'
+          #     - 'route.request.querystring.Auth'          
+      - websocket:
+          route: echo             # sample route by routeKey. echo request.
+  #------------------
   # REST API : /hello
   hello:
     handler: handler.hello

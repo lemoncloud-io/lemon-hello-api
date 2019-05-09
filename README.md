@@ -51,4 +51,5 @@ Version History
 |--         |--
 | 1.0.0     | initial version with full deploy by profile+stage
 | 1.0.1     | support `SNS` with CloudWatch Event, and post to `Slack`
+| 1.0.2     | support `WSS` with API Gateway + WebSocket.
 

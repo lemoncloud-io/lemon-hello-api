@@ -108,7 +108,11 @@ exports = module.exports = (function (_$, name) {
                     next = do_delete_hello;
 				break;
 			case 'EVENT':
-				break;
+                break;
+            // For WSS. use dummy handler.
+			case 'CONNECT':
+            case 'DISCONNECT':
+                return ()=>'ok'
 			default:
 				break;
 		}

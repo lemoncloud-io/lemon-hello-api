@@ -1,6 +1,6 @@
 {
   "name": "lemon-hello-api",
-  "version": "1.0.1",
+  "version": "1.0.2",
   "description": "Basic Serverless API Template",
   "main": "handler.js",
   "scripts": {

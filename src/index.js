@@ -154,12 +154,14 @@ function initialize($export, options) {
 
 	//! load utilities.
 	const $U = require('./lib/utilities')(_$);
+	const $aws = require('aws-sdk');                                    // AWS module.
 
 	//! register to global instance manager.
 	_$('U', $U);            // register: Utilities.
 	
 	//! load api functions......
     const hello = require('./api/hello-api')(_$);
+	_$('aws', $aws);        // register: aws instance.
     
     //! register api
     _$('hello', hello)

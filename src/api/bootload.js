@@ -42,7 +42,7 @@ exports = module.exports = (function (_$, NS, decode_next_handler) {
     
     //! constants config
     const HEADER_LEMON_IDENTITY = 'x-lemon-identity';
-
+    const METHOD_MODE_MAP = 'LIST,GET,PUT,POST,CONNECT,DISCONNECT'.split(',').reduce((N,K)=>{return N[K]=K,N}, {});
 
 	/** ********************************************************************************************************************
 	 *  COMMON Functions.
@@ -135,8 +135,7 @@ exports = module.exports = (function (_$, NS, decode_next_handler) {
 		const CMD = decodeURIComponent($path.cmd || event.action || '');                 // cmd in path (2nd parameter).
 
 		//! decoding mode.
-		const METHOD_MODE_MAP = {'LIST':'LIST', 'GET':'GET', 'PUT':'PUT', 'POST':'POST', 'DELETE':'DELETE'};
-		const MODE = METHOD && METHOD_MODE_MAP[METHOD] || (event.Records ? 'EVENT' : event.Sns ? 'SNS' : 'CRON');       // updated @180710
+		const MODE = METHOD_MODE_MAP[METHOD] || (event.Records ? 'EVENT' : event.Sns ? 'SNS' : 'CRON');       // updated @180710
 		//! safe decode body if it has json format. (TODO - support url-encoded post body)
 		const $body = event.body 
 				&& (typeof event.body === 'string' && (event.body.startsWith('{') || event.body.startsWith('[')) ? JSON.parse(event.body) : event.body) 
