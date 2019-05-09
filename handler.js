@@ -23,7 +23,7 @@ const $scope = {
 //! load configuration.
 const handler = require(SRC+'index')(0 ? global : $scope);
 
-//! Common SNS Handler for lemon-protocol integration.
+//! Additional Common Handlers
 const SNS      = require('./SNS')(handler._$);
 const WSS      = require('./WSS')(handler._$);
 

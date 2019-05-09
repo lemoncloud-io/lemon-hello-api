@@ -54,6 +54,7 @@ exports = module.exports = (function (_$) {
         _log(NS, `sendMessageToClient(${url}, ${connectionId})...`)
         _log(NS, '> payload=', payload);
 
+        //NOTE - it would NOT work in VPC lambda.
         const apigatewaymanagementapi = new $aws.ApiGatewayManagementApi({ apiVersion: '2029', endpoint: url });
         apigatewaymanagementapi.postToConnection({
             ConnectionId: connectionId, // connectionId of the receiving ws-client
