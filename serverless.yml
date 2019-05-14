@@ -29,6 +29,10 @@ custom:
   #------------------------------------------------
   documentation: ${file(./swagger/documentation.yml):documentation}
   #------------------------------------------------
+  # SQS Queue
+  #------------------------------------------------
+  queueName: lemon-hello-sqs
+  #------------------------------------------------
   # SNS Registration
   #------------------------------------------------
   topicName: lemon-hello-sns
@@ -81,6 +85,13 @@ provider:
         - ec2:ResetNetworkInterfaceAttribute
         - SNS:GetEndpointAttributes
       Resource: "*"
+    # SQS
+    - Effect: "Allow"
+      Action:
+        - "sqs:DeleteMessage"
+        - "sqs:ReceiveMessage"
+      Resource: "arn:aws:sqs:${opt:region, self:provider.region}:*:${self:custom.queueName}"
+    # SNS
     - Effect: "Allow"
       Action:
         - "sns:Publish"
@@ -110,6 +121,17 @@ functions:
     handler: handler.SNS
     events:
       - sns: 'arn:aws:sns:${self:provider.region}:#{AWS::AccountId}:${self:custom.topicName}'
+  #------------------
+  # Common SQS Service.
+  SQS:
+    handler: handler.SQS
+    events:
+      - sqs:
+          arn:
+            Fn::GetAtt:
+              - MyQueue
+              - Arn
+          batchSize: 1 # the maximum number of SQS messages that AWS will send to your Lambda function on a single trigger. (default: 10)
   #------------------
   # Common WSS (WebSocket Server).
   # - see: https://serverless.com/framework/docs/providers/aws/events/websocket/
@@ -229,6 +251,19 @@ resources:
     #       WriteCapacityUnits: 20
     #     StreamSpecification:
     #       StreamViewType: "NEW_AND_OLD_IMAGES"
+    # -------------------------------
+    # SQS Queue
+    # -------------------------------
+    MyQueue:
+      Type: 'AWS::SQS::Queue'
+      # https://docs.aws.amazon.com/ko_kr/AWSSimpleQueueService/latest/APIReference/API_SetQueueAttributes.html
+      Properties:
+        QueueName: '${self:custom.queueName}'
+        MessageRetentionPeriod: 1800      # 30 mins
+        VisibilityTimeout: 300            # 5 mins
+        MaximumMessageSize: 4096          # 4 Kb
+        DelaySeconds: 3                   # 3 seconds
+        ReceiveMessageWaitTimeSeconds: 20 # 20 seconds
 
     # -------------------------------
     # This SNS Topic
