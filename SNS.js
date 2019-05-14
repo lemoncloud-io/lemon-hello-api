@@ -13,7 +13,7 @@ exports = module.exports = (function (_$) {
     const $U = _$.U;                                // re-use global instance (utils).
     if(!$U) throw new Error('$U(utillities) is required!');
 
-	const NS = $U.NS('SNS', "yellow");              // NAMESPACE TO BE PRINTED.
+    const NS = $U.NS('SNS', "yellow");              // NAMESPACE TO BE PRINTED.
 
     //! load common functions
     const _log = _$.log;

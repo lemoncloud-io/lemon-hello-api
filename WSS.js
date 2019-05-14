@@ -15,33 +15,33 @@ exports = module.exports = (function (_$) {
     const $U = _$.U;                                // re-use global instance (utils).
     const $aws = _$.aws;                            // re-use global instance (aws).
     if(!$U) throw new Error('$U(utillities) is required!');
-	if (!$aws) throw new Error('$aws(aws-sdk) is required!');
+    if (!$aws) throw new Error('$aws(aws-sdk) is required!');
 
-	const NS = $U.NS('WSS', "yellow");              // NAMESPACE TO BE PRINTED.
+    const NS = $U.NS('WSS', "yellow");              // NAMESPACE TO BE PRINTED.
 
     //! load common functions
     const _log = _$.log;
     const _inf = _$.inf;
     const _err = _$.err;
     
-	function success(body) {
-		return buildResponse(200, body);
-	}
+    function success(body) {
+        return buildResponse(200, body);
+    }
 
-	function notfound(body) {
-		return buildResponse(404, body);
-	}
+    function notfound(body) {
+        return buildResponse(404, body);
+    }
 
-	function failure(body) {
-		return buildResponse(503, body);
-	}
+    function failure(body) {
+        return buildResponse(503, body);
+    }
 
-	function buildResponse(statusCode, body) {
-		return {
-			statusCode: statusCode,
-			body: body === undefined ? undefined : typeof body == 'string' ? body : JSON.stringify(body)
-		};
-	}
+    function buildResponse(statusCode, body) {
+        return {
+            statusCode: statusCode,
+            body: body === undefined ? undefined : typeof body == 'string' ? body : JSON.stringify(body)
+        };
+    }
 
     /**
      * Send JSON message to client.

@@ -16,7 +16,7 @@
  * Copyright (C) 2018 LemonCloud Co Ltd. - All Rights Reserved.
  */
 exports = module.exports = (function (_$) {
-	"use strict";
+    "use strict";
     if (!_$) throw new Error('_$(global instance pool) is required!');
     
     //! load services (_$ defined in global)
@@ -24,7 +24,7 @@ exports = module.exports = (function (_$) {
     const $U = _$.U;                                // re-use global instance (utils).
     if(!$U) throw new Error('$U(utillities) is required!');
 
-	const NS = $U.NS('SQS', "yellow");              // NAMESPACE TO BE PRINTED.
+    const NS = $U.NS('SQS', "yellow");              // NAMESPACE TO BE PRINTED.
     const DEFAULT_TYPE = _$.environ('DEFAULT_TYPE', 'hello');
 
     //! load common functions
@@ -129,7 +129,7 @@ exports = module.exports = (function (_$) {
 
     //! Common SQS Handler for lemon-protocol integration.
     const SQS = function(event, context, callback){
-		//!WARN! allows for using callbacks as finish/error-handlers
+        //!WARN! allows for using callbacks as finish/error-handlers
         context.callbackWaitsForEmptyEventLoop = false;
 
         //! for each SQS record. do service.
