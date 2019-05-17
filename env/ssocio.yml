@@ -7,6 +7,7 @@ default_env: &default_env
   TS: 1                   # time-stamp in line
   NAME: 'ssocio'
   SRC: './src/'
+  SLACK_PUBLIC: https://stage-admin.ssocioliving.com/slack/post
 
 #-----------------------------------
 # local development configuration.
