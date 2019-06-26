@@ -32,21 +32,23 @@ exports = module.exports = (function (_$) {
     }
 
     //! post to slack channel.
-    const do_post_slack = (pretext='', title='', text='', fields=[])=>{
+    const do_post_slack = (pretext='', title='', text='', fields=[], color='#FFB71B', username='hello-alarm')=>{
         if (pretext && typeof pretext == 'object'){
             const args = pretext||{};
             pretext = args.pretext||'';
-            title = args.title||'';
-            text = args.text||'';
-            fields = args.fields||[];
+            title = args.title||title;
+            text = args.text||text;
+            fields = args.fields||fields;
+            color = args.color||color;
+            username = args.username||username;
         }
         // Set the request body
         const now       = new Date().getTime();
 
         //! build attachment.
         const attachment = {
-            "username"  : "hello-alarm",
-            "color"     : "#FFB71B",
+            "username"  : username,
+            "color"     : color,
             "pretext"   : pretext,
             "title"     : title,
             "text"      : text,
@@ -181,6 +183,15 @@ exports = module.exports = (function (_$) {
         return do_post_slack('', 'error-report', text=asText(data), [])
     }
 
+    //! chain for ALARM type. (see data/alarm.jsonc)
+    const chain_process_callback = ({subject, data, context}) => {
+        _log(`chain_process_callback(${subject})...`)
+        data = data || {};
+        _log('> data=', data);
+
+        return do_post_slack('', 'callback-report', text=asText(data), [], '#B71BFF')
+    }
+
     //! chain for HTTP type.
     const chain_process_http = ({subject, data, context}) => {
         _log(`chain_process_http(${subject})...`)
@@ -242,6 +253,7 @@ exports = module.exports = (function (_$) {
             : subject.startsWith('ALARM: ') ? chain_process_alarm 
             : subject.startsWith('DeliveryFailure event') ? chain_process_delivery_failure 
             : subject === 'error' ? chain_process_error 
+            : subject === 'callback' ? chain_process_callback 
             : chain_process_http;
 
         //! start chain processing.
