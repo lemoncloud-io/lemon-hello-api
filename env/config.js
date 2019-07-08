@@ -5,6 +5,11 @@
  * 
  * 참고: https://velog.io/@doondoony/Serverless-Framework-serverless.yml-%EC%84%A4%EC%A0%95-%EC%A0%95%EB%B3%B4-%EC%88%A8%EA%B8%B0%EA%B8%B0-2hjmsx7nal
  * 
+ * **TODO**
+ * - [ ] use async loading env via custom's s3 (refer https://serverless.com/blog/serverless-v1.13.0/)
+ * - [ ] remove `lemoncloud-io/public` default slack channel!.
+ *
+ * 
  * @param {*} serverless        see `node_modules/serverless/lib/Serverless.js`
  * @author Steve Jung <steve@lemoncloud.io>
  * @date   2019.JAN.10
