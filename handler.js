@@ -24,9 +24,9 @@ const $scope = {
 const handler = require(SRC+'index')(0 ? global : $scope);
 
 //! Additional Common Handlers
-const SNS      = require('./SNS')(handler._$);
-const SQS      = require('./SQS')(handler._$);
-const WSS      = require('./WSS')(handler._$);
+const SNS      = require(SRC+'SNS')(handler._$);
+const SQS      = require(SRC+'SQS')(handler._$);
+const WSS      = require(SRC+'WSS')(handler._$);
 
 //! export serverless handlers.
 module.exports = Object.assign(handler, {SNS, WSS, SQS})
