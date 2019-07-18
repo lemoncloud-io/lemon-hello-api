@@ -1,0 +1,27 @@
+{
+    "extends": [
+        "eslint:recommended",
+        "airbnb"
+    ],
+    "env": {
+        "node": true,
+        "es6": true
+    },
+    "rules": {
+        "semi-spacing": "error",
+        "no-unused-vars": [
+            "error",
+            {
+                "argsIgnorePattern": "next|err"
+            }
+        ],
+        "max-len": [
+            "error",
+            {
+                "code": 160
+            }
+        ],
+        "linebreak-style": 0,
+        "import/prefer-default-export": "off"
+    }
+}

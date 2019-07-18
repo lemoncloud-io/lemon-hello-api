@@ -21,7 +21,7 @@ const $scope = {
 }
 
 //! load configuration.
-const handler = require(SRC+'index')(0 ? global : $scope);
+const handler  = require(SRC+'index')(0 ? global : $scope);
 
 //! Additional Common Handlers
 const SNS      = require(SRC+'SNS')(handler._$);
