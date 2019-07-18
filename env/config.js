@@ -26,6 +26,7 @@ const CONF = (serverless) => {
             stream: undefined,                                  // Table Stream ARN
             securityGroupIds: undefined,                        // securityGroupIds in VPC
             subnetIds: undefined,                               // subnetIds in VPC
+            kmsKey: '*',                                        // KMS key-id
         },
         "ssocio": {
             name: "ssocio-app",
@@ -35,6 +36,7 @@ const CONF = (serverless) => {
             stream: undefined,                                  // Table Stream ARN
             securityGroupIds: undefined,                        // securityGroupIds in VPC
             subnetIds: undefined,                               // subnetIds in VPC
+            kmsKey: '*',                                        // KMS key-id
         },
         "none": {
             name: "none-app",
@@ -44,6 +46,7 @@ const CONF = (serverless) => {
             stream: undefined,                                  // Table Stream ARN
             securityGroupIds: undefined,                        // securityGroupIds in VPC
             subnetIds: undefined,                               // subnetIds in VPC
+            kmsKey: undefined,                                  // KMS key-id
         },
     };
 }

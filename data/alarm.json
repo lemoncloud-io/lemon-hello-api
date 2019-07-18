@@ -1,6 +1,6 @@
 {
     "!":"Example for CloudWatch's ALARM message.",
-    "!!":"subject: ALARM \"awsapplicationelb-targetgroup-prod-kwonsun-r2-8ae26393706048e8-H...\" in Asia Pacific (Seoul)",
+    "!!":"subject: ALARM: \"awsapplicationelb-targetgroup-prod-kwonsun-r2-8ae26393706048e8-H...\" in Asia Pacific (Seoul)",
     "AlarmName": "awsapplicationelb-targetgroup-prod-kwonsun-r2-8ae26393706048e8-High-Unhealthy-Hosts",
     "AlarmDescription": "Created from EC2 Console",
     "AWSAccountId": "....",

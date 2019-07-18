@@ -7,7 +7,7 @@ default_env: &default_env
   TS: 1                   # time-stamp in line
   NAME: 'lemon'
   SRC: './src/'
-  SLACK_PUBLIC: 'AQICAHixEHf7isdNQBbkxpofjAClbUEdI/Y6QQovlgFxV0cfRAF9vnM13bYmsoKZC/XL2tjLAAAArzCBrAYJKoZIhvcNAQcGoIGeMIGbAgEAMIGVBgkqhkiG9w0BBwEwHgYJYIZIAWUDBAEuMBEEDB34X0dM0w58MzLx6QIBEIBoI6Aj+JbP9IzZDVn5FFecz3ltSuWjeIJLq1UYZ6ZZ2HWBIE7W4Bo82PQHQuiCId06ogpPsgGrAeI4rcv4ipYFtv952Bnr0YQE36cnfmFKy/aRtasShUkLkJN8Tb0c85r2OsiJ96nwYHw='
+  SLACK_PUBLIC: 'AQICAHgbY0Vh/KmEbJAIGCzYw7lo21MbERr8nDmrLayPi0EuxgFZMJda8JVWOdKIuxYbbRMPAAAArzCBrAYJKoZIhvcNAQcGoIGeMIGbAgEAMIGVBgkqhkiG9w0BBwEwHgYJYIZIAWUDBAEuMBEEDIBCSXmt5AmMA/atMgIBEIBo43N3BLfCJgjn4N4EXiVQcu1jIMdTh3B/428v7bIhFNYt9b69lKnLVWSjtGxs1mn5Ka+ngxZUlsE3Y/9utFbjUvC7tvsxwISYDoNFBOZCauyuSIk51G2Z3357iqoXxLaQnRr6GVGS13A='
 
 #-----------------------------------
 # local development configuration.
