@@ -30,10 +30,13 @@ const app = express();
 
 // app.use(bodyParser.json({limit:'10mb'})); //default limit 100kb
 // const WebSocket = require('ws');
-const uploader = multer({ dest: '../uploads/' });
+const uploader = multer({ dest: '../tmp/' });
 
 //! load configuration.
 const handler = require('./index')(global, { env: $env });
+
+// eslint-disable-next-line no-underscore-dangle
+const _inf = (global && global.console.log) || (() => {});
 
 //! middle ware
 const middle = (req, res, next) => {
@@ -99,7 +102,7 @@ app.get('', (req, res) => {
 const handle_hello = (req, res) => handler.hello(req.$event, req.$context, req.$callback, res);
 
 //! WARN - MUST sync with 'serverless.yml'
-//! hello
+//! manual route map of 'api/hello-api'
 app.get('/hello', middle, handle_hello);
 app.get('/hello/:id', middle, handle_hello);
 app.get('/hello/:id/:cmd', middle, handle_hello);
@@ -138,8 +141,6 @@ const createServer = (options = null) => {
   const port = getRunParam('-port', 8081, options.argv);
 
   //! list port.
-  // eslint-disable-next-line no-underscore-dangle
-  const _inf = console.log;
   server.listen(port, () => {
     _inf(NS, 'Server Listen on Port =', server.address().port);
   }).on('error', (e) => {

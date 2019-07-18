@@ -73,7 +73,9 @@
         "nodemon": "^1.18.10",
         "serverless-aws-documentation": "^0.8.0",
         "serverless-offline": "^3.24.5",
-        "serverless-pseudo-parameters": "^2.4.0"
+        "serverless-pseudo-parameters": "^2.4.0",
+        "superagent": "^5.1.0",
+        "supertest": "^4.0.2"
     },
     "jest": {
         "testMatch": [
