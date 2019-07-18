@@ -1,3 +1,8 @@
+[![travis](https://travis-ci.org/lemoncloud-io/lemon-hello-api.svg?branch=master)](https://travis-ci.org/lemoncloud-io/lemon-hello-api)
+[![codecov](https://codecov.io/gh/lemoncloud-io/lemon-hello-api/branch/master/graph/badge.svg)](https://codecov.io/gh/lemoncloud-io/lemon-hello-api)
+[![npm version](https://badge.fury.io/js/lemon-hello-api.svg)](https://badge.fury.io/js/lemon-hello-api)
+[![GitHub version](https://badge.fury.io/gh/lemoncloud-io%2Flemon-hello-api.svg)](https://badge.fury.io/gh/lemoncloud-io%2Flemon-hello-api)
+
 # lemon-hello-api
 
 Basic Serverless Hello API with `Lambda` + `API Gateway` + `Web Socket` + `SNS` + `SQS` + `KMS`
@@ -75,7 +80,7 @@ AWS Lambda 에 배포됨.
 
 ## 라이센스 (License)
 
-MIT License
+[MIT](http://opensource.org/licenses/MIT)
 
 
 ----------------
