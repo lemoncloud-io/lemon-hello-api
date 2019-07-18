@@ -3,6 +3,11 @@ sudo: false
 node_js:
 - 10
 - 8
+# built by branches
+branches:
+  only:
+  - master
+  - develop
 install:
 - npm install
 script:
@@ -11,6 +16,7 @@ env:
 - CODECOV_TOKEN="0cd44aea-7596-4f0c-b830-110c85fd9d3d"
 after_success:
 - "./node_modules/.bin/codecov"
+# deploy on master
 deploy:
   provider: npm
   email: steve@lemoncloud.io
