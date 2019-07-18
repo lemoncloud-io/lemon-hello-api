@@ -11,5 +11,8 @@
                 "regenerator": true
             }
         ]
-    ]
+    ],
+    "test": [
+        "jest"
+    ]    
 }
