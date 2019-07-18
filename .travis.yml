@@ -1,22 +1,22 @@
-# travis conf: see `https://travis-ci.org/lemoncloud-io/lemon-hello-api`
 language: node_js
 sudo: false
 node_js:
-  - 10
-  - 8
+- 10
+- 8
 install:
-    - npm install
+- npm install
 script:
-    - npm run test
+- npm run test
 env:
-    # codecov token: see `https://codecov.io/gh/lemoncloud-io/lemon-hello-api/settings`
-    - CODECOV_TOKEN="0cd44aea-7596-4f0c-b830-110c85fd9d3d"
+- CODECOV_TOKEN="0cd44aea-7596-4f0c-b830-110c85fd9d3d"
 after_success:
-    - ./node_modules/.bin/codecov
+- "./node_modules/.bin/codecov"
 deploy:
-    # deploy to npm: see `https://www.npmjs.com/package/lemon-hello-api`
-    provider: npm
-    email: steve@lemoncloud.io
-    api_key: c92195ff-1783-491b-b934-701b3be9ebd9
-
-    
+  provider: npm
+  email: steve@lemoncloud.io
+  #WARN - use `$ travis encrypt <Npm Access Tokens> --add deploy.api_key`
+  api_key:
+    secure: xnaFsfY9tVlZPpML2bHsXVF6ktkuU8LRZbWfT5dPPZ5LmS+vMW85Rjvq26C2yaSd+RmpyUrmnL7hhId2VliesmZI+dp9krIw9QKL2My0mcTpTKhpeJaTehga82eTaRwlvnAWbwQCpL6/5IqHHOZRElB6O5whRbnoTsMzoqh6K0TdDkHIQMH/9Dq1234Z6r7wsc5LhptF+X9n9uGVvGfTDOKXbkPBK3f9xbqRzaG4GZT8cx57s7WF2HiP+5tBRiANygruyR6fg6LL6/PzhIYNp9SCG8kbIWwCro7l4IkfOwCBPzH2FSg3qHjcWGUMYO54fbGAzbi02EJxtYzp7C6lH7BD+Rr8e3wCM5gYqeSAJNaNrGzXC/Wq/ndMV3tqCpFd5cOvu8mnG2QWqZL9i4Bx6yartMeUJqf68wjpYP7pOVPrOLVM102rqtm0d+mmvL3YoPW/rMsfOpP+HCVvM1GQqbdIXf/ZFEXxkzd/2VnQBXn3xKKWdi+tQ2mRGrvAcNvB1oFJX8FeV0L/FMmSGqB50N3g0po/HwnNpAtGHPnlVADJNT3EIJIZaWpkADwql5ZxvoGEH8YxQz8cjRiWGU2UkAxz+7LGYfXiOzASchooyXyTyYiLqdSqgz6DvmZjdi3jNgHs6ROiPEHCiNaKOgdmLGXdAPkVbO4sJHbBNC1KglI=
+  #! run `npm publish` only for `master` branch.
+  on:
+    branch: master
