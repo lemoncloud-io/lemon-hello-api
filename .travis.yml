@@ -1,3 +1,4 @@
+# see `https://travis-ci.org/lemoncloud-io/lemon-hello-api`
 language: node_js
 sudo: false
 node_js:
