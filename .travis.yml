@@ -1,0 +1,15 @@
+language: node_js
+sudo: false
+node_js:
+  - 10
+  - 8
+install:
+    - npm install
+script:
+    - npm run test
+env:
+    # codecov token: see https://codecov.io/gh/lemoncloud-io/lemon-hello-api/settings
+    - CODECOV_TOKEN="0cd44aea-7596-4f0c-b830-110c85fd9d3d"
+after_success:
+    - ./node_modules/.bin/codecov
+    

@@ -1,9 +1,15 @@
 # lemon-hello-api
 
-Basic Serverless Hello API with Lambda + API Gateway + KMS
+Basic Serverless Hello API with `Lambda` + `API Gateway` + `Web Socket` + `SNS` + `SQS` + `KMS`
+
+- Hello Nodejs DevOps Project with `babel` + `eslint` + `jest` + `supertest` + `codecov` + `travis`
+
+- Integrate with `Slack` + `CloudWatch Alarm`
+
 
 ## 설명 (Description)
 
+- `Nodejs` 기반 오픈소스 표준 개발 환경 구성안.
 - AWS CloudWatch 의 내용을 `lemon-hello-sns`으로 수신 함 -> 이후 슬랙으로 전달
 - 슬랙 webhook를 이용하여, 해당 슬랙 채널에 메세지를 보냄
 
@@ -60,6 +66,16 @@ AWS Lambda 에 배포됨.
     ```bash
     $ npm run deploy
     ```
+
+
+## 기여하기 (Contribution)
+
+누구나 어느내용이든 참여가능하며, 수정 요청시 PR 로 요청 주세요.
+
+
+## 라이센스 (License)
+
+MIT License
 
 
 ----------------
