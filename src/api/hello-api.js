@@ -89,6 +89,8 @@ exports = module.exports = (function (_$, name) {
                     next = do_get_hello;
                 else if (ID !== '!' && CMD === 'test-sns')
                     next = do_get_test_sns;
+                else if (ID !== '!' && CMD === 'test-encrypt')
+                    next = do_get_test_encrypt;
 				break;
 			case 'PUT':
                 if (false);
@@ -131,6 +133,11 @@ exports = module.exports = (function (_$, name) {
 	/** ********************************************************************************************************************
 	 *  Local Functions.
 	 ** ********************************************************************************************************************/
+    const $kms = function() {
+        if(!_$.kms) throw new Error('$kms(kms-service) is required!');
+        return _$.kms;
+    }
+
     //! shared memory.
     //WARN! - `serverless offline`는 상태를 유지하지 않으므로, NODES값들이 실행때마다 리셋이될 수 있음.
     const NODES = [
@@ -184,6 +191,34 @@ exports = module.exports = (function (_$, name) {
             postReq.end();
         })
     };
+
+
+    //! store channel map in cache
+    const $channels = {}
+    const do_load_slack_channel = (name) => {
+        const ENV_NAME = `SLACK_${name}`.toUpperCase();
+        const $env = process.env||{};
+        const webhook = $channels[ENV_NAME]||$env[ENV_NAME]||'';
+        _log(NS, '> webhook :=', webhook);
+        if (!webhook) return Promise.reject(new Error(`env[${ENV_NAME}] is required!`));
+        return Promise.resolve(webhook)
+        .then(_ => {
+            if (!_.startsWith('http')){
+                return $kms().do_decrypt(_)
+                .then(_ => {
+                    const url = `${_}`.trim();
+                    $channels[ENV_NAME] = url;
+                    return url;
+                })
+            }
+            return _;
+        })
+        .then(_ => {
+            if (!(_ && _.startsWith('http')))
+                throw new Error('404 NOT FOUND - Channel:'+name);
+            return _;
+        })
+    }
 
 	/** ********************************************************************************************************************
 	 *  Public API Functions.
@@ -268,10 +303,8 @@ exports = module.exports = (function (_$, name) {
         })
     }
 
-    
     /**
      * Post message via Slack Web Hook
-     * 
      * 
      * ```sh
      * # post message to slack/general
@@ -285,24 +318,16 @@ exports = module.exports = (function (_$, name) {
      */
 	async function do_post_hello_slack(ID, $param, $body, $ctx){
 		_log(NS, `do_post_hello_slack(${ID})....`);
-        if (ID !== 'public') return Promise.reject(new Error('404 NOT FOUND - Channel:'+ID));
         $param = $param||{};
 
-        //! basic configuration.
-        const WEBHOOK = 'https://hooks.slack.com/services/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';            // channel: `lemoncloud-io/public`
         const message = typeof $body == 'string' ? {text: $body} : $body;
-
-        //1. load target webhook via environ.
-        const $env = process.env||{};
-        const ENV_NAME = `SLACK_${ID}`.toUpperCase();
-        const webhook = $env[ENV_NAME]||WEBHOOK;
-        _log(NS, '> webhook :=', webhook);
-
-        //2. post message.
-        const res = await postMessage(webhook, message);
-
-        //3. returns
-        return res;
+        //! load target webhook via environ.
+        return do_load_slack_channel(ID)
+        .then(webhook => {
+            _log(NS, '> webhook :=', webhook);
+            // return { webhook }
+            return postMessage(webhook, message);
+        })
     }
     
 	/**
@@ -388,7 +413,29 @@ exports = module.exports = (function (_$, name) {
         })()
         .then(local_chain_handle_sns)
     }
-        
+
+	/**
+	 * Encrypt Test.
+	 * 
+	 * ```sh
+	 * $ http ':8888/hello/0/test-encrypt'
+	 */
+	function do_get_test_encrypt(ID, $param, $body, $ctx){
+        _log(NS, `do_get_test_encrypt(${ID})....`);
+        const message = 'hello lemon';
+        return $kms().do_encrypt(message)
+        .then(encrypted => {
+            return $kms().do_decrypt(encrypted)
+            .then(decrypted => {
+                return { encrypted, decrypted, message }
+            })
+        })
+        .then(_ => {
+            const result = _.encrypted && _.message === _.decrypted;
+            return { result, ..._ }
+        })
+    }
+
 	//! return fially.
 	return main;
 //////////////////////////

@@ -6,6 +6,8 @@ default_env: &default_env
   LC: 1                   # line-coloring
   TS: 1                   # time-stamp in line
   NAME: 'lemon'
+  SRC: './src/'
+  SLACK_PUBLIC: 'AQICAHixEHf7isdNQBbkxpofjAClbUEdI/Y6QQovlgFxV0cfRAF9vnM13bYmsoKZC/XL2tjLAAAArzCBrAYJKoZIhvcNAQcGoIGeMIGbAgEAMIGVBgkqhkiG9w0BBwEwHgYJYIZIAWUDBAEuMBEEDB34X0dM0w58MzLx6QIBEIBoI6Aj+JbP9IzZDVn5FFecz3ltSuWjeIJLq1UYZ6ZZ2HWBIE7W4Bo82PQHQuiCId06ogpPsgGrAeI4rcv4ipYFtv952Bnr0YQE36cnfmFKy/aRtasShUkLkJN8Tb0c85r2OsiJ96nwYHw='
 
 #-----------------------------------
 # local development configuration.

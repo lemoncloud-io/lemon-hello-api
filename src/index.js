@@ -144,26 +144,26 @@ function initialize($export, options) {
 	if (typeof _$ !== 'function') throw new Error('_$ should be function.');
 
 	//! load common functions
-	const _log = _$.log;
 	const _inf = _$.inf;
-	const _err = _$.err;
 
 	//! load configuration.
 	const STAGE = _$.environ('STAGE', '');
 	STAGE && _inf('#STAGE =', STAGE);
 
-	//! load utilities.
+	//! load utilities & aws
 	const $U = require('./lib/utilities')(_$);
 	const $aws = require('aws-sdk');                                    // AWS module.
 
 	//! register to global instance manager.
-	_$('U', $U);            // register: Utilities.
+    _$('U', $U);
+	_$('aws', $aws);
+
+    //! load basic core services......
+    const $kms = require('./service/kms-service')(_$);
+	_$('kms', $kms);
 	
-	//! load api functions......
+	//! load api functions............
     const hello = require('./api/hello-api')(_$);
-	_$('aws', $aws);        // register: aws instance.
-    
-    //! register api
     _$('hello', hello)
     
 	//! export.

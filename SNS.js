@@ -58,7 +58,7 @@ exports = module.exports = (function (_$) {
             // "image_url" : image || '',
             "fields"    : fields,
         }
-        //! build body for slack.
+        //! build body for slack
         const body = {"attachments": [attachment]};
 
         //! call post-slack
