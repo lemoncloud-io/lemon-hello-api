@@ -21,39 +21,46 @@ Basic Serverless Hello API with `Lambda` + `API Gateway` + `Web Socket` + `SNS` 
 
 ## 사용법 (Usage)
 
-로컬에서 바로 실행
+- 로컬에서 API 서버로 실행 (for local development)
 
     ```bash
     $ npm install
     $ npm run express
     ```
 
-### 준비. KMS로 설정내용 암호화 하기
+- Nodejs 에서 모듈로 이용 (for sending message to api)
 
-1. KMS 마스터 키ID 생성하기 (최초 생성)
+    ```bash
+    $ npm install lemon-hello-api
+    ```
+
+
+## 설치하기 (Installation)
+
+**전체 순서**
+
+1. KMS 로 슬랙채널 WebHook 암호화 시키기.
+1. `npm run deploy` 으로 AWS 클라우드에 올리기
+1. 그리곤, 즐기자~~
+
+### STEP.1 KMS로 설정 내용 암호화 하기
+
+- KMS 마스터 키ID 생성하기 (최초 생성)
 
     ```bash
     # 최초의 사용자 키 생성히기..
     $ aws kms create-key --profile <profile> --description 'hello master key'
     {
         "KeyMetadata": {
-            "AWSAccountId": "000000000000",
             "KeyId": "0039d20d-.....-387b887b4783",
-            "Arn": "arn:aws:kms:ap-northeast-2:000000000000:key/0039d20d-.....-387b887b4783",
-            "CreationDate": 0,
-            "Enabled": true,
-            "Description": "hello master key",
-            "KeyUsage": "ENCRYPT_DECRYPT",
-            "KeyState": "Enabled",
-            "Origin": "AWS_KMS",
-            "KeyManager": "CUSTOMER"
+            ...
         }
     }
     # Alias 생성하기 ('0039d20d-.....-387b887b4783'은 앞에서 생성된 KeyId 항목으로 변경)
     $ aws kms create-alias --profile <profile> --alias-name alias/lemon-hello-api --target-key-id 0039d20d-.....-387b887b4783
     ```
 
-1. 암호화 테스트 하기.
+- (참고) 암호화 테스트 하기.
 
     ```sh
     # 'hello lemon' 를 <kms-key-id>로 암호화하기...
@@ -63,12 +70,12 @@ Basic Serverless Hello API with `Lambda` + `API Gateway` + `Web Socket` + `SNS` 
     $ http ':8888/hello/0/test-encrypt'
     ```
 
+### STEP.2 AWS 클라우드에 배포
 
-## 설치하기 (Installation)
-
-AWS Lambda 에 배포됨.
+- AWS Lambda 에 배포
 
     ```bash
+    # npm 명령어 실행.
     $ npm run deploy
     ```
 
