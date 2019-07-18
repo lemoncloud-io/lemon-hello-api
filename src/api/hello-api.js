@@ -432,7 +432,7 @@ exports = module.exports = (function (_$, name) {
         })
         .then(_ => {
             const result = _.encrypted && _.message === _.decrypted;
-            return { result, ..._ }
+            return Object.assign(_, { result });
         })
     }
 
