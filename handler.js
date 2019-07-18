@@ -12,7 +12,7 @@ const $env = process.env;                                   //NOTE! - serverless
 process.env.TZ = 'Asia/Seoul';
 
 //! TARGET SOURCE FOLDER.
-const SRC = $env.SRC || './src/';
+const SRC = $env.SRC || './dist/';
 
 //! PREPARE RUNNING SCOPE.
 const $scope = {

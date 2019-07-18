@@ -24,9 +24,8 @@ const express = (env) => {
  *
  * @param {*} env   environment config like `process.env`
  */
-const handler = (env) => {
-  const SRC = (env && env.SRC) || './dist/';
-  const $handler = require(`${SRC}handler`);
+const handler = () => {
+  const $handler = require('./handler');
   return $handler;
 };
 

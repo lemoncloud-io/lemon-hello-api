@@ -6,7 +6,6 @@ default_env: &default_env
   LC: 1                   # line-coloring
   TS: 1                   # time-stamp in line
   NAME: 'ssocio'
-  SRC: './src/'
   SLACK_PUBLIC: 'AQICAHixEHf7isdNQBbkxpofjAClbUEdI/Y6QQovlgFxV0cfRAF+FHEoDRV35GnfKVRptzG1AAAAkTCBjgYJKoZIhvcNAQcGoIGAMH4CAQAweQYJKoZIhvcNAQcBMB4GCWCGSAFlAwQBLjARBAx5BZAik3j59qOhBZcCARCATA6T1tI/R1nXo44Qfy7itfLJxsnFfaIGpLyBCGGvGO4E9SlOC7aG9mHWYvkl7v5HyGc019HbfKdpiigFo4R/26gyaiMWICuxp+SRbf4='
 
 #-----------------------------------
@@ -14,6 +13,7 @@ default_env: &default_env
 local:
   <<: *default_env
   STAGE: 'local'
+  SRC: './src/'
   
 #-----------------------------------
 # development server
