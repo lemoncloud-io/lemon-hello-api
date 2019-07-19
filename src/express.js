@@ -36,7 +36,7 @@ const uploader = multer({ dest: '../tmp/' });
 const handler = require('./index')(global, { env: $env });
 
 // eslint-disable-next-line no-underscore-dangle
-const _inf = (global && global.console.log) || (() => {});
+const _inf = (global && global.console && global.console.log) || (() => {});
 
 //! middle ware
 const middle = (req, res, next) => {
