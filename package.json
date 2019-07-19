@@ -1,8 +1,8 @@
 {
     "name": "lemon-hello-api",
-    "version": "1.0.3-beta.2",
+    "version": "1.1.0",
     "description": "Basic Serverless Hello API with `Lambda` + `API Gateway` + `Web Socket` + `SNS` + `SQS` + `KMS`",
-    "main": "handler.js",
+    "main": "index.js",
     "scripts": {
         "!build": "build /src to /dist",
         "build": "babel src --out-dir dist",
@@ -36,7 +36,8 @@
         "remove.lemon": "sls remove --profile lemon --stage prod",
         "remove.ssocio": "sls remove --profile ssocio --stage prod",
         "!test": "----- run self-test with jest -----",
-        "test": "jest"
+        "test": "jest",
+        "release": "standard-version"
     },
     "dependencies": {
         "aws-sdk": "^2.456.0",
@@ -73,6 +74,7 @@
         "serverless-aws-documentation": "^0.8.0",
         "serverless-offline": "^3.24.5",
         "serverless-pseudo-parameters": "^2.4.0",
+        "standard-version": "^6.0.1",
         "superagent": "^5.1.0",
         "supertest": "^4.0.2"
     },
