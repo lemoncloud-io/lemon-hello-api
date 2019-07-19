@@ -9,6 +9,10 @@ branches:
   - develop
 install:
 - npm install
+cache:
+  bundler: true
+  directories:
+    - node_modules
 script:
 - npm run test
 env:
@@ -19,6 +23,7 @@ after_success:
 # deploy on master
 deploy:
   provider: npm
+  skip_cleanup: true
   email: steve@lemoncloud.io
   #WARN - use `$ travis encrypt <Npm Access Tokens> --add deploy.api_key`
   api_key:
@@ -26,3 +31,4 @@ deploy:
   #! run `npm publish` only for `master` branch.
   on:
     branch: master
+    tags: true
