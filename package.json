@@ -1,6 +1,6 @@
 {
     "name": "lemon-hello-api",
-    "version": "1.0.3a",
+    "version": "1.0.3b",
     "description": "Basic Serverless Hello API with `Lambda` + `API Gateway` + `Web Socket` + `SNS` + `SQS` + `KMS`",
     "main": "dist/index.js",
     "scripts": {
@@ -83,7 +83,9 @@
     "author": "Steve Jung <steve@lemoncloud.io> (https://lemoncloud.io)",
     "license": "MIT",
     "files": [
-        "dist/**/*"
+      "index.js",
+      "handler.js",
+      "dist/**/*"
     ],
     "engines": {
         "node": ">=8.10.0"
