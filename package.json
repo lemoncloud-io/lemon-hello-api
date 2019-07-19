@@ -1,6 +1,6 @@
 {
     "name": "lemon-hello-api",
-    "version": "1.2.0",
+    "version": "1.2.1",
     "description": "Basic Serverless Hello API with `Lambda` + `API Gateway` + `Web Socket` + `SNS` + `SQS` + `KMS`",
     "main": "index.js",
     "scripts": {
