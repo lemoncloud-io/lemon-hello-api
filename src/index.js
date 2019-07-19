@@ -29,6 +29,7 @@ module.exports = function factory($scope, $environ) {
 	//! load configuration.
 	const ROOT_NAME = $scope.name || 'lemon';
 	const STAGE = _get_env('STAGE', '');
+	const LS = _get_env('LS', '0') === '1'; // LOG SILENT (NO PRINT LOG)
 	const TS = _get_env('TS', '1') === '1'; // PRINT TIME-STAMP.
 	const LC = STAGE === 'local' || STAGE === 'express' || _get_env('LC', '') === '1'; // COLORIZE LOG.
 
@@ -37,12 +38,13 @@ module.exports = function factory($scope, $environ) {
 	const YELLOW = '\x1b[33m';
 
 	//! common function for logging.
+	const silent = () => {};
 	const $console = {
 		thiz: console,
 		// eslint-disable-next-line no-console
-		log: console.log,
+		log: LS ? silent : console.log,
 		// eslint-disable-next-line no-console
-		error: console.error,
+		error: LS ? silent : console.error,
 		auto_ts: TS,
 		auto_color: LC,
 	};
