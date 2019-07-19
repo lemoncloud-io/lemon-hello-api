@@ -31,7 +31,7 @@ const app = express();
 const uploader = multer({ dest: '../tmp/' });
 
 //! load configuration.
-const handler = require('./index')(global, { env: $env });
+const handler = require('./index')(global, $env);
 
 // eslint-disable-next-line no-underscore-dangle
 const _inf = (global && global.console && global.console.log) || (() => {});

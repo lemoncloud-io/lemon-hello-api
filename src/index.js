@@ -11,20 +11,13 @@
  * ```
  *
  * @param $scope    main scope.
- * @param $environ	configuration environment.
+ * @param $environ	configuration environment like `process.env`.
  *
  * @author  Steve <steve@lemoncloud.io)
  * @date    2019-07-19
  *
  * @copyright (C) lemoncloud.io 2019 - All Rights Reserved.
  */
-/* eslint-disable global-require */
-/* eslint-disable no-nested-ternary */
-/* eslint-disable no-param-reassign */
-/* eslint-disable no-unused-vars */
-/* eslint-disable no-underscore-dangle */
-/* eslint-disable no-constant-condition */
-/* eslint-disable no-use-before-define */
 module.exports = function factory($scope, $environ) {
 	// eslint-disable-next-line no-underscore-dangle
 	function _$$() {} // global container.(dummy instance pointer)
@@ -107,7 +100,7 @@ module.exports = function factory($scope, $environ) {
 	function _get_env(name, defVal) {
 		// as default, load from proces.env.
 		const env = $environ || (process && process.env) || {};
-		const val = (env && env[name]) || undefined;
+		const val = typeof env[name] !== 'undefined' ? env[name] : undefined;
 		// throw Error if value is not set.
 		if (defVal && defVal instanceof Error && val === undefined) throw defVal;
 		// returns default.

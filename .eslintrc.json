@@ -14,7 +14,7 @@
   "rules": {
     "semi-spacing": "error",
     "no-unused-vars": [
-      "error",
+      "off",
       {
         "argsIgnorePattern": "next|err"
       }
@@ -28,6 +28,7 @@
     "linebreak-style": 0,
     "import/prefer-default-export": "off",
     "camelcase": "off",
-    "extraneous-dependencies": "off"
+    "extraneous-dependencies": "off",
+    "no-constant-condition": "off"
   }
 }

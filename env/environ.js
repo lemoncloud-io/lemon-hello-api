@@ -1,13 +1,15 @@
 /**
  * express 실행시, 환경 변수를 로딩하는 부분만 따로 빼놓음.
- * 
+ *
  * ex:
+ * ```js
  * const $env = require('environ')(process)
- * 
- * NOTE! - may required for `express`
- * 
- * @author Steve Jung <steve@lemoncloud.io>
- * @date   2019.JAN.30
+ * ```
+ *
+ * @author  Steve <steve@lemoncloud.io)
+ * @date    2019-07-19
+ *
+ * @copyright (C) lemoncloud.io 2019 - All Rights Reserved.
  */
 exports = module.exports = (process)=>{
     ////////////////////////////////////////////////////////////////////////
@@ -49,7 +51,7 @@ exports = module.exports = (process)=>{
                 return $O;
             }, {})
             $new.STAGE = $new.STAGE||STAGE;                                 //! confirm STAGE.
-            // console.log('! env :=', JSON.stringify($new));
+            // console.log('! env.new :=', JSON.stringify($new));
             Object.assign($det, $new);
         } catch (e) {
             console.error('ERROR FOR ENV: ', e);

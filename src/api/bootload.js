@@ -15,13 +15,6 @@
  *
  * @copyright (C) lemoncloud.io 2019 - All Rights Reserved.
  */
-/* eslint-disable global-require */
-/* eslint-disable no-nested-ternary */
-/* eslint-disable no-param-reassign */
-/* eslint-disable no-unused-vars */
-/* eslint-disable no-underscore-dangle */
-/* eslint-disable no-constant-condition */
-/* eslint-disable no-use-before-define */
 /** ********************************************************************************************************************
  *  MAIN EXPORTS
  ** ******************************************************************************************************************* */
