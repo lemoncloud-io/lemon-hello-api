@@ -101,4 +101,5 @@ Version History
 | 1.0.1     | support `SNS` with CloudWatch Event, and post to `Slack`
 | 1.0.2     | support `WSS` with API Gateway + WebSocket.
 | 1.0.3     | support `SQS` with handling SQS message.
+| 1.1.0     | support release version.
 
