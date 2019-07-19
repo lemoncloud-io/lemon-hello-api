@@ -10,12 +10,12 @@ branches:
 install:
 - npm install
 script:
-- npm run build
 - npm run test
 env:
 - CODECOV_TOKEN="0cd44aea-7596-4f0c-b830-110c85fd9d3d"
 after_success:
 - "./node_modules/.bin/codecov"
+- npm run build
 # deploy on master
 deploy:
   provider: npm
