@@ -31,4 +31,4 @@ deploy:
   #! run `npm publish` only for `master` branch.
   on:
     branch: master
-    tags: true
+    # tags: true
