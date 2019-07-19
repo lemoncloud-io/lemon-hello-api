@@ -1,7 +1,6 @@
 language: node_js
 sudo: false
 node_js:
-- 10
 - 8
 # built by branches
 branches:
@@ -11,6 +10,7 @@ branches:
 install:
 - npm install
 script:
+- npm run build
 - npm run test
 env:
 - CODECOV_TOKEN="0cd44aea-7596-4f0c-b830-110c85fd9d3d"
