@@ -194,7 +194,9 @@ function initialize($export) {
 
 	//! load basic core services......
 	const $kms = require('./service/kms-service')(_$);
+	const $sns = require('./service/sns-service')(_$);
 	_$('kms', $kms);
+	_$('sns', $sns);
 
 	//! load api functions............
 	const hello = require('./api/hello-api')(_$);

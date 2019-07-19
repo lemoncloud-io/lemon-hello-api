@@ -63,7 +63,7 @@ provider:
   runtime: ${self:custom.CONF.${self:custom.CORE.profile}.runtime, 'nodejs6.10'}
   region: ${self:custom.CONF.${self:custom.CORE.profile}.region, self:custom.CORE.region}      # profile의 region를 먼저 사용하고, 없으면 실행 옵션값.
 
-  # VPC Configuration for Lambda. 
+  # VPC Configuration for Lambda.
   vpc:
     securityGroupIds: ${self:custom.CONF.${self:custom.CORE.profile}.securityGroupIds}
     subnetIds: ${self:custom.CONF.${self:custom.CORE.profile}.subnetIds}
@@ -84,6 +84,12 @@ provider:
         - ec2:ModifyNetworkInterfaceAttribute
         - ec2:ResetNetworkInterfaceAttribute
         - SNS:GetEndpointAttributes
+      Resource: "*"
+    # IAM/STS - For VPC, Use static ARN Name for 'lemon-hello-api'.
+    - Effect: "Allow"
+      Action:
+        - "iam:GetUser"
+        - "sts:GetCallerIdentity"
       Resource: "*"
     # SQS
     - Effect: "Allow"
@@ -108,7 +114,7 @@ provider:
         - "execute-api:ManageConnections"
       Resource:
         - "arn:aws:execute-api:*:*:**/@connections/*"
-      
+
   # [WSS] custom routes are selected by the value of the action property in the body
   websocketApiRouteSelectionExpression: $request.body.action
 
@@ -155,7 +161,7 @@ functions:
           #   name: auth
           #   identitySource:
           #     - 'route.request.header.Auth'
-          #     - 'route.request.querystring.Auth'          
+          #     - 'route.request.querystring.Auth'
       - websocket:
           route: echo             # sample route by routeKey. echo request.
   #------------------
@@ -240,7 +246,7 @@ resources:
   # 리소스 지정.
   Resources:
     # TABLE CREATED MANUALLY.
-    # ## Dynamo Table : 
+    # ## Dynamo Table :
     # DynamoAtemCoreTable:
     #   Type: 'AWS::DynamoDB::Table'
     #   #DeletionPolicy: Retain

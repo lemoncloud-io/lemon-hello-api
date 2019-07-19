@@ -1,11 +1,11 @@
 {
     "name": "lemon-hello-api",
-    "version": "1.0.3",
+    "version": "1.0.3a",
     "description": "Basic Serverless Hello API with `Lambda` + `API Gateway` + `Web Socket` + `SNS` + `SQS` + `KMS`",
-    "main": "handler.js",
+    "main": "dist/index.js",
     "scripts": {
         "!build": "build /src to /dist",
-        "build": "babel src --out-dir dist",
+        "build": "babel ./src --out-dir ./dist --verbose",
         "start": "nodemon --watch src --exec babel-node src/express.js",
         "!server": "----- local에서 serverless로 실행하기 (개발용) -----",
         "server": "sls offline start --stage local --port 8888",
