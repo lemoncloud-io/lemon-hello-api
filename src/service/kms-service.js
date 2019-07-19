@@ -91,6 +91,6 @@ module.exports = function(_$, name, options) {
 			});
 	}
 
-	//! returns.
+	//! export thiz.
 	return { do_encrypt, do_decrypt };
 };

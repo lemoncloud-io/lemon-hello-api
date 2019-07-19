@@ -55,6 +55,10 @@ module.exports = (_$, name) => {
 					next = do_get_hello;
 				} else if (ID !== '!' && CMD === 'test-sns') {
 					next = do_get_test_sns;
+				} else if (ID !== '!' && CMD === 'test-sns-arn') {
+					next = do_get_test_sns_arn;
+				} else if (ID !== '!' && CMD === 'test-sns-err') {
+					next = do_get_test_sns_err;
 				} else if (ID !== '!' && CMD === 'test-encrypt') {
 					next = do_get_test_encrypt;
 				}
@@ -106,6 +110,11 @@ module.exports = (_$, name) => {
 	const $kms = function() {
 		if (!_$.kms) throw new Error('$kms(kms-service) is required!');
 		return _$.kms;
+	};
+
+	const $sns = function() {
+		if (!_$.sns) throw new Error('$sns(sns-service) is required!');
+		return _$.sns;
 	};
 
 	//! shared memory.
@@ -375,6 +384,39 @@ module.exports = (_$, name) => {
 			}
 			return Promise.reject(new Error(`404 NOT FOUND - test-sns:${ID}`));
 		})().then(local_chain_handle_sns);
+	}
+
+	/**
+	 * Test SNS ARN
+	 *
+	 * ```sh
+	 * $ http ':8888/hello/0/test-sns-arn'
+	 */
+	function do_get_test_sns_arn(ID, $param, $body, $ctx) {
+		_log(NS, `do_get_test_sns_arn(${ID})....`);
+		return $sns()
+			.arn()
+			.then(arn => {
+				_log(NS, '> arn =', arn);
+				return arn;
+			});
+	}
+
+	/**
+	 * Test SNS Report Error
+	 *
+	 * ```sh
+	 * $ http ':8888/hello/0/test-sns-err'
+	 */
+	function do_get_test_sns_err(ID, $param, $body, $ctx) {
+		_log(NS, `do_get_test_sns_err(${ID})....`);
+		const e = new Error('Test Error');
+		return $sns()
+			.reportError(e)
+			.then(mid => {
+				_log(NS, '> message-id =', mid);
+				return mid;
+			});
 	}
 
 	/**
