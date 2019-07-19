@@ -37,6 +37,7 @@
         "remove.ssocio": "sls remove --profile ssocio --stage prod",
         "!test": "----- run self-test with jest -----",
         "test": "LS=1 jest",
+        "!release": "----- release with standard -----",
         "release": "standard-version"
     },
     "dependencies": {
