@@ -17,12 +17,12 @@ const SRC = $env.SRC || './dist/';
 const $scope = { name: 'lemon-hello-api' };
 
 //! load configuration.
-const engine = require(`${SRC}index`)($scope, $env);
+const $lemon = require(`${SRC}index`)($scope, $env);
 
 //! Load Additional Handlers
-const SNS = require(`${SRC}sns`)(engine);
-const SQS = require(`${SRC}sqs`)(engine);
-const WSS = require(`${SRC}wss`)(engine);
+const SNS = require(`${SRC}sns`)($lemon);
+const SQS = require(`${SRC}sqs`)($lemon);
+const WSS = require(`${SRC}wss`)($lemon);
 
 //! export serverless handlers.
 module.exports = Object.assign($scope, { SNS, WSS, SQS });

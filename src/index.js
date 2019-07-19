@@ -20,10 +20,10 @@
  */
 module.exports = function factory($scope, $environ) {
 	// eslint-disable-next-line no-underscore-dangle
-	function _$$() {} // global container.(dummy instance pointer)
+	function DummyClass() {} // global container.(dummy instance pointer)
 
 	// ! make sure not null
-	$scope = $scope || new _$$();
+	$scope = $scope || new DummyClass();
 	$environ = $environ || {};
 
 	//! load configuration.
@@ -109,11 +109,11 @@ module.exports = function factory($scope, $environ) {
 		return val === undefined ? defVal : val;
 	}
 
-	//! root instance to manage global objects.
-	var _$ = function(name, opts) {
+	//! function instance to manage global objects.
+	var $lemon = function(name, opts) {
 		// global identifier.
 		if (!name) return;
-		const thiz = _$; // 인스턴스 바꿔치기: _$('hello') == _$.hello
+		const thiz = $lemon; // 인스턴스 바꿔치기: _$('hello') == _$.hello
 		let opt = typeof thiz[name] !== 'undefined' ? thiz[name] : undefined;
 		if (opts === undefined) return opt;
 		if (opt === undefined) {
@@ -131,33 +131,33 @@ module.exports = function factory($scope, $environ) {
 	};
 
 	// register into _$(global instance manager).
-	_$.STAGE = STAGE;
-	_$.id = ROOT_NAME;
-	_$.log = _log;
-	_$.inf = _inf;
-	_$.err = _err;
-	_$.extend = _extend;
-	_$.ts = _ts;
-	_$.environ = _get_env;
-	_$.$console = $console; // '$' means object. (change this in order to override log/error message handler)
-	_$.toString = () => ROOT_NAME || '$ROOT';
+	$lemon.STAGE = STAGE;
+	$lemon.id = ROOT_NAME;
+	$lemon.log = _log;
+	$lemon.inf = _inf;
+	$lemon.err = _err;
+	$lemon.extend = _extend;
+	$lemon.ts = _ts;
+	$lemon.environ = _get_env;
+	$lemon.$console = $console; // '$' means object. (change this in order to override log/error message handler)
+	$lemon.toString = () => ROOT_NAME || '$ROOT';
 
 	// register as global instances.
 	$scope._log = _log;
 	$scope._inf = _inf;
 	$scope._err = _err;
-	$scope._$ = _$;
-	$scope[_$.id] = _$;
+	$scope._$ = $lemon;
+	$scope[$lemon.id] = $lemon;
 
 	//! load underscore(or lodash) for global utility.
 	const _ = require('lodash/core'); // underscore utilities.
-	_$('_', _); // register: underscore utility.
+	$lemon('_', _); // register: underscore utility.
 
 	//! initialize in addition.
-	initialize.apply(_$, [$scope]);
+	initialize.apply($lemon, [$scope]);
 
 	//! returns root function.
-	return _$;
+	return $lemon;
 };
 
 /** ********************************************************************************************************************
@@ -171,36 +171,36 @@ module.exports = function factory($scope, $environ) {
 function initialize($export) {
 	//! load main instance.
 	const thiz = this; // it must be $root.
-	const _$ = thiz;
+	const $lemon = thiz;
 
 	if (!$export) throw new Error('$export is required.');
-	if (!_$) throw new Error('_$ is required.');
-	if (typeof _$ !== 'function') throw new Error('_$ should be function.');
+	if (!$lemon) throw new Error('_$ is required.');
+	if (typeof $lemon !== 'function') throw new Error('_$ should be function.');
 
 	//! load common functions
-	const _inf = _$.inf;
+	const _inf = $lemon.inf;
 
 	//! load configuration.
-	const STAGE = _$.environ('STAGE', '');
+	const STAGE = $lemon.STAGE || '';
 	STAGE && _inf('#STAGE =', STAGE);
 
 	//! load utilities & aws
-	const $U = require('./lib/utilities')(_$);
+	const $U = require('./lib/utilities')($lemon);
 	const $aws = require('aws-sdk'); // AWS module.
 
 	//! register to global instance manager.
-	_$('U', $U);
-	_$('aws', $aws);
+	$lemon('U', $U);
+	$lemon('aws', $aws);
 
 	//! load basic core services......
-	const $kms = require('./service/kms-service')(_$);
-	const $sns = require('./service/sns-service')(_$);
-	_$('kms', $kms);
-	_$('sns', $sns);
+	const $kms = require('./service/kms-service')($lemon);
+	const $sns = require('./service/sns-service')($lemon);
+	$lemon('kms', $kms);
+	$lemon('sns', $sns);
 
 	//! load api functions............
-	const hello = require('./api/hello-api')(_$);
-	_$('hello', hello);
+	const hello = require('./api/hello-api')($lemon);
+	$lemon('hello', hello);
 
 	//! export.
 	return Object.assign($export, { hello });

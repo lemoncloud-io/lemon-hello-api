@@ -9,6 +9,17 @@ const express = env => {
 };
 
 /**
+ * factory of express()
+ *
+ * @param {*} env   environment config like `process.env`
+ */
+const lemon = env => {
+	const $scope = { name: 'lemon-hello-api' };
+	const $lemon = require(`./dist/index`)($scope, env);
+	return $lemon;
+};
+
+/**
  * factory of handler()
  *
  * @param {*} env   environment config like `process.env`
@@ -19,4 +30,4 @@ const handler = env => {
 };
 
 //! export default
-module.exports = { express, handler };
+module.exports = { lemon, express, handler };
