@@ -42,7 +42,7 @@ module.exports = (_$, NS, decode_next_handler) => {
 
 	//! constants config
 	const HEADER_LEMON_IDENTITY = 'x-lemon-identity';
-	const METHOD_MODE_MAP = 'LIST,GET,PUT,POST,CONNECT,DISCONNECT'.split(',').reduce((N, K) => {
+	const METHOD_MODE_MAP = 'LIST,GET,PUT,POST,DELETE,CONNECT,DISCONNECT'.split(',').reduce((N, K) => {
 		N[K] = K;
 		return N;
 	}, {});
