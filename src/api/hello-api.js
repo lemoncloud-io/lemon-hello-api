@@ -204,9 +204,9 @@ module.exports = (_$, name) => {
 	/**
 	 * Search by params
 	 *
-	 * example:
+	 * ```sh
 	 * $ http ':8888/hello/'
-	 *
+	 * ```
 	 * @param {*} ID 			id of object
 	 * @param {*} $param		query parameters (json)
 	 * @param {*} $body			body parameters (json)
@@ -226,7 +226,7 @@ module.exports = (_$, name) => {
 	/**
 	 * Read the detailed object.
 	 *
-	 * example:
+	 * ```sh
 	 * $ http ':8888/hello/0'
 	 */
 	function do_get_hello(ID, $param, $body, $ctx) {
@@ -245,7 +245,7 @@ module.exports = (_$, name) => {
 	/**
 	 * Only Update with incremental support
 	 *
-	 * example:
+	 * ```sh
 	 * $ echo '{"size":1}' | http PUT ':8888/hello/1'
 	 */
 	function do_put_hello(ID, $param, $body, $ctx) {
@@ -262,7 +262,7 @@ module.exports = (_$, name) => {
 	/**
 	 * Insert new Node at position 0.
 	 *
-	 * example:
+	 * ```sh
 	 * $ echo '{"name":"lemoncloud"}' | http POST ':8888/hello/0'
 	 */
 	function do_post_hello(ID, $param, $body, $ctx) {
@@ -305,7 +305,7 @@ module.exports = (_$, name) => {
 	/**
 	 * Delete Node (or mark deleted)
 	 *
-	 * example:
+	 * ```sh
 	 * $ http DELETE ':8888/hello/1'
 	 */
 	function do_delete_hello(ID, $param, $body, $ctx) {

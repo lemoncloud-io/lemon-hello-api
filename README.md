@@ -21,23 +21,36 @@ Basic Serverless Hello API with `Lambda` + `API Gateway` + `Web Socket` + `SNS` 
 
 ## 사용법 (Usage)
 
-- 로컬에서 API 서버로 실행 (for local development)
-
-    ```bash
-    $ npm install
-    $ npm run express
-    ```
-
 - Nodejs 에서 모듈로 이용 (for sending message to api)
 
     ```bash
-    $ npm install lemon-hello-api
+    # npm 으로 패키지 설치.
+    $ npm install lemon-hello-api --save
     ```
+
+- **case1** 에러 발생시 `SNS`로 정보 보내기.
+
+    ```js
+    const payload = {...};
+    try {
+        ...
+    } catch (e){
+        const hello = require('lemon-hello-api');
+        // `LS=1` means 'log silence'
+        const sns = hello.lemon({ LS: '1' })('sns');
+        const msgId = await $sns.reportError(e, payload);
+    }
+    ```
+
+- 슬랙으로 에러 정보 표시.
+
+    ![SlackError](assets/sns.report-error.png)
+
 
 
 ## 설치하기 (Installation)
 
-**전체 순서**
+**[전체 순서]**
 
 1. KMS 로 슬랙채널 WebHook 암호화 시키기.
 1. `npm run deploy` 으로 AWS 클라우드에 올리기
@@ -53,7 +66,6 @@ Basic Serverless Hello API with `Lambda` + `API Gateway` + `Web Socket` + `SNS` 
     {
         "KeyMetadata": {
             "KeyId": "0039d20d-.....-387b887b4783",
-            ...
         }
     }
     # Alias 생성하기 ('0039d20d-.....-387b887b4783'은 앞에서 생성된 KeyId 항목으로 변경)
@@ -75,8 +87,20 @@ Basic Serverless Hello API with `Lambda` + `API Gateway` + `Web Socket` + `SNS` 
 - AWS Lambda 에 배포
 
     ```bash
-    # npm 명령어 실행.
-    $ npm run deploy
+    # npm 명령어 실행. (profile <lemon>)
+    $ npm run deploy.lemon
+    ```
+
+## 개발 (Development)
+
+- 로컬에서 API 서버로 실행 (for local development)
+
+    ```bash
+    # express API 서버 올리기 (profile <lemon>)
+    $ npm run express.lemon
+
+    # httpie 로 요청하기 
+    $ http ':8888/hello/'
     ```
 
 
