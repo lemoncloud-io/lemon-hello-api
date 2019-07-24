@@ -1,0 +1,465 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <title>Plato - dist/SNS.js</title>
+
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta name="description" content="">
+  <meta name="author" content="">
+
+  <!--[if lt IE 9]>
+  <script src="http://html5shim.googlecode.com/svn/trunk/html5.js"></script>
+  <![endif]-->
+
+  <link href="../../assets/css/vendor/morris.css" rel="stylesheet">
+  <link href="../../assets/css/vendor/bootstrap.css" rel="stylesheet">
+  <link href="../../assets/css/vendor/font-awesome.css" rel="stylesheet">
+  <link href="../../assets/css/vendor/codemirror.css" rel="stylesheet">
+  <link href="../../assets/css/plato.css" rel="stylesheet">
+  <link href="../../assets/css/plato-file.css" rel="stylesheet">
+
+</head>
+
+<body>
+
+<div class="navbar navbar-fixed-top">
+  <div class="container">
+    <a class="navbar-brand" href="http://github.com/es-analysis/plato">Plato on Github</a>
+    <ul class="nav navbar-nav">
+      <li>
+        <a href="../../index.html">Report Home</a>
+      </li>
+    </ul>
+  </div>
+</div>
+
+<div class="jumbotron">
+  <div class="container">
+    <h1>dist/SNS.js</h1>
+  </div>
+</div>
+
+<div class="container aggregate-stats">
+  <div class="row">
+    <div class="col-md-6">
+      <h2 class="header">Maintainability <a href="http://blogs.msdn.com/b/codeanalysis/archive/2007/11/20/maintainability-index-range-and-meaning.aspx"><i class="icon icon-info-sign" rel="popover" data-placement="top" data-trigger="hover" data-content="A value between 0 and 100 that represents the relative ease of maintaining the code. A high value means better maintainability." data-original-title="Maintainability Index"  data-container="body"></i></a></h2>
+      <p class="stat">62.25</p>
+    </div>
+    <div class="col-md-6">
+      <h2 class="header">Lines of code <i class="icon icon-info-sign" rel="popover" data-placement="top" data-trigger="hover" data-content="Source Lines of Code / Logical Lines of Code" data-original-title="SLOC/LSLOC" data-container="body"></i></h2>
+      <p class="stat">348</p>
+    </div>
+  </div>
+  <div class="row historical">
+    <div class="col-md-6">
+      <p id="chart_historical_maint" class="chart"></p>
+    </div>
+    <div class="col-md-6">
+      <p id="chart_historical_sloc" class="chart"></p>
+    </div>
+  </div>
+  <div class="row">
+    <div class="col-md-6">
+      <h2 class="header">Difficulty  <a href="http://en.wikipedia.org/wiki/Halstead_complexity_measures"><i class="icon icon-info-sign" rel="popover" data-placement="top" data-trigger="hover" data-content="The difficulty measure is related to the difficulty of the program to write or understand." data-original-title="Difficulty" data-container="body"></i></a></h2>
+      <p class="stat">38.20</p>
+    </div>
+    <div class="col-md-6">
+      <h2 class="header">Estimated Errors  <a href="http://en.wikipedia.org/wiki/Halstead_complexity_measures"><i class="icon icon-info-sign" rel="popover" data-placement="top" data-trigger="hover" data-content="Halstead's delivered bugs is an estimate for the number of errors in the implementation." data-original-title="Delivered Bugs" data-container="body"></i></a></h2>
+      <p class="stat">3.34</p>
+    </div>
+  </div>
+</div>
+
+<div class="container charts">
+  <div class="row">
+    <h2 class="header">Function weight</h2>
+  </div>
+  <div class="row">
+    <div class="col-md-6">
+      <h3 class="chart-header">By Complexity <a href="http://en.wikipedia.org/wiki/Cyclomatic_complexity"><i class="icon icon-info-sign" rel="popover" data-placement="top" data-trigger="hover" data-content="This metric counts the number of distinct paths through a block of code. Lower values are better." data-original-title="Cyclomatic Complexity" data-container="body"></i></a></h3>
+      <div id="fn-by-complexity" class="stat"></div>
+    </div>
+    <div class="col-md-6">
+      <h3 class="chart-header">By SLOC  <i class="icon icon-info-sign" rel="popover" data-placement="top" data-trigger="hover" data-content="Source Lines of Code / Logical Lines of Code" data-original-title="SLOC/LSLOC" data-container="body"></i></h3>
+      <div id="fn-by-sloc" class="stat"></div>
+    </div>
+  </div>
+</div>
+
+<div class="container">
+  <div class="row">
+    <textarea id="file-source" class="col-md-12">/**
+ * Common SNS Handler in order to dispatch the target handler via SNS common.
+ *
+ *
+ *
+ * @author  Steve &lt;steve@lemoncloud.io)
+ * @date    2019-07-19
+ *
+ * @copyright (C) lemoncloud.io 2019 - All Rights Reserved.
+ */
+module.exports = _$ =&gt; {
+  if (!_$) throw new Error(&#039;_$(global instance pool) is required!&#039;); //! load services (_$ defined in global)
+
+  const $_ = _$._; // re-use global instance (lodash).
+
+  const $U = _$.U; // re-use global instance (utils).
+
+  if (!$U) throw new Error(&#039;$U(utillities) is required!&#039;);
+  const NS = $U.NS(&#039;SNS&#039;, &#039;yellow&#039;); // NAMESPACE TO BE PRINTED.
+  //! load common functions
+
+  const _log = _$.log;
+  const _inf = _$.inf;
+  const _err = _$.err; //! external service
+
+  const $aws = () =&gt; {
+    if (!_$.aws) throw new Error(&#039;$aws is required!&#039;);
+    return _$.aws;
+  }; //! load api services.
+
+
+  const $hello = () =&gt; {
+    if (!_$.hello) throw new Error(&#039;$hello(hello-api) is required!&#039;);
+    return _$.hello;
+  };
+
+  const asText = data =&gt; {
+    const keys = data &amp;&amp; Object.keys(data) || [];
+    return keys.length &gt; 0 ? JSON.stringify(data) : &#039;&#039;;
+  }; //! post to slack channel.
+
+
+  const do_post_slack = (pretext = &#039;&#039;, title = &#039;&#039;, text = &#039;&#039;, fields = [], color = &#039;#FFB71B&#039;, username = &#039;hello-alarm&#039;) =&gt; {
+    if (pretext &amp;&amp; typeof pretext === &#039;object&#039;) {
+      const args = pretext || {};
+      pretext = args.pretext || &#039;&#039;;
+      title = args.title || title;
+      text = args.text || text;
+      fields = args.fields || fields;
+      color = args.color || color;
+      username = args.username || username;
+    } // Set the request body
+
+
+    const now = new Date().getTime(); //! build attachment.
+
+    const attachment = {
+      username,
+      color,
+      pretext,
+      title,
+      text,
+      ts: Math.floor(now / 1000),
+      // &quot;title_link&quot;: link||&#039;&#039;,
+      // &quot;thumb_url&quot; : thumb || &#039;&#039;,
+      // &quot;image_url&quot; : image || &#039;&#039;,
+      fields
+    }; //! build body for slack
+
+    const body = {
+      attachments: [attachment]
+    }; //! call post-slack
+
+    return $hello().do_post_slack(&#039;public&#039;, {}, body);
+  }; //! chain for ALARM type. (see data/alarm.jsonc)
+
+
+  const chain_process_alarm = ({
+    subject,
+    data,
+    context
+  }) =&gt; {
+    _log(`chain_process_alarm(${subject})...`);
+
+    data = data || {};
+
+    _log(&#039;&gt; data=&#039;, data);
+
+    const AlarmName = data.AlarmName || &#039;&#039;;
+    const AlarmDescription = data.AlarmDescription || &#039;&#039;; //!  build fields.
+
+    const Fields = [];
+
+    const pop_to_fields = (param, short = true) =&gt; {
+      short = short === undefined ? true : short;
+      const [name, nick] = param.split(&#039;/&#039;, 2);
+      const val = data[name];
+
+      if (val !== undefined &amp;&amp; val !== &#039;&#039;) {
+        Fields.push({
+          title: nick || name,
+          value: typeof val === &#039;object&#039; ? JSON.stringify(val) : val,
+          short
+        });
+      }
+
+      delete data[name];
+    };
+
+    pop_to_fields(&#039;AlarmName&#039;, false);
+    pop_to_fields(&#039;AlarmDescription&#039;);
+    pop_to_fields(&#039;AWSAccountId&#039;);
+    pop_to_fields(&#039;NewStateValue&#039;);
+    pop_to_fields(&#039;NewStateReason&#039;, false);
+    pop_to_fields(&#039;StateChangeTime&#039;);
+    pop_to_fields(&#039;Region&#039;);
+    pop_to_fields(&#039;OldStateValue&#039;);
+    pop_to_fields(&#039;Trigger&#039;, false);
+    const pretext = `Alarm: ${AlarmName}`;
+    const title = AlarmDescription || &#039;&#039;;
+    const text = asText(data);
+    const fields = Fields;
+    return do_post_slack(pretext, title, text, fields);
+  }; //! chain for DeliveryFailure type. (see data/delivery-failure.json)
+
+
+  const chain_process_delivery_failure = ({
+    subject,
+    data,
+    context
+  }) =&gt; {
+    _log(`chain_process_delivery_failure(${subject})...`);
+
+    data = data || {};
+
+    _log(&#039;&gt; data=&#039;, data);
+
+    const FailName = data.EventType || &#039;&#039;;
+    const FailDescription = data.FailureMessage || &#039;&#039;;
+    const EndpointArn = data.EndpointArn || &#039;&#039;; //!  build fields.
+
+    const Fields = [];
+
+    const pop_to_fields = (param, short = true) =&gt; {
+      short = short === undefined ? true : short;
+      const [name, nick] = param.split(&#039;/&#039;, 2);
+      const val = data[name];
+
+      if (val !== undefined &amp;&amp; val !== &#039;&#039; &amp;&amp; nick !== &#039;&#039;) {
+        Fields.push({
+          title: nick || name,
+          value: typeof val === &#039;object&#039; ? JSON.stringify(val) : val,
+          short
+        });
+      }
+
+      delete data[name];
+    };
+
+    pop_to_fields(&#039;EventType/&#039;); // clear this
+
+    pop_to_fields(&#039;FailureMessage/&#039;); // clear this
+
+    pop_to_fields(&#039;FailureType&#039;);
+    pop_to_fields(&#039;DeliveryAttempts/&#039;); // DeliveryAttempts=1
+
+    pop_to_fields(&#039;Service/&#039;); // Service=SNS
+
+    pop_to_fields(&#039;MessageId&#039;);
+    pop_to_fields(&#039;EndpointArn&#039;, false);
+    pop_to_fields(&#039;Resource&#039;, false);
+    pop_to_fields(&#039;Time/&#039;, false); // clear this
+
+    const pretext = `SNS: ${FailName}`;
+    const title = FailDescription || &#039;&#039;; // const text = asText(data);
+
+    const text = `For more details, run below. \n\`\`\`aws sns get-endpoint-attributes --endpoint-arn &quot;${EndpointArn}&quot;\`\`\``;
+    const fields = Fields; //! get get-endpoint-attributes
+
+    const local_chain_endpoint_attrs = that =&gt; {
+      const AWS = $aws();
+      const SNS = new AWS.SNS();
+      return SNS.getEndpointAttributes({
+        EndpointArn
+      }).promise().then(_ =&gt; {
+        _log(NS, &#039;&gt; EndpointAttributes=&#039;, _);
+
+        const Attr = _ &amp;&amp; _.Attributes || {};
+        that.fields.push({
+          title: &#039;Enabled&#039;,
+          value: Attr.Enabled || &#039;&#039;,
+          short: true
+        });
+        that.fields.push({
+          title: &#039;CustomUserData&#039;,
+          value: Attr.CustomUserData || &#039;&#039;,
+          short: true
+        });
+        that.fields.push({
+          title: &#039;Token&#039;,
+          value: Attr.Token || &#039;&#039;,
+          short: false
+        });
+        return that;
+      }).catch(e =&gt; {
+        _err(NS, &#039;!ERR EndpointAttributes=&#039;, e);
+
+        return that;
+      });
+    }; // return do_post_slack(pretext, title, text, fields)
+
+
+    return Promise.resolve({
+      pretext,
+      title,
+      text,
+      fields
+    }).then(local_chain_endpoint_attrs).then(do_post_slack);
+  }; //! chain for ALARM type. (see data/alarm.jsonc)
+
+
+  const chain_process_error = ({
+    subject,
+    data,
+    context
+  }) =&gt; {
+    _log(`chain_process_error(${subject})...`);
+
+    data = data || {};
+
+    _log(&#039;&gt; data=&#039;, data);
+
+    return do_post_slack(&#039;&#039;, &#039;error-report&#039;, asText(data), []);
+  }; //! chain for ALARM type. (see data/alarm.jsonc)
+
+
+  const chain_process_callback = ({
+    subject,
+    data,
+    context
+  }) =&gt; {
+    _log(`chain_process_callback(${subject})...`);
+
+    data = data || {};
+
+    _log(&#039;&gt; data=&#039;, data);
+
+    return do_post_slack(&#039;&#039;, &#039;callback-report&#039;, asText(data), [], &#039;#B71BFF&#039;);
+  }; //! chain for HTTP type.
+
+
+  const chain_process_http = ({
+    subject,
+    data,
+    context
+  }) =&gt; {
+    _log(`chain_process_http(${subject})...`);
+
+    _log(&#039;&gt; data=&#039;, data); //! extract parameters....
+
+
+    const TYPE = data.type || subject || &#039;&#039;; // NOTE - default API name.
+
+    const METHOD = (data.method || &#039;get&#039;).toUpperCase();
+    const ID = data.id;
+    const CMD = data.cmd;
+    const PARAM = data.param;
+    const BODY = data.body; // transform to APIGatewayEvent;
+
+    const event = {
+      httpMethod: METHOD,
+      // eslint-disable-next-line no-nested-ternary
+      path: CMD ? `/${ID}/${CMD}` : ID !== undefined ? `/${ID}` : &#039;/&#039;,
+      headers: {},
+      pathParameters: {},
+      queryStringParameters: {},
+      body: &#039;&#039;,
+      isBase64Encoded: false,
+      stageVariables: null,
+      requestContext: {},
+      resource: &#039;&#039;
+    };
+    if (ID !== undefined) event.pathParameters.id = ID;
+    if (CMD !== undefined) event.pathParameters.cmd = CMD;
+    if (PARAM) event.queryStringParameters = PARAM;
+    if (BODY) event.body = BODY; //! lookup target-api by name.
+
+    const API = _$(TYPE);
+
+    if (!API) return Promise.reject(new Error(`404 NOT FOUND - API.type:${TYPE}`)); //! returns promised
+
+    return new Promise((resolve, reject) =&gt; API(event, {}, (err, res) =&gt; err ? reject(err) : resolve(res)));
+  }; //! process each record.
+
+
+  const local_process_record = (record, i, context) =&gt; {
+    const sns = record.Sns || {};
+    const subject = sns.Subject || &#039;&#039;;
+    const message = sns.Message || &#039;&#039;;
+    const data = typeof message === &#039;string&#039; &amp;&amp; message.startsWith(&#039;{&#039;) &amp;&amp; message.endsWith(&#039;}&#039;) ? JSON.parse(message) : message || {};
+
+    _log(`! record[${i}].&quot;${subject}&quot; =`, typeof data, JSON.stringify(data)); //! validate &amp; filter inputs.
+
+
+    if (!data) return Promise.resolve({
+      error: &#039;empty data!&#039;
+    }); //! determin main chain process.
+    // eslint-disable-next-line no-constant-condition
+
+    const chain_next = false ? null : subject.startsWith(&#039;ALARM: &#039;) ? chain_process_alarm : subject.startsWith(&#039;DeliveryFailure event&#039;) ? chain_process_delivery_failure : subject === &#039;error&#039; ? chain_process_error : subject === &#039;callback&#039; ? chain_process_callback : chain_process_http; //! start chain processing.
+
+    return Promise.resolve({
+      subject,
+      data,
+      context
+    }).then(chain_next).then(res =&gt; {
+      const statusCode = res.statusCode || 200;
+      const body = typeof res.body === &#039;string&#039; &amp;&amp; res.body.startsWith(&#039;{&#039;) &amp;&amp; res.body.endsWith(&#039;}&#039;) ? JSON.parse(res.body) : res.body;
+
+      _log(`! RES[${statusCode}] =`, typeof body, $U.json(body));
+
+      return statusCode !== 200 ? {
+        error: body
+      } : body;
+    }).catch(e =&gt; {
+      _err(&#039;! ERR =&#039;, e);
+
+      const msg = e &amp;&amp; e.message || `${e}`;
+      return {
+        error: msg
+      };
+    });
+  }; //! Common SNS Handler for lemon-protocol integration.
+
+
+  const SNS = (event, context, callback) =&gt; {
+    //! WARN! allows for using callbacks as finish/error-handlers
+    context.callbackWaitsForEmptyEventLoop = false; //! for each SNS record. do service.
+
+    const records = event.Records || [];
+    if (!records.length) return callback &amp;&amp; callback(null, 0); //! resolve all.
+
+    return Promise.all(records.map((_, i) =&gt; local_process_record(_, i, context))).then(_ =&gt; callback &amp;&amp; callback(null, _.length));
+  }; //! returns main SNS handler.
+
+
+  return SNS;
+};</textarea>
+  </div>
+</div>
+
+<footer class="footer">
+  <div class="container">
+    <p>.</p>
+  </div>
+</footer>
+
+<script type="text/html" id="complexity-popover-template">
+  <div class="complexity-notice">
+    Complexity : {{ cyclomatic }} <br>
+    Length : {{ halstead.length }} <br>
+    Difficulty : {{ halstead.difficulty.toFixed(2) }} <br>
+    Est # bugs : {{ halstead.bugs.toFixed(2) }}<br>
+  </div>
+</script>
+
+<script type="text/javascript" src="../../assets/scripts/bundles/core-bundle.js"></script>
+<script type="text/javascript" src="../../assets/scripts/bundles/codemirror.js"></script>
+<script type="text/javascript" src="../../assets/scripts/codemirror.markpopovertext.js"></script>
+<script type="text/javascript" src="report.js"></script>
+<script type="text/javascript" src="report.history.js"></script>
+<script type="text/javascript" src="../../assets/scripts/plato-file.js"></script>
+</body>
+</html>
