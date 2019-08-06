@@ -36,6 +36,7 @@ const CONF = (serverless) => {
             securityGroupIds: undefined,                        // securityGroupIds in VPC
             subnetIds: undefined,                               // subnetIds in VPC
             kmsKey: '*',                                        // KMS key-id
+            bucket: 'ssocio-hello-wwww',                        // Name of S3 public bucket.
         },
         "none": {
             name: "none-app",

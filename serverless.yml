@@ -47,6 +47,10 @@ custom:
         - Fn::GetAtt:
           - MyInputTopic
           - TopicName
+  #------------------------------------------------
+  # S3 Bucket
+  #------------------------------------------------
+  bucketName: ${self:custom.CONF.${self:custom.CORE.profile}.bucket, 'lemon-hello-www'}
 
 #------------------------------------------------
 # Provider
@@ -102,6 +106,12 @@ provider:
       Action:
         - "sns:Publish"
       Resource: ${self:custom.topicArn}
+    # S3
+    - Effect: "Allow"
+      Action:
+        - "s3:GetObject"
+        - "s3:PutObject"
+      Resource: "arn:aws:sqs:${opt:region, self:provider.region}:*:${self:custom.bucketName}"
     # KMS
     - Effect: Allow
       Action:
@@ -245,9 +255,10 @@ package:
 resources:
   # 리소스 지정.
   Resources:
-    # TABLE CREATED MANUALLY.
-    # ## Dynamo Table :
-    # DynamoAtemCoreTable:
+    # -------------------------------
+    # Dynamo
+    # -------------------------------
+    # TestTable:
     #   Type: 'AWS::DynamoDB::Table'
     #   #DeletionPolicy: Retain
     #   Properties:
@@ -263,6 +274,7 @@ resources:
     #       WriteCapacityUnits: 20
     #     StreamSpecification:
     #       StreamViewType: "NEW_AND_OLD_IMAGES"
+
     # -------------------------------
     # SQS Queue
     # -------------------------------
@@ -284,3 +296,51 @@ resources:
       Type: 'AWS::SNS::Topic'
       Properties:
         TopicName: '${self:custom.topicName}'
+
+    # -------------------------------
+    # S3 Bucket
+    # -------------------------------
+    MyS3Bucket:
+      Type: AWS::S3::Bucket
+      Properties:
+        AccessControl: PublicRead
+        BucketName: ${self:custom.bucketName}
+        WebsiteConfiguration:
+          IndexDocument: index.html
+        CorsConfiguration:
+            CorsRules:
+              -
+                AllowedOrigins:
+                  - '*'
+                AllowedHeaders:
+                  - '*'
+                AllowedMethods:
+                  - GET
+                  - HEAD
+                MaxAge: 3000
+
+    # -------------------------------
+    # S3 Bucket
+    # -------------------------------
+    MyS3BucketPolicy:
+      Type: AWS::S3::BucketPolicy
+      Properties:
+        Bucket:
+          Ref: MyS3Bucket
+        PolicyDocument:
+          Statement:
+            - Sid: PublicReadGetObject
+              Effect: Allow
+              Principal: "*"
+              Action:
+                - s3:GetObject
+              Resource:
+                Fn::Join: [
+                  "", [
+                    "arn:aws:s3:::",
+                    {
+                      "Ref": "MyS3Bucket"
+                    },
+                    "/*"
+                  ]
+                ]
