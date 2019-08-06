@@ -40,6 +40,15 @@ module.exports = function(_$, name, options) {
 	const isBase64 = text => /^([A-Za-z0-9+/]{4})*([A-Za-z0-9+/]{4}|[A-Za-z0-9+/]{3}=|[A-Za-z0-9+/]{2}==)$/.test(text);
 
 	/**
+	 * hello
+	 */
+	const hello = () => {
+		return {
+			hello: 'kms-service',
+		};
+	};
+
+	/**
 	 * Encrypt message
 	 *
 	 * @param {*} message
@@ -92,5 +101,5 @@ module.exports = function(_$, name, options) {
 	}
 
 	//! export thiz.
-	return { do_encrypt, do_decrypt };
+	return { hello, do_encrypt, do_decrypt };
 };

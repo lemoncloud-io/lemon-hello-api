@@ -1,9 +1,14 @@
 /* eslint-disable no-undef */
 //! with supertest via express.app
 const request = require('supertest');
-const app = require('../src/express')['app'];
+const express = require('../src/express');
 
-describe('Test the root path', () => {
+const app = express['app'];
+const $lemon = express['$lemon'];
+
+// Test Hello
+describe('Test Hello API', () => {
+	//! test GET.
 	test('It should response the GET method', done => {
 		request(app)
 			.get('/')
@@ -17,5 +22,15 @@ describe('Test the root path', () => {
 		return request(app)
 			.get('/')
 			.expect(200);
+	});
+
+	test('It should get the proper instances', () => {
+		expect($lemon.kms.hello().hello).toBe('kms-service');
+		expect($lemon.sns.hello().hello).toBe('sns-service');
+		expect($lemon.s3s.hello().hello).toBe('s3s-service');
+	});
+
+	test('It should get the unique id', () => {
+		expect($lemon.s3s.nextId().length).toBe('583b839c-aa9d-4ea1-a2d7-2e374ee1566a'.length);
 	});
 });

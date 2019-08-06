@@ -459,7 +459,8 @@ module.exports = (_$, name) => {
 		const message = 'hello lemon';
 		const data = { message };
 		const json = JSON.stringify(data);
-		return $s3s().putObject('test.json', json, 'application/json');
+		// return $s3s().putObject(json, 'test.json', 'application/json');
+		return $s3s().putObject(json);
 	}
 
 	const a = 1;

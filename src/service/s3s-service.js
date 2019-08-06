@@ -41,7 +41,7 @@ module.exports = function(_$, name, options) {
 	 */
 	const hello = () => {
 		return {
-			hello: 's3-service',
+			hello: 's3s-service',
 		};
 	};
 
@@ -62,14 +62,29 @@ module.exports = function(_$, name, options) {
 	/**
 	 * upload a file to S3 Bucket
 	 *
+	 * ```js
+	 * const res = $s3s().putObject(JSON.stringify({ message }), 'test.json', 'application/json');
+	 * // response would be like
+	 * {
+	 *  "Bucket": "lemon-hello-www",
+	 *  "ETag": "5e206.....8bd4c",
+	 *  "Key": "test.json",
+	 *  "Location": "https://lemon-hello-www.s3.ap-northeast-2.amazonaws.com/test.json",
+	 *  "key": "test.json"
+	 * }
+	 * ```
+	 *
 	 * @param {string} bucketId
 	 * @param {string} fileName
 	 * @param {string} fileStream
 	 * @param {object} tags             (optional) tags to save.
 	 */
-	async function putObject(fileName, fileStream, contentType = 'application/json', tags = null) {
-		if (!fileName) throw new Error('filename is required!');
+	async function putObject(fileStream, fileName = '', contentType = 'application/json', tags = null) {
 		if (!fileStream) throw new Error('filestream is required!');
+		// if (!fileName) throw new Error('filename is required!');
+
+		//! get unique file name.
+		fileName = fileName || `${this.nextId()}.json`;
 
 		const params = { Bucket: bucketId(), Key: fileName, Body: fileStream };
 		const options = {};
@@ -125,6 +140,11 @@ module.exports = function(_$, name, options) {
 		});
 	}
 
+	function nextId() {
+		const uuidv4 = require('uuid/v4');
+		return uuidv4();
+	}
+
 	//! export thiz.
-	return { hello, putObject, getObject };
+	return { hello, putObject, getObject, nextId };
 };

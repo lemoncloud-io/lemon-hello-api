@@ -110,7 +110,7 @@ module.exports = function factory($scope, $environ) {
 	}
 
 	//! function instance to manage global objects.
-	var $lemon = function(name, opts) {
+	const $lemon = function(name, opts) {
 		// global identifier.
 		if (!name) return;
 		const thiz = $lemon; // 인스턴스 바꿔치기: _$('hello') == _$.hello
