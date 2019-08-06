@@ -9,8 +9,8 @@
  * $ ENV=lemon STAGE=local nodemon express.js
  * ```
  *
- * @author  Steve <steve@lemoncloud.io)
- * @date    2019-07-19
+ * @author  Steve <steve@lemoncloud.io>
+ * @date    2019-07-19 initial version
  *
  * @copyright (C) lemoncloud.io 2019 - All Rights Reserved.
  */
@@ -31,7 +31,7 @@ const app = express();
 const uploader = multer({ dest: '../tmp/' });
 
 //! load configuration.
-const handler = require('./index')(global, $env);
+const $lemon = require('./index')(global, $env);
 
 // eslint-disable-next-line no-underscore-dangle
 const _inf = (global && global.console && global.console.log) || (() => {});
@@ -96,7 +96,7 @@ app.get('', (req, res) => {
 });
 
 //! handle request to handler.
-const handle_hello = (req, res) => handler.hello(req.$event, req.$context, req.$callback, res);
+const handle_hello = (req, res) => $lemon.hello(req.$event, req.$context, req.$callback, res);
 
 //! WARN - MUST sync with 'serverless.yml'
 //! manual route map of 'api/hello-api'
@@ -156,4 +156,4 @@ if (typeof require !== 'undefined' && require.main === module) {
 }
 
 // export default
-module.exports = { createServer, app, express };
+module.exports = { createServer, app, express, $lemon };

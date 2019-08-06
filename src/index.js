@@ -13,8 +13,8 @@
  * @param $scope    main scope.
  * @param $environ	configuration environment like `process.env`.
  *
- * @author  Steve <steve@lemoncloud.io)
- * @date    2019-07-19
+ * @author  Steve <steve@lemoncloud.io>
+ * @date    2019-07-19 initial version
  *
  * @copyright (C) lemoncloud.io 2019 - All Rights Reserved.
  */
@@ -110,7 +110,7 @@ module.exports = function factory($scope, $environ) {
 	}
 
 	//! function instance to manage global objects.
-	var $lemon = function(name, opts) {
+	const $lemon = function(name, opts) {
 		// global identifier.
 		if (!name) return;
 		const thiz = $lemon; // 인스턴스 바꿔치기: _$('hello') == _$.hello
@@ -195,8 +195,10 @@ function initialize($export) {
 	//! load basic core services......
 	const $kms = require('./service/kms-service')($lemon);
 	const $sns = require('./service/sns-service')($lemon);
+	const $s3s = require('./service/s3s-service')($lemon);
 	$lemon('kms', $kms);
 	$lemon('sns', $sns);
+	$lemon('s3s', $s3s);
 
 	//! load api functions............
 	const hello = require('./api/hello-api')($lemon);

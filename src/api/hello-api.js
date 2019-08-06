@@ -1,10 +1,10 @@
 /**
- * API: /hello
+ * API: `/hello`
  *  - hello lemon API
  *
  *
- * @author  Steve <steve@lemoncloud.io)
- * @date    2019-07-19
+ * @author  Steve <steve@lemoncloud.io>
+ * @date    2019-07-19 initial version
  *
  * @copyright (C) lemoncloud.io 2019 - All Rights Reserved.
  */
@@ -51,37 +51,26 @@ module.exports = (_$, name) => {
 				break;
 			case 'GET':
 				if (false);
-				else if (ID !== '!' && CMD === '') {
-					next = do_get_hello;
-				} else if (ID !== '!' && CMD === 'test-sns') {
-					next = do_get_test_sns;
-				} else if (ID !== '!' && CMD === 'test-sns-arn') {
-					next = do_get_test_sns_arn;
-				} else if (ID !== '!' && CMD === 'test-sns-err') {
-					next = do_get_test_sns_err;
-				} else if (ID !== '!' && CMD === 'test-encrypt') {
-					next = do_get_test_encrypt;
-				}
+				else if (ID !== '!' && CMD === '') next = do_get_hello;
+				else if (ID !== '!' && CMD === 'test-sns') next = do_get_test_sns;
+				else if (ID !== '!' && CMD === 'test-sns-arn') next = do_get_test_sns_arn;
+				else if (ID !== '!' && CMD === 'test-sns-err') next = do_get_test_sns_err;
+				else if (ID !== '!' && CMD === 'test-encrypt') next = do_get_test_encrypt;
+				else if (ID !== '!' && CMD === 'test-s3-put') next = do_get_test_s3_put;
 				break;
 			case 'PUT':
 				if (false);
-				else if (ID !== '!' && CMD === '') {
-					next = do_put_hello;
-				}
+				else if (ID !== '!' && CMD === '') next = do_put_hello;
 				break;
 			case 'POST':
 				if (false);
-				else if (ID !== '!' && CMD === '') {
-					next = do_post_hello;
-				} else if (ID !== '!' && CMD === 'slack') {
-					next = do_post_hello_slack;
-				}
+				else if (ID !== '!' && CMD === '') next = do_post_hello;
+				else if (ID !== '!' && CMD === 'slack') next = do_post_hello_slack;
+				else if (ID === '!' && CMD === 'event') next = do_post_hello_event;
 				break;
 			case 'DELETE':
 				if (false);
-				else if (ID !== '!' && CMD === '') {
-					next = do_delete_hello;
-				}
+				else if (ID !== '!' && CMD === '') next = do_delete_hello;
 				break;
 			case 'EVENT':
 				break;
@@ -115,6 +104,16 @@ module.exports = (_$, name) => {
 	const $sns = function() {
 		if (!_$.sns) throw new Error('$sns(sns-service) is required!');
 		return _$.sns;
+	};
+
+	const $s3s = function() {
+		if (!_$.s3s) throw new Error('$s3s(s3s-service) is required!');
+		return _$.s3s;
+	};
+
+	const $aws = () => {
+		if (!_$.aws) throw new Error('$aws is required!');
+		return _$.aws;
 	};
 
 	//! shared memory.
@@ -196,6 +195,189 @@ module.exports = (_$, name) => {
 				}
 				return _;
 			});
+	};
+
+	const asText = data => {
+		const keys = (data && Object.keys(data)) || [];
+		return keys.length > 0 ? JSON.stringify(data) : '';
+	};
+
+	//! post to slack channel.
+	const do_post_slack = (
+		pretext = '',
+		title = '',
+		text = '',
+		fields = [],
+		color = '#FFB71B',
+		username = 'hello-alarm'
+	) => {
+		if (pretext && typeof pretext === 'object') {
+			const args = pretext || {};
+			pretext = args.pretext || '';
+			title = args.title || title;
+			text = args.text || text;
+			fields = args.fields || fields;
+			color = args.color || color;
+			username = args.username || username;
+		}
+		// Set the request body
+		const now = new Date().getTime();
+
+		//! build attachment.
+		const attachment = {
+			username,
+			color,
+			pretext,
+			title,
+			text,
+			ts: Math.floor(now / 1000),
+			// "title_link": link||'',
+			// "thumb_url" : thumb || '',
+			// "image_url" : image || '',
+			fields,
+		};
+		//! build body for slack
+		const body = { attachments: [attachment] };
+
+		//! call post-slack
+		return do_post_hello_slack('public', {}, body);
+	};
+
+	//! chain for ALARM type. (see data/alarm.jsonc)
+	const chain_process_alarm = ({ subject, data, context }) => {
+		_log(`chain_process_alarm(${subject})...`);
+		data = data || {};
+		_log('> data=', data);
+
+		const AlarmName = data.AlarmName || '';
+		const AlarmDescription = data.AlarmDescription || '';
+
+		//!  build fields.
+		const Fields = [];
+		const pop_to_fields = (param, short = true) => {
+			short = short === undefined ? true : short;
+			const [name, nick] = param.split('/', 2);
+			const val = data[name];
+			if (val !== undefined && val !== '') {
+				Fields.push({
+					title: nick || name,
+					value: typeof val === 'object' ? JSON.stringify(val) : val,
+					short,
+				});
+			}
+			delete data[name];
+		};
+		pop_to_fields('AlarmName', false);
+		pop_to_fields('AlarmDescription');
+		pop_to_fields('AWSAccountId');
+		pop_to_fields('NewStateValue');
+		pop_to_fields('NewStateReason', false);
+		pop_to_fields('StateChangeTime');
+		pop_to_fields('Region');
+		pop_to_fields('OldStateValue');
+		pop_to_fields('Trigger', false);
+
+		const pretext = `Alarm: ${AlarmName}`;
+		const title = AlarmDescription || '';
+		const text = asText(data);
+		const fields = Fields;
+
+		return do_post_slack(pretext, title, text, fields);
+	};
+
+	//! chain for DeliveryFailure type. (see data/delivery-failure.json)
+	const chain_process_delivery_failure = ({ subject, data, context }) => {
+		_log(`chain_process_delivery_failure(${subject})...`);
+		data = data || {};
+		_log('> data=', data);
+
+		const FailName = data.EventType || '';
+		const FailDescription = data.FailureMessage || '';
+		const EndpointArn = data.EndpointArn || '';
+
+		//!  build fields.
+		const Fields = [];
+		const pop_to_fields = (param, short = true) => {
+			short = short === undefined ? true : short;
+			const [name, nick] = param.split('/', 2);
+			const val = data[name];
+			if (val !== undefined && val !== '' && nick !== '') {
+				Fields.push({
+					title: nick || name,
+					value: typeof val === 'object' ? JSON.stringify(val) : val,
+					short,
+				});
+			}
+			delete data[name];
+		};
+		pop_to_fields('EventType/'); // clear this
+		pop_to_fields('FailureMessage/'); // clear this
+		pop_to_fields('FailureType');
+		pop_to_fields('DeliveryAttempts/'); // DeliveryAttempts=1
+		pop_to_fields('Service/'); // Service=SNS
+		pop_to_fields('MessageId');
+		pop_to_fields('EndpointArn', false);
+		pop_to_fields('Resource', false);
+		pop_to_fields('Time/', false); // clear this
+
+		const pretext = `SNS: ${FailName}`;
+		const title = FailDescription || '';
+		// const text = asText(data);
+		const text = `For more details, run below. \n\`\`\`aws sns get-endpoint-attributes --endpoint-arn "${EndpointArn}"\`\`\``;
+		const fields = Fields;
+
+		//! get get-endpoint-attributes
+		const local_chain_endpoint_attrs = that => {
+			const AWS = $aws();
+			const SNS = new AWS.SNS();
+			return SNS.getEndpointAttributes({ EndpointArn })
+				.promise()
+				.then(_ => {
+					_log(NS, '> EndpointAttributes=', _);
+					const Attr = (_ && _.Attributes) || {};
+					that.fields.push({ title: 'Enabled', value: Attr.Enabled || '', short: true });
+					that.fields.push({ title: 'CustomUserData', value: Attr.CustomUserData || '', short: true });
+					that.fields.push({ title: 'Token', value: Attr.Token || '', short: false });
+					return that;
+				})
+				.catch(e => {
+					_err(NS, '!ERR EndpointAttributes=', e);
+					return that;
+				});
+		};
+
+		// return do_post_slack(pretext, title, text, fields)
+		return Promise.resolve({
+			pretext,
+			title,
+			text,
+			fields,
+		})
+			.then(local_chain_endpoint_attrs)
+			.then(do_post_slack);
+	};
+
+	//! chain for ALARM type. (see data/alarm.jsonc)
+	const chain_process_error = ({ subject, data, context }) => {
+		_log(`chain_process_error(${subject})...`);
+		data = data || {};
+		_log('> data=', data);
+
+		//! get error reason.
+		const message = data.message || data.error;
+
+		//NOTE - DO NOT CHANGE ARGUMENT ORDER.
+		return do_post_slack(message, 'error-report', asText(data), []);
+	};
+
+	//! chain for ALARM type. (see data/alarm.jsonc)
+	const chain_process_callback = ({ subject, data, context }) => {
+		_log(`chain_process_callback(${subject})...`);
+		data = data || {};
+		_log('> data=', data);
+
+		//NOTE - DO NOT CHANGE ARGUMENT ORDER.
+		return do_post_slack('', 'callback-report', asText(data), [], '#B71BFF');
 	};
 
 	/** ********************************************************************************************************************
@@ -291,15 +473,102 @@ module.exports = (_$, name) => {
 	 */
 	function do_post_hello_slack(ID, $param, $body, $ctx) {
 		_log(NS, `do_post_hello_slack(${ID})....`);
+		_log(NS, '> body =', $body);
 		$param = $param || {};
 
-		const message = typeof $body === 'string' ? { text: $body } : $body;
+		//! save main data to S3.
+		const local_chain_save_to_s3 = message => {
+			const attachments = message.attachments;
+			if (attachments && attachments.length) {
+				const attachment = attachments[0] || {};
+				const pretext = attachment.pretext || '';
+				const title = attachment.title || '';
+				const color = attachment.color || '';
+				_log(NS, `> title[${pretext}] =`, title);
+				const data = Object.assign({}, message); // copy.
+				data.attachments = data.attachments.map(_ => {
+					_ = Object.assign({}, _); // copy.
+					const text = `${_.text}`;
+					if (text.startsWith('{') && text.endsWith('}')) _.text = JSON.parse(_.text);
+					if (_.text['stack-trace'] && typeof _.text['stack-trace'] == 'string')
+						_.text['stack-trace'] = _.text['stack-trace'].split('\n');
+					return _;
+				});
+				const json = JSON.stringify(data);
+				return $s3s()
+					.putObject(json)
+					.then(({ Bucket, Location }) => {
+						_inf(NS, '> uploaded =', Location);
+						const title_link = Location;
+						message = {
+							attachments: [
+								{
+									pretext: title == 'error-report' ? title : pretext,
+									title: title == 'error-report' ? pretext : title,
+									color,
+									title_link,
+									mrkdwn: true,
+									mrkdwn_in: ['pretext', 'text'],
+								},
+							],
+						};
+						return message;
+					})
+					.catch(e => {
+						message.attachments.push({
+							pretext: 'internal error',
+							title: `${e.message || e.reason || e.error || e}`,
+						});
+						return message;
+					});
+			}
+			return message;
+		};
+
 		//! load target webhook via environ.
 		return do_load_slack_channel(ID).then(webhook => {
 			_log(NS, '> webhook :=', webhook);
-			// return { webhook }
-			return postMessage(webhook, message);
+			//! prepare slack message via body.
+			const message = typeof $body === 'string' ? { text: $body } : $body;
+			//! filter message.
+			return Promise.resolve(message)
+				.then(local_chain_save_to_s3)
+				.then(message => postMessage(webhook, message));
 		});
+	}
+
+	/**
+	 * Event Handler via SNS
+	 *
+	 * ```sh
+	 * # alarm data
+	 * $ cat data/alarm.json | http ':8888/hello/!/event?subject=ALARM: test'
+	 * # delivery failure
+	 * $ cat data/delivery-failure.json | http ':8888/hello/!/event?subject=DeliveryFailure test'
+	 * # error case
+	 * $ cat data/error-1.json | http ':8888/hello/!/event?subject=error'
+	 * $ cat data/error-2.json | http ':8888/hello/!/event?subject=error'
+	 */
+	function do_post_hello_event(ID, $param, $body, $ctx) {
+		_log(NS, `do_post_hello_event(${ID})....`);
+		$param = $param || {};
+		const subject = `${$param.subject || ''}`;
+		const data = $body;
+		const context = $ctx;
+
+		const chain_next = false
+			? null
+			: subject.startsWith('ALARM:')
+			? chain_process_alarm
+			: subject.startsWith('DeliveryFailure')
+			? chain_process_delivery_failure
+			: subject === 'error'
+			? chain_process_error
+			: subject === 'callback'
+			? chain_process_callback
+			: _ => _;
+
+		return Promise.resolve({ subject, data, context }).then(chain_next);
 	}
 
 	/**
@@ -439,6 +708,21 @@ module.exports = (_$, name) => {
 				const result = _.encrypted && _.message === _.decrypted;
 				return Object.assign(_, { result });
 			});
+	}
+
+	/**
+	 * Test S3 PutObject.
+	 *
+	 * ```sh
+	 * $ http ':8888/hello/0/test-s3-put'
+	 */
+	function do_get_test_s3_put(ID, $param, $body, $ctx) {
+		_log(NS, `do_get_test_s3_put(${ID})....`);
+		const message = 'hello lemon';
+		const data = { message };
+		const json = JSON.stringify(data);
+		// return $s3s().putObject(json, 'test.json', 'application/json');
+		return $s3s().putObject(json);
 	}
 
 	const a = 1;

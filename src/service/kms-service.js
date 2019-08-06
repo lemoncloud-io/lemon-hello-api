@@ -1,10 +1,10 @@
 /**
- * kms-service.js
+ * `kms-service.js`
  * - encrypt/decrypt service api with KMS
  *
  *
- * @author  Steve <steve@lemoncloud.io)
- * @date    2019-07-19
+ * @author  Steve <steve@lemoncloud.io>
+ * @date    2019-07-19 initial version
  *
  * @copyright (C) lemoncloud.io 2019 - All Rights Reserved.
  */
@@ -38,6 +38,15 @@ module.exports = function(_$, name, options) {
 
 	//! check if base64 string.
 	const isBase64 = text => /^([A-Za-z0-9+/]{4})*([A-Za-z0-9+/]{4}|[A-Za-z0-9+/]{3}=|[A-Za-z0-9+/]{2}==)$/.test(text);
+
+	/**
+	 * hello
+	 */
+	const hello = () => {
+		return {
+			hello: 'kms-service',
+		};
+	};
 
 	/**
 	 * Encrypt message
@@ -92,5 +101,5 @@ module.exports = function(_$, name, options) {
 	}
 
 	//! export thiz.
-	return { do_encrypt, do_decrypt };
+	return { hello, do_encrypt, do_decrypt };
 };
