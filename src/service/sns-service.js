@@ -10,7 +10,7 @@
  */
 module.exports = function(_$, name, options) {
 	'use strict';
-	name = name || 'KMS'; // engine service name.
+	name = name || 'SNS'; // engine service name.
 
 	// core module
 	const $U = _$.U;

@@ -125,6 +125,7 @@ Version History
 
 | Version   | Description
 |--         |--
+| 1.2.3     | fix: iota of `NS` in sns-service.
 | 1.1.0     | Release version with `npm run release`.
 | 1.0.3     | support `SQS` with handling SQS message.
 | 1.0.2     | support `WSS` with API Gateway + WebSocket.
