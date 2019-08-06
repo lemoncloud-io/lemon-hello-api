@@ -10,8 +10,8 @@
  *
  *
  *
- * @author Tony Sung <tony@lemoncloud.io>
- * @description     2019-01-17 To support `$protocol().do_post_notify(url, body, callback)`. (engine >1.0.13)
+ * @author    Tony Sung <tony@lemoncloud.io>
+ * @date      2019-01-17 To support `$protocol().do_post_notify(url, body, callback)`. (engine >1.0.13)
  *
  * @copyright (C) lemoncloud.io 2019 - All Rights Reserved.
  */
