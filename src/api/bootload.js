@@ -1,5 +1,5 @@
 /**
- * bootload.js
+ * `bootload.js`
  * - basic bootloader for API handler.
  *
  * use like below in api
@@ -10,8 +10,8 @@
  * return main;
  * ```
  *
- * @author  Steve <steve@lemoncloud.io)
- * @date    2019-07-19
+ * @author  Steve <steve@lemoncloud.io>
+ * @date    2019-07-19 initial version
  *
  * @copyright (C) lemoncloud.io 2019 - All Rights Reserved.
  */
