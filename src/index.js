@@ -195,8 +195,10 @@ function initialize($export) {
 	//! load basic core services......
 	const $kms = require('./service/kms-service')($lemon);
 	const $sns = require('./service/sns-service')($lemon);
+	const $s3s = require('./service/s3s-service')($lemon);
 	$lemon('kms', $kms);
 	$lemon('sns', $sns);
+	$lemon('s3s', $s3s);
 
 	//! load api functions............
 	const hello = require('./api/hello-api')($lemon);

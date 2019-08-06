@@ -61,6 +61,8 @@ module.exports = (_$, name) => {
 					next = do_get_test_sns_err;
 				} else if (ID !== '!' && CMD === 'test-encrypt') {
 					next = do_get_test_encrypt;
+				} else if (ID !== '!' && CMD === 'test-s3-put') {
+					next = do_get_test_s3_put;
 				}
 				break;
 			case 'PUT':
@@ -115,6 +117,11 @@ module.exports = (_$, name) => {
 	const $sns = function() {
 		if (!_$.sns) throw new Error('$sns(sns-service) is required!');
 		return _$.sns;
+	};
+
+	const $s3s = function() {
+		if (!_$.s3s) throw new Error('$s3s(s3s-service) is required!');
+		return _$.s3s;
 	};
 
 	//! shared memory.
@@ -439,6 +446,20 @@ module.exports = (_$, name) => {
 				const result = _.encrypted && _.message === _.decrypted;
 				return Object.assign(_, { result });
 			});
+	}
+
+	/**
+	 * Test S3 PutObject.
+	 *
+	 * ```sh
+	 * $ http ':8888/hello/0/test-s3-put'
+	 */
+	function do_get_test_s3_put(ID, $param, $body, $ctx) {
+		_log(NS, `do_get_test_s3_put(${ID})....`);
+		const message = 'hello lemon';
+		const data = { message };
+		const json = JSON.stringify(data);
+		return $s3s().putObject('test.json', json, 'application/json');
 	}
 
 	const a = 1;
