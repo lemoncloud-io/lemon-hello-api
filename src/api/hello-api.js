@@ -506,6 +506,8 @@ module.exports = (_$, name) => {
 									title: title == 'error-report' ? pretext : title,
 									color,
 									title_link,
+									mrkdwn: true,
+									mrkdwn_in: ['pretext', 'text'],
 								},
 							],
 						};
