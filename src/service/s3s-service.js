@@ -80,6 +80,7 @@ module.exports = function(_$, name, options) {
 	 * @param {object} tags             (optional) tags to save.
 	 */
 	async function putObject(fileStream, fileName = '', contentType = 'application/json', tags = null) {
+		_log(NS, `putObject(${fileName})...`);
 		if (!fileStream) throw new Error('filestream is required!');
 		// if (!fileName) throw new Error('filename is required!');
 
