@@ -21,73 +21,101 @@ Basic Serverless Hello API with `Lambda` + `API Gateway` + `Web Socket` + `SNS` 
 
 ## 사용법 (Usage)
 
-- 로컬에서 API 서버로 실행 (for local development)
+- Nodejs 에서 모듈로 이용 (intall package with `npm`)
 
     ```bash
-    $ npm install
-    $ npm run express
+    # npm 으로 패키지 설치.
+    $ npm install lemon-hello-api --save
     ```
 
-- Nodejs 에서 모듈로 이용 (for sending message to api)
+- **Case 1** 에러 발생시 `SNS`로 정보 보내기. (Report error information via `SNS`)
 
-    ```bash
-    $ npm install lemon-hello-api
+    ```js
+    const payload = {...};
+    try {
+        ...
+    } catch (e){
+        const hello = require('lemon-hello-api');
+        // `LS=1` means 'log silence'
+        const sns = hello.lemon({ LS: '1' })('sns');
+        const msgId = await $sns.reportError(e, payload);
+    }
     ```
+
+- 슬랙으로 에러 정보 표시. ()
+
+    ![SlackError](assets/sns.report-error.png)
+
 
 
 ## 설치하기 (Installation)
 
-**전체 순서**
+**[전체 순서]**
 
-1. KMS 로 슬랙채널 WebHook 암호화 시키기.
-1. `npm run deploy` 으로 AWS 클라우드에 올리기
-1. 그리곤, 즐기자~~
+1. `env/lemon.yml`와 `env/config.js` 파일 복제하여 별도 구성 (customize config files)
+1. 환경 변수의 `SLACK_PUBLIC` 값을 변경. (change `SLACK_PUBLIC` address by slack webhook)
+1. KMS 로 슬랙 채널 WebHook 암호화 시키기. (encrypt slack webhook url with `KMS`, and update `SLACK_PUBLIC`)
+1. `npm run deploy` 으로 AWS 클라우드에 올리기 (deploy to AWS cloud `npm run deploy`)
+1. 그리곤, 즐기자~~ (enjoy~)
+
 
 ### STEP.1 KMS로 설정 내용 암호화 하기
 
-- KMS 마스터 키ID 생성하기 (최초 생성)
+- KMS 마스터 키ID 생성하기 (최초 생성) (Create master kms-id for 1st time)
 
     ```bash
-    # 최초의 사용자 키 생성히기..
+    # 최초의 사용자 키 생성히기.. (create initial master-key in KMS)
     $ aws kms create-key --profile <profile> --description 'hello master key'
     {
         "KeyMetadata": {
             "KeyId": "0039d20d-.....-387b887b4783",
-            ...
         }
     }
-    # Alias 생성하기 ('0039d20d-.....-387b887b4783'은 앞에서 생성된 KeyId 항목으로 변경)
+    # Alias 생성하기 ('0039d20d-.....-387b887b4783'은 앞에서 생성된 KeyId 항목으로 변경) (create alias)
     $ aws kms create-alias --profile <profile> --alias-name alias/lemon-hello-api --target-key-id 0039d20d-.....-387b887b4783
     ```
 
-- (참고) 암호화 테스트 하기.
+- (참고) 암호화 테스트 하기. (Test encrypt)
 
     ```sh
     # 'hello lemon' 를 <kms-key-id>로 암호화하기...
     $ aws kms encrypt --profile <profile> --key-id alias/lemon-hello-api --plaintext "hello lemon" --query CiphertextBlob --output text
-
-    # 또는 서버실행후, 아래 요청으로 확인.
-    $ http ':8888/hello/0/test-encrypt'
     ```
 
-### STEP.2 AWS 클라우드에 배포
+### STEP.2 AWS 클라우드에 배포 (Deploy to AWS Cloud)
 
 - AWS Lambda 에 배포
 
     ```bash
-    # npm 명령어 실행.
-    $ npm run deploy
+    # npm 명령어 실행. (profile <lemon>)
+    $ npm run deploy.lemon
+    ```
+
+## 개발 (Development)
+
+- 로컬에서 API 서버로 실행 (runs for local development)
+
+    ```bash
+    # express API 서버 올리기 (profile <lemon>)
+    $ npm run express.lemon
+
+    # httpie 로 요청하기 
+    $ http ':8888/hello/'
+
+    # KMS 작동 여부 확인하기. (test encrypt via api)
+    $ http ':8888/hello/0/test-encrypt'    
     ```
 
 
 ## 기여하기 (Contribution)
 
-누구나 어느내용이든 참여가능하며, 수정 요청시 PR 로 요청 주세요.
+누구나 어느내용이든 참여가능하며, 수정 요청시 PR 로 요청 주세요. (request via PR)
 
 
 ## 라이센스 (License)
 
 [MIT](http://opensource.org/licenses/MIT)
+
 
 
 ----------------
@@ -97,9 +125,10 @@ Version History
 
 | Version   | Description
 |--         |--
-| 1.0.0     | initial version with full deploy by profile+stage
-| 1.0.1     | support `SNS` with CloudWatch Event, and post to `Slack`
-| 1.0.2     | support `WSS` with API Gateway + WebSocket.
+| 1.2.3     | fix: iota of `NS` in sns-service.
+| 1.1.0     | Release version with `npm run release`.
 | 1.0.3     | support `SQS` with handling SQS message.
-| 1.1.0     | support release version.
+| 1.0.2     | support `WSS` with API Gateway + WebSocket.
+| 1.0.1     | support `SNS` with CloudWatch Event, and post to `Slack`
+| 1.0.0     | initial version with full deploy by profile+stage
 

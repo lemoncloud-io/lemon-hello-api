@@ -20,9 +20,9 @@ const $scope = { name: 'lemon-hello-api' };
 const $lemon = require(`${SRC}index`)($scope, $env);
 
 //! Load Additional Handlers
-const SNS = require(`${SRC}sns`)($lemon);
-const SQS = require(`${SRC}sqs`)($lemon);
-const WSS = require(`${SRC}wss`)($lemon);
+const SNS = require(`${SRC}SNS`)($lemon);
+const SQS = require(`${SRC}SQS`)($lemon);
+const WSS = require(`${SRC}WSS`)($lemon);
 
 //! export serverless handlers.
 module.exports = Object.assign($scope, { SNS, WSS, SQS });

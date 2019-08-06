@@ -1,0 +1,288 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <title>Plato - dist/express.js</title>
+
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta name="description" content="">
+  <meta name="author" content="">
+
+  <!--[if lt IE 9]>
+  <script src="http://html5shim.googlecode.com/svn/trunk/html5.js"></script>
+  <![endif]-->
+
+  <link href="../../assets/css/vendor/morris.css" rel="stylesheet">
+  <link href="../../assets/css/vendor/bootstrap.css" rel="stylesheet">
+  <link href="../../assets/css/vendor/font-awesome.css" rel="stylesheet">
+  <link href="../../assets/css/vendor/codemirror.css" rel="stylesheet">
+  <link href="../../assets/css/plato.css" rel="stylesheet">
+  <link href="../../assets/css/plato-file.css" rel="stylesheet">
+
+</head>
+
+<body>
+
+<div class="navbar navbar-fixed-top">
+  <div class="container">
+    <a class="navbar-brand" href="http://github.com/es-analysis/plato">Plato on Github</a>
+    <ul class="nav navbar-nav">
+      <li>
+        <a href="../../index.html">Report Home</a>
+      </li>
+    </ul>
+  </div>
+</div>
+
+<div class="jumbotron">
+  <div class="container">
+    <h1>dist/express.js</h1>
+  </div>
+</div>
+
+<div class="container aggregate-stats">
+  <div class="row">
+    <div class="col-md-6">
+      <h2 class="header">Maintainability <a href="http://blogs.msdn.com/b/codeanalysis/archive/2007/11/20/maintainability-index-range-and-meaning.aspx"><i class="icon icon-info-sign" rel="popover" data-placement="top" data-trigger="hover" data-content="A value between 0 and 100 that represents the relative ease of maintaining the code. A high value means better maintainability." data-original-title="Maintainability Index"  data-container="body"></i></a></h2>
+      <p class="stat">70.52</p>
+    </div>
+    <div class="col-md-6">
+      <h2 class="header">Lines of code <i class="icon icon-info-sign" rel="popover" data-placement="top" data-trigger="hover" data-content="Source Lines of Code / Logical Lines of Code" data-original-title="SLOC/LSLOC" data-container="body"></i></h2>
+      <p class="stat">171</p>
+    </div>
+  </div>
+  <div class="row historical">
+    <div class="col-md-6">
+      <p id="chart_historical_maint" class="chart"></p>
+    </div>
+    <div class="col-md-6">
+      <p id="chart_historical_sloc" class="chart"></p>
+    </div>
+  </div>
+  <div class="row">
+    <div class="col-md-6">
+      <h2 class="header">Difficulty  <a href="http://en.wikipedia.org/wiki/Halstead_complexity_measures"><i class="icon icon-info-sign" rel="popover" data-placement="top" data-trigger="hover" data-content="The difficulty measure is related to the difficulty of the program to write or understand." data-original-title="Difficulty" data-container="body"></i></a></h2>
+      <p class="stat">29.18</p>
+    </div>
+    <div class="col-md-6">
+      <h2 class="header">Estimated Errors  <a href="http://en.wikipedia.org/wiki/Halstead_complexity_measures"><i class="icon icon-info-sign" rel="popover" data-placement="top" data-trigger="hover" data-content="Halstead's delivered bugs is an estimate for the number of errors in the implementation." data-original-title="Delivered Bugs" data-container="body"></i></a></h2>
+      <p class="stat">1.35</p>
+    </div>
+  </div>
+</div>
+
+<div class="container charts">
+  <div class="row">
+    <h2 class="header">Function weight</h2>
+  </div>
+  <div class="row">
+    <div class="col-md-6">
+      <h3 class="chart-header">By Complexity <a href="http://en.wikipedia.org/wiki/Cyclomatic_complexity"><i class="icon icon-info-sign" rel="popover" data-placement="top" data-trigger="hover" data-content="This metric counts the number of distinct paths through a block of code. Lower values are better." data-original-title="Cyclomatic Complexity" data-container="body"></i></a></h3>
+      <div id="fn-by-complexity" class="stat"></div>
+    </div>
+    <div class="col-md-6">
+      <h3 class="chart-header">By SLOC  <i class="icon icon-info-sign" rel="popover" data-placement="top" data-trigger="hover" data-content="Source Lines of Code / Logical Lines of Code" data-original-title="SLOC/LSLOC" data-container="body"></i></h3>
+      <div id="fn-by-sloc" class="stat"></div>
+    </div>
+  </div>
+</div>
+
+<div class="container">
+  <div class="row">
+    <textarea id="file-source" class="col-md-12">/**
+ * Express Server Application.
+ * - standalone http service with express.
+ *
+ *
+ * ```bash
+ * #run-server (use lemon.yml:local)
+ * $ npm install -g nodemon
+ * $ ENV=lemon STAGE=local nodemon express.js
+ * ```
+ *
+ * @author  Steve &lt;steve@lemoncloud.io)
+ * @date    2019-07-19
+ *
+ * @copyright (C) lemoncloud.io 2019 - All Rights Reserved.
+ */
+// MAIN EXPRESS BOOT-LOADER.
+const NS = &#039;EXPR&#039;;
+
+const express = require(&#039;express&#039;);
+
+const bodyParser = require(&#039;body-parser&#039;);
+
+const multer = require(&#039;multer&#039;);
+
+const http = require(&#039;http&#039;);
+
+const $pack = require(&#039;../package.json&#039;);
+
+const $env = require(&#039;../env/environ&#039;)(process);
+
+const app = express(); // app.use(bodyParser.json({limit:&#039;10mb&#039;})); //default limit 100kb
+// const WebSocket = require(&#039;ws&#039;);
+
+const uploader = multer({
+  dest: &#039;../tmp/&#039;
+}); //! load configuration.
+
+const handler = require(&#039;./index&#039;)(global, $env); // eslint-disable-next-line no-underscore-dangle
+
+
+const _inf = global &amp;&amp; global.console &amp;&amp; global.console.log || (() =&gt; {}); //! middle ware
+
+
+const middle = (req, res, next) =&gt; {
+  //! prepare event
+  const event = {
+    queryStringParameters: req.query || {},
+    pathParameters: req.params,
+    httpMethod: req.method,
+    connection: req.connection,
+    url: req.url,
+    headers: req.headers,
+    body: req.body
+  };
+  const context = {
+    source: &#039;express&#039;
+  };
+
+  const callback = (err, data) =&gt; {
+    if (data.headers) {
+      Object.keys(data.headers).map(k =&gt; res.setHeader(k, data.headers[k]));
+    }
+
+    res.setHeader(&#039;Content-Type&#039;, &#039;application/json&#039;);
+    res.status(data.statusCode || 200).send(data.body);
+  }; //! attach to req.
+
+
+  req.$event = event;
+  req.$context = context;
+  req.$callback = callback; //! use json parser or multer.
+
+  const method = req.method || &#039;&#039;;
+  const ctype = req.headers &amp;&amp; req.headers[&#039;content-type&#039;] || &#039;&#039;; // _log(NS, &#039;!&#039;,method,&#039;:&#039;, url,&#039; - &#039;, ctype);
+
+  if (ctype.indexOf(&#039;multipart/&#039;) &gt;= 0) {
+    const parser = uploader.single(&#039;file&#039;);
+    parser(req, res, () =&gt; {
+      // _inf(NS, &#039;&gt; body =&#039;, req.body);
+      event.body = req.body || {};
+      event.body.file = req.file;
+      next();
+    });
+  } else if (method === &#039;POST&#039; || method === &#039;PUT&#039;) {
+    const parser = bodyParser.json({
+      limit: &#039;10mb&#039;
+    });
+    parser(req, res, () =&gt; {
+      // _inf(NS, &#039;&gt; body =&#039;, req.body);
+      event.body = req.body;
+      next();
+    });
+  } else {
+    next();
+  }
+};
+/** ********************************************************************************************************************
+ *  ROUTE SETTING
+ ** ****************************************************************************************************************** */
+//! default app.
+
+
+app.get(&#039;&#039;, (req, res) =&gt; {
+  res.status(200).send($pack.name || &#039;LEMON API&#039;);
+}); //! handle request to handler.
+
+const handle_hello = (req, res) =&gt; handler.hello(req.$event, req.$context, req.$callback, res); //! WARN - MUST sync with &#039;serverless.yml&#039;
+//! manual route map of &#039;api/hello-api&#039;
+
+
+app.get(&#039;/hello&#039;, middle, handle_hello);
+app.get(&#039;/hello/:id&#039;, middle, handle_hello);
+app.get(&#039;/hello/:id/:cmd&#039;, middle, handle_hello);
+app.put(&#039;/hello/:id&#039;, middle, handle_hello);
+app.post(&#039;/hello/:id&#039;, middle, handle_hello);
+app.post(&#039;/hello/:id/:cmd&#039;, middle, handle_hello);
+app.delete(&#039;/hello/:id&#039;, middle, handle_hello); // get running parameter like -h api.
+
+function getRunParam(o, defval, argv) {
+  // eslint-disable-next-line no-param-reassign
+  argv = argv || process.argv || []; // use scope.
+
+  const nm = `-${o}`;
+  let i = argv.indexOf(nm);
+  i = i &gt; 0 ? i : argv.indexOf(o);
+
+  if (i &gt;= 0) {
+    const ret = argv[i + 1]; //! decode param.
+
+    if (typeof defval === &#039;boolean&#039;) {
+      return ret === &#039;true&#039; || ret === &#039;t&#039; || ret === &#039;y&#039; || ret === &#039;1&#039;;
+    }
+
+    if (typeof defval === &#039;number&#039;) {
+      return Math.round(ret / 1);
+    }
+
+    return ret;
+  }
+
+  return defval;
+} //! finally listen to port.
+
+
+const createServer = (options = null) =&gt; {
+  // eslint-disable-next-line no-param-reassign
+  options = options || {};
+  const server = http.createServer(app); //! fetch server post.
+
+  const port = getRunParam(&#039;-port&#039;, 8081, options.argv); //! list port.
+
+  server.listen(port, () =&gt; {
+    _inf(NS, &#039;Server Listen on Port =&#039;, server.address().port);
+  }).on(&#039;error&#039;, e =&gt; {
+    _inf(NS, &#039;!ERR - listen.err = &#039;, e);
+  });
+  return server;
+}; //! check if this is main
+
+
+if (typeof require !== &#039;undefined&#039; &amp;&amp; require.main === module) {
+  createServer();
+} // export default
+
+
+module.exports = {
+  createServer,
+  app,
+  express
+};</textarea>
+  </div>
+</div>
+
+<footer class="footer">
+  <div class="container">
+    <p>.</p>
+  </div>
+</footer>
+
+<script type="text/html" id="complexity-popover-template">
+  <div class="complexity-notice">
+    Complexity : {{ cyclomatic }} <br>
+    Length : {{ halstead.length }} <br>
+    Difficulty : {{ halstead.difficulty.toFixed(2) }} <br>
+    Est # bugs : {{ halstead.bugs.toFixed(2) }}<br>
+  </div>
+</script>
+
+<script type="text/javascript" src="../../assets/scripts/bundles/core-bundle.js"></script>
+<script type="text/javascript" src="../../assets/scripts/bundles/codemirror.js"></script>
+<script type="text/javascript" src="../../assets/scripts/codemirror.markpopovertext.js"></script>
+<script type="text/javascript" src="report.js"></script>
+<script type="text/javascript" src="report.history.js"></script>
+<script type="text/javascript" src="../../assets/scripts/plato-file.js"></script>
+</body>
+</html>

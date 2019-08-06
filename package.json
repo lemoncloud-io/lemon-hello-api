@@ -1,6 +1,6 @@
 {
     "name": "lemon-hello-api",
-    "version": "1.2.1",
+    "version": "1.2.3",
     "description": "Basic Serverless Hello API with `Lambda` + `API Gateway` + `Web Socket` + `SNS` + `SQS` + `KMS`",
     "main": "index.js",
     "scripts": {
@@ -37,7 +37,10 @@
         "remove.ssocio": "sls remove --profile ssocio --stage prod",
         "!test": "----- run self-test with jest -----",
         "test": "LS=1 jest",
-        "release": "standard-version"
+        "!release": "----- release with standard -----",
+        "release": "standard-version",
+        "!plato": "----- analysis code complexity -----",
+        "plato": "plato -r -d complexity dist"
     },
     "dependencies": {
         "aws-sdk": "^2.456.0",
@@ -65,6 +68,7 @@
         "js-yaml": "^3.13.1",
         "multer": "^1.4.1",
         "nodemon": "^1.18.10",
+        "plato": "^1.7.0",
         "prettier": "^1.18.2",
         "serverless-aws-documentation": "^0.8.0",
         "serverless-offline": "^3.24.5",

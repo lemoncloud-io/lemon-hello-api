@@ -14,7 +14,7 @@ local:
   <<: *default_env
   STAGE: 'local'
   SRC: './src/'
-  
+
 #-----------------------------------
 # development server
 dev:

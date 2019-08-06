@@ -1,0 +1,336 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <title>Plato - dist/WSS.js</title>
+
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta name="description" content="">
+  <meta name="author" content="">
+
+  <!--[if lt IE 9]>
+  <script src="http://html5shim.googlecode.com/svn/trunk/html5.js"></script>
+  <![endif]-->
+
+  <link href="../../assets/css/vendor/morris.css" rel="stylesheet">
+  <link href="../../assets/css/vendor/bootstrap.css" rel="stylesheet">
+  <link href="../../assets/css/vendor/font-awesome.css" rel="stylesheet">
+  <link href="../../assets/css/vendor/codemirror.css" rel="stylesheet">
+  <link href="../../assets/css/plato.css" rel="stylesheet">
+  <link href="../../assets/css/plato-file.css" rel="stylesheet">
+
+</head>
+
+<body>
+
+<div class="navbar navbar-fixed-top">
+  <div class="container">
+    <a class="navbar-brand" href="http://github.com/es-analysis/plato">Plato on Github</a>
+    <ul class="nav navbar-nav">
+      <li>
+        <a href="../../index.html">Report Home</a>
+      </li>
+    </ul>
+  </div>
+</div>
+
+<div class="jumbotron">
+  <div class="container">
+    <h1>dist/WSS.js</h1>
+  </div>
+</div>
+
+<div class="container aggregate-stats">
+  <div class="row">
+    <div class="col-md-6">
+      <h2 class="header">Maintainability <a href="http://blogs.msdn.com/b/codeanalysis/archive/2007/11/20/maintainability-index-range-and-meaning.aspx"><i class="icon icon-info-sign" rel="popover" data-placement="top" data-trigger="hover" data-content="A value between 0 and 100 that represents the relative ease of maintaining the code. A high value means better maintainability." data-original-title="Maintainability Index"  data-container="body"></i></a></h2>
+      <p class="stat">61.77</p>
+    </div>
+    <div class="col-md-6">
+      <h2 class="header">Lines of code <i class="icon icon-info-sign" rel="popover" data-placement="top" data-trigger="hover" data-content="Source Lines of Code / Logical Lines of Code" data-original-title="SLOC/LSLOC" data-container="body"></i></h2>
+      <p class="stat">219</p>
+    </div>
+  </div>
+  <div class="row historical">
+    <div class="col-md-6">
+      <p id="chart_historical_maint" class="chart"></p>
+    </div>
+    <div class="col-md-6">
+      <p id="chart_historical_sloc" class="chart"></p>
+    </div>
+  </div>
+  <div class="row">
+    <div class="col-md-6">
+      <h2 class="header">Difficulty  <a href="http://en.wikipedia.org/wiki/Halstead_complexity_measures"><i class="icon icon-info-sign" rel="popover" data-placement="top" data-trigger="hover" data-content="The difficulty measure is related to the difficulty of the program to write or understand." data-original-title="Difficulty" data-container="body"></i></a></h2>
+      <p class="stat">39.57</p>
+    </div>
+    <div class="col-md-6">
+      <h2 class="header">Estimated Errors  <a href="http://en.wikipedia.org/wiki/Halstead_complexity_measures"><i class="icon icon-info-sign" rel="popover" data-placement="top" data-trigger="hover" data-content="Halstead's delivered bugs is an estimate for the number of errors in the implementation." data-original-title="Delivered Bugs" data-container="body"></i></a></h2>
+      <p class="stat">1.61</p>
+    </div>
+  </div>
+</div>
+
+<div class="container charts">
+  <div class="row">
+    <h2 class="header">Function weight</h2>
+  </div>
+  <div class="row">
+    <div class="col-md-6">
+      <h3 class="chart-header">By Complexity <a href="http://en.wikipedia.org/wiki/Cyclomatic_complexity"><i class="icon icon-info-sign" rel="popover" data-placement="top" data-trigger="hover" data-content="This metric counts the number of distinct paths through a block of code. Lower values are better." data-original-title="Cyclomatic Complexity" data-container="body"></i></a></h3>
+      <div id="fn-by-complexity" class="stat"></div>
+    </div>
+    <div class="col-md-6">
+      <h3 class="chart-header">By SLOC  <i class="icon icon-info-sign" rel="popover" data-placement="top" data-trigger="hover" data-content="Source Lines of Code / Logical Lines of Code" data-original-title="SLOC/LSLOC" data-container="body"></i></h3>
+      <div id="fn-by-sloc" class="stat"></div>
+    </div>
+  </div>
+</div>
+
+<div class="container">
+  <div class="row">
+    <textarea id="file-source" class="col-md-12">/**
+ * Common WebSocket Server
+ * - Proxy request to internal API handler.
+ *
+ *
+ *
+ * @author  Steve &lt;steve@lemoncloud.io)
+ * @date    2019-07-19
+ *
+ * @copyright (C) lemoncloud.io 2019 - All Rights Reserved.
+ */
+module.exports = function (_$) {
+  if (!_$) throw new Error(&#039;_$(global instance pool) is required!&#039;); //! load services (_$ defined in global)
+
+  const $_ = _$._; // re-use global instance (lodash).
+
+  const $U = _$.U; // re-use global instance (utils).
+
+  const $aws = _$.aws; // re-use global instance (aws).
+
+  if (!$U) throw new Error(&#039;$U(utillities) is required!&#039;);
+  if (!$aws) throw new Error(&#039;$aws(aws-sdk) is required!&#039;);
+  const NS = $U.NS(&#039;WSS&#039;, &#039;yellow&#039;); // NAMESPACE TO BE PRINTED.
+  //! load common functions
+
+  const _log = _$.log;
+  const _inf = _$.inf;
+  const _err = _$.err;
+
+  function success(body) {
+    return buildResponse(200, body);
+  }
+
+  function notfound(body) {
+    return buildResponse(404, body);
+  }
+
+  function failure(body) {
+    return buildResponse(503, body);
+  }
+
+  function buildResponse(statusCode, body) {
+    return {
+      statusCode: statusCode,
+      body: body === undefined ? undefined : typeof body == &#039;string&#039; ? body : JSON.stringify(body)
+    };
+  }
+  /**
+   * Send JSON message to client.
+   *
+   * @param {*} url               API Gateway URL
+   * @param {*} connectionId      Unique connection-id per connection
+   * @param {*} payload           Data to send
+   */
+
+
+  const sendMessageToClient = (url, connectionId, payload) =&gt; new Promise((resolve, reject) =&gt; {
+    _log(NS, `sendMessageToClient(${url}, ${connectionId})...`);
+
+    _log(NS, &#039;&gt; payload=&#039;, payload); //NOTE - it would NOT work in VPC lambda.
+
+
+    const apigatewaymanagementapi = new $aws.ApiGatewayManagementApi({
+      apiVersion: &#039;2029&#039;,
+      endpoint: url
+    });
+    apigatewaymanagementapi.postToConnection({
+      ConnectionId: connectionId,
+      // connectionId of the receiving ws-client
+      Data: JSON.stringify(payload)
+    }, (err, data) =&gt; {
+      if (err) {
+        _err(NS, &#039;&gt; err=&#039;, err);
+
+        return reject(err);
+      }
+
+      _log(NS, &#039;&gt; res=&#039;, data);
+
+      resolve(data);
+    });
+  }); //! chain for HTTP type.
+
+
+  const executeServiceApi = (method, type = &#039;hello&#039;, id = &#039;&#039;, cmd = &#039;&#039;, param = null, body = null, context = null) =&gt; new Promise((resolve, reject) =&gt; {
+    _log(NS, `executeServiceApi(${method})...`); // if (!method) return reject(new Error(&#039;method is required!&#039;));
+
+
+    if (!method) throw new Error(&#039;method is required!&#039;);
+
+    if (method &amp;&amp; typeof method === &#039;object&#039;) {
+      const data = method;
+      type = &#039;&#039; + (type || &#039;hello&#039;); //MUST BE STRING!
+
+      method = &#039;&#039; + (data.method || &#039;get&#039;); //MUST BE STRING!
+
+      id = &#039;&#039; + (data.id || id); //MUST BE STRING!
+
+      cmd = &#039;&#039; + (data.cmd || cmd); //MUST BE STRING!
+
+      param = data.param;
+      body = data.body;
+      context = data.context;
+    }
+
+    method = `${method}`.toUpperCase();
+
+    _log(NS, `&gt; ${method} ${type}/${id}/${cmd} param=`, param); //! lookup target-api by name.
+
+
+    const API = _$(type);
+
+    if (!API) new Error(&#039;404 NOT FOUND - API.type:&#039; + type); //! transform to APIGatewayEvent;
+
+    const event = {
+      httpMethod: method,
+      path: cmd ? `/${id}/${cmd}` : id !== undefined ? `/${id}` : `/`,
+      headers: {},
+      pathParameters: {},
+      queryStringParameters: {},
+      body: &#039;&#039;,
+      isBase64Encoded: false,
+      stageVariables: null,
+      requestContext: context || {},
+      resource: &#039;&#039;
+    };
+    if (id !== undefined) event.pathParameters.id = id;
+    if (cmd !== undefined) event.pathParameters.cmd = cmd;
+    if (param) event.queryStringParameters = param;
+    if (body) event.body = body; //! basic handler type. (see bootload.main)
+
+    API(event, {}, (err, res) =&gt; {
+      err &amp;&amp; reject(err);
+      !err &amp;&amp; resolve(res);
+    });
+  });
+  /**
+   * Common WSS Handler for AWS API Gateway
+   *
+   * example:
+   * ```js
+   * $ npm install -g wscat
+   * $ wscat -c wss://4zrx5adcrd.execute-api.ap-northeast-2.amazonaws.com/prod
+   * &gt; {&quot;action&quot;:&quot;echo&quot;}
+   * &gt; {&quot;id&quot;:&quot;&quot;,&quot;cmd&quot;:&quot;&quot;}
+   * ```
+   *
+   * @param {*} event
+   * @param {*} context
+   */
+
+
+  const WSS = async (event, context) =&gt; {
+    // context.callbackWaitsForEmptyEventLoop = false;
+    // _log(NS, &#039;! event =&#039;, event);
+    // _log(NS, &#039;! context=&#039;, context);
+    _log(NS, &#039;! event.headers =&#039;, event.headers);
+
+    const $ctx = event.requestContext || {};
+    const EVENT_TYPE = $ctx.eventType || &#039;&#039;;
+    const ROUTE_KEY = $ctx.routeKey || &#039;&#039;;
+
+    _log(NS, `&gt; ${ROUTE_KEY}/${EVENT_TYPE} context=`, $ctx);
+
+    const stage = $ctx.stage;
+    const domain = $ctx.domainName;
+    const connectionId = $ctx.connectionId;
+    const callbackUrlForAWS = `https://${domain}/${stage}`;
+
+    try {
+      let res = null;
+
+      if (EVENT_TYPE === &#039;CONNECT&#039;) {
+        res = await executeServiceApi({
+          method: &#039;CONNECT&#039;,
+          context: $ctx
+        });
+      } else if (EVENT_TYPE === &#039;DISCONNECT&#039;) {
+        res = await executeServiceApi({
+          method: &#039;DISCONNECT&#039;,
+          context: $ctx
+        });
+      } else if (EVENT_TYPE === &#039;MESSAGE&#039; &amp;&amp; ROUTE_KEY === &#039;echo&#039;) {
+        // handler for &#039;echo&#039; action. see route config.
+        await sendMessageToClient(callbackUrlForAWS, connectionId, event);
+        res = success();
+      } else if (EVENT_TYPE === &#039;MESSAGE&#039;) {
+        const body = event.body;
+        const data = typeof body === &#039;string&#039; &amp;&amp; body.startsWith(&#039;{&#039;) &amp;&amp; body.endsWith(&#039;}&#039;) ? JSON.parse(body) : body;
+
+        _log(NS, &#039;&gt; data =&#039;, data); //NOTE - in connected state, send result via web-socket with success
+
+
+        const message = await (async () =&gt; {
+          if (data &amp;&amp; typeof data === &#039;object&#039;) {
+            data.context = $ctx; //NOTE - Never use context from client.
+
+            return await executeServiceApi(data);
+          }
+
+          return failure(&#039;body should be JSON object. but type:&#039; + typeof data);
+        })();
+        await sendMessageToClient(callbackUrlForAWS, connectionId, message);
+        res = success();
+      } //! returns result or failure.
+
+
+      return res || failure(`Invalid ${ROUTE_KEY}/${EVENT_TYPE}`);
+    } catch (e) {
+      _err(NS, &#039;! error =&#039;, e);
+
+      const msg = `${e.message || e}`;
+      return msg.startsWith(&#039;404 NOT FOUND&#039;) ? notfound(msg) : failure(msg);
+    }
+  }; //! returns main SNS handler.
+
+
+  return WSS;
+};</textarea>
+  </div>
+</div>
+
+<footer class="footer">
+  <div class="container">
+    <p>.</p>
+  </div>
+</footer>
+
+<script type="text/html" id="complexity-popover-template">
+  <div class="complexity-notice">
+    Complexity : {{ cyclomatic }} <br>
+    Length : {{ halstead.length }} <br>
+    Difficulty : {{ halstead.difficulty.toFixed(2) }} <br>
+    Est # bugs : {{ halstead.bugs.toFixed(2) }}<br>
+  </div>
+</script>
+
+<script type="text/javascript" src="../../assets/scripts/bundles/core-bundle.js"></script>
+<script type="text/javascript" src="../../assets/scripts/bundles/codemirror.js"></script>
+<script type="text/javascript" src="../../assets/scripts/codemirror.markpopovertext.js"></script>
+<script type="text/javascript" src="report.js"></script>
+<script type="text/javascript" src="report.history.js"></script>
+<script type="text/javascript" src="../../assets/scripts/plato-file.js"></script>
+</body>
+</html>

@@ -10,7 +10,7 @@
  */
 module.exports = function(_$, name, options) {
 	'use strict';
-	name = name || 'KMS'; // engine service name.
+	name = name || 'SNS'; // engine service name.
 
 	// core module
 	const $U = _$.U;
@@ -84,10 +84,24 @@ module.exports = function(_$, name, options) {
 	};
 
 	/**
-	 * get arn string of this
+	 * get/set arn string of this
+	 *
+	 * ```js
+	 * // get default 'arn'
+	 * const = $sns().arn();
+	 *
+	 * // set 'arn' of 'lemon-hello-sns'
+	 * const old = $sns().arn('arn:aws:sns:111223344:lemon-hello-sns');
+	 * ```
 	 */
-	const arn = (name = 'lemon-hello-sns') => {
+	const arn = (_arn = undefined, name = 'lemon-hello-sns') => {
 		const arn = $arns[name];
+		//! set if _arn is defined.
+		if (_arn !== undefined) {
+			$arns[name] = _arn;
+			return Promise.resolve(arn); // returns old value.
+		}
+		//! return if cached.
 		if (arn) return Promise.resolve(arn);
 		return accountID().then(_ => {
 			_log(NS, '> account-id =', _);
