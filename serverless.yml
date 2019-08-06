@@ -111,7 +111,7 @@ provider:
       Action:
         - "s3:GetObject"
         - "s3:PutObject"
-      Resource: "arn:aws:sqs:${opt:region, self:provider.region}:*:${self:custom.bucketName}"
+      Resource: "arn:aws:s3:::${self:custom.bucketName}/*"
     # KMS
     - Effect: Allow
       Action:

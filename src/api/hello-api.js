@@ -487,6 +487,7 @@ module.exports = (_$, name) => {
 				_log(NS, `> title[${pretext}] =`, title);
 				const data = Object.assign({}, message); // copy.
 				data.attachments = data.attachments.map(_ => {
+					_ = Object.assign({}, _); // copy.
 					const text = `${_.text}`;
 					if (text.startsWith('{') && text.endsWith('}')) _.text = JSON.parse(_.text);
 					if (_.text['stack-trace'] && typeof _.text['stack-trace'] == 'string')
