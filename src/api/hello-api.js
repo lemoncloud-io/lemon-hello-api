@@ -1,10 +1,10 @@
 /**
- * API: /hello
+ * API: `/hello`
  *  - hello lemon API
  *
  *
- * @author  Steve <steve@lemoncloud.io)
- * @date    2019-07-19
+ * @author  Steve <steve@lemoncloud.io>
+ * @date    2019-07-19 initial version
  *
  * @copyright (C) lemoncloud.io 2019 - All Rights Reserved.
  */
