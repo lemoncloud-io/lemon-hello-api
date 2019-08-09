@@ -3,9 +3,10 @@
 #-----------------------------------
 # default
 default_env: &default_env
+  LS: 0                   # log silence.
   LC: 1                   # line-coloring
   TS: 1                   # time-stamp in line
-  NAME: 'lemon'
+  NAME: 'lemon'           # profile name.
   SLACK_PUBLIC: 'AQICAHgbY0Vh/KmEbJAIGCzYw7lo21MbERr8nDmrLayPi0EuxgFZMJda8JVWOdKIuxYbbRMPAAAArzCBrAYJKoZIhvcNAQcGoIGeMIGbAgEAMIGVBgkqhkiG9w0BBwEwHgYJYIZIAWUDBAEuMBEEDIBCSXmt5AmMA/atMgIBEIBo43N3BLfCJgjn4N4EXiVQcu1jIMdTh3B/428v7bIhFNYt9b69lKnLVWSjtGxs1mn5Ka+ngxZUlsE3Y/9utFbjUvC7tvsxwISYDoNFBOZCauyuSIk51G2Z3357iqoXxLaQnRr6GVGS13A='
 
 #-----------------------------------
@@ -13,7 +14,6 @@ default_env: &default_env
 local:
   <<: *default_env
   STAGE: 'local'
-  SRC: './src/'
 
 #-----------------------------------
 # development server
@@ -26,11 +26,5 @@ dev:
 prod:
   <<: *default_env
   STAGE: 'production'
-  LC: 0
   TS: 0
 
-#-----------------------------------
-# proxy mode configuration.
-proxy:
-  <<: *default_env
-  STAGE: 'proxy'
