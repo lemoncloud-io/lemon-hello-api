@@ -24,6 +24,11 @@ custom:
     env: ${opt:env, './env/none.yml'}           # run option `--env`
   CONF: ${file(./env/config.js):CONF}           # `config.js` 에서 CONF() 함수 호출하여 가져옴.
   #------------------------------------------------
+  # serverless-offline
+  #------------------------------------------------
+  serverless-offline:
+    port: 8888
+  #------------------------------------------------
   # Documentation
   #   - https://github.com/9cookies/serverless-aws-documentation
   #------------------------------------------------
@@ -245,6 +250,7 @@ package:
     - docs/**
     - test/**
   excludeDevDependencies: true
+
 
 #------------------------------------------------
 # ## 리소스 생성.
