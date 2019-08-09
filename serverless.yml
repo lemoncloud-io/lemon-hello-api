@@ -184,14 +184,14 @@ functions:
           path: /hello
           method: get
           cors: true
-          authorizer: aws_iam
+          # authorizer: aws_iam
           documentation:
             summary: "list items"
       - http:
           path: /hello/{id}
           method: get
           cors: true
-          authorizer: aws_iam
+          # authorizer: aws_iam
           documentation:
             summary: "read single item"
       - http:
