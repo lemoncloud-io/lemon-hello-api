@@ -38,7 +38,7 @@ export const express = () => {
  * # run express in local
  * $ node .
  * # batch run from 1 to 2 page.
- * $ node . -ep forms -sid lemon -cmd run -opt 'dummy=1' -ipp 1 -page 1~2
+ * $ node . -ep hello -sid lemon -cmd run -opt 'dummy=1' -ipp 1 -page 1~2
  * ```
  ** *******************************************************************************************************************/
 if (typeof require !== 'undefined' && require.main === module) {
