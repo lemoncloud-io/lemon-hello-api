@@ -23,15 +23,15 @@ import hello from './api/hello-api';
 import * as $kms from './service/kms-service';
 import * as $s3s from './service/s3s-service';
 import * as $sns from './service/sns-service';
-export { $kms, $s3s, $sns };
+// export { $kms, $s3s, $sns };
 
 //! Load Additional Handlers......
 import $SNS from './builder/SNS';
 import { $SQS } from 'lemon-core';
 
 //! build additional handlers.....
-export const SNS = $SNS('hello');
-export const SQS = $SQS('hello');
+const SNS = $SNS('hello');
+const SQS = $SQS('hello');
 
 //! export default.
-export default Object.assign($engine, { hello, SNS, SQS });
+export default Object.assign($engine, { hello, SNS, SQS, $kms, $s3s, $sns });
