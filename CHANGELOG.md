@@ -2,6 +2,31 @@
 
 All notable changes to this project will be documented in this file. See [standard-version](https://github.com/conventional-changelog/standard-version) for commit guidelines.
 
+## [1.3.0](https://github.com/lemoncloud-io/lemon-hello-api/compare/v1.2.0...v1.3.0) (2019-08-09)
+
+
+### Bug Fixes
+
+* add delete in method map ([3206bf2](https://github.com/lemoncloud-io/lemon-hello-api/commit/3206bf2))
+* eslint ([d9cd93f](https://github.com/lemoncloud-io/lemon-hello-api/commit/d9cd93f))
+* export `lemon` factory as default ([618f75a](https://github.com/lemoncloud-io/lemon-hello-api/commit/618f75a))
+* file name ([0b1a8ca](https://github.com/lemoncloud-io/lemon-hello-api/commit/0b1a8ca))
+* filter message ([5e3dc0b](https://github.com/lemoncloud-io/lemon-hello-api/commit/5e3dc0b))
+* name case SNS/SQS/WSS ([cc07902](https://github.com/lemoncloud-io/lemon-hello-api/commit/cc07902))
+* optimize SNS handler ([f496cce](https://github.com/lemoncloud-io/lemon-hello-api/commit/f496cce))
+* redirect to POST via SNS ([a54d06d](https://github.com/lemoncloud-io/lemon-hello-api/commit/a54d06d))
+* s3 role ([b07f5ba](https://github.com/lemoncloud-io/lemon-hello-api/commit/b07f5ba))
+* test hello-api ([f18b7b8](https://github.com/lemoncloud-io/lemon-hello-api/commit/f18b7b8))
+
+
+### Features
+
+* add plato ([1a01e24](https://github.com/lemoncloud-io/lemon-hello-api/commit/1a01e24))
+* sns support custom arn ([301152a](https://github.com/lemoncloud-io/lemon-hello-api/commit/301152a))
+* upload json to s3 ([c8dec56](https://github.com/lemoncloud-io/lemon-hello-api/commit/c8dec56))
+
+
+
 ## [1.2.0](https://github.com/lemoncloud-io/lemon-hello-api/compare/v1.1.0...v1.2.0) (2019-07-19)
 
 
