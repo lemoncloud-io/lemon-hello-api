@@ -10,7 +10,7 @@
  */
 import request from 'supertest';
 import { app } from '../src/express';
-import { $kms, $s3s, $sns } from '../src/engine';
+import $engine from '../src/engine';
 
 // Test Hello
 describe('Test Hello API', () => {
@@ -31,12 +31,12 @@ describe('Test Hello API', () => {
     });
 
     test('It should get the proper instances', () => {
-        expect($kms.hello().hello).toBe('kms-service');
-        expect($sns.hello().hello).toBe('sns-service');
-        expect($s3s.hello().hello).toBe('s3s-service');
+        expect($engine.$kms.hello().hello).toBe('kms-service');
+        expect($engine.$sns.hello().hello).toBe('sns-service');
+        expect($engine.$s3s.hello().hello).toBe('s3s-service');
     });
 
     test('It should get the unique id', () => {
-        expect($s3s.nextId().length).toBe('583b839c-aa9d-4ea1-a2d7-2e374ee1566a'.length);
+        expect($engine.$s3s.nextId().length).toBe('583b839c-aa9d-4ea1-a2d7-2e374ee1566a'.length);
     });
 });

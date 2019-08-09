@@ -83,7 +83,6 @@
     "author": "Steve Jung <steve@lemoncloud.io> (https://lemoncloud.io)",
     "license": "MIT",
     "files": [
-        "index.js",
         "handler.js",
         "dist/**/*"
     ],
