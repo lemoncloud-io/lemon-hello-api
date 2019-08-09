@@ -725,10 +725,6 @@ module.exports = (_$, name) => {
 		return $s3s().putObject(json);
 	}
 
-	const a = 1;
-	// eslint-disable-next-line no-console
-	console.log('a =', a);
-
 	//! return fially.
 	return main;
 	// ////////////////////////
