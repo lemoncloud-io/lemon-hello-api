@@ -17,15 +17,20 @@
 import { $U, _log, _inf, _err } from 'lemon-core';
 import { loadJsonSync } from 'lemon-core';
 
-import * as $kms from '../service/kms-service';
-import * as $s3s from '../service/s3s-service';
-import * as $sns from '../service/sns-service';
-import AWS from 'aws-sdk';
-
 //! define NS, and export default handler().
 export const NS = $U.NS('HELO', 'yellow'); // NAMESPACE TO BE PRINTED.
 import { $WEB } from 'lemon-core';
 export default $WEB(NS, decode_next_handler);
+
+//! import dependency
+import $engine from '../engine';
+import url from 'url';
+import https from 'https';
+
+import * as $kms from '../service/kms-service';
+import * as $s3s from '../service/s3s-service';
+import * as $sns from '../service/sns-service';
+import AWS from 'aws-sdk';
 
 /** ********************************************************************************************************************
  *  Decode Next Handler
@@ -99,9 +104,6 @@ const NODES = [
  * @param {*} message       Object or String.
  */
 const postMessage = (hookUrl, message) => {
-    const url = require('url');
-    const https = require('https');
-
     const body = typeof message === 'string' ? message : JSON.stringify(message);
     const options = url.parse(hookUrl);
     options.method = 'POST';
@@ -356,7 +358,7 @@ const chain_process_callback = ({ subject, data, context }) => {
  * @param {*} $body			body parameters (json)
  * @param {*} $ctx			context (optional)
  */
-function do_list_hello(ID, $param, $body, $ctx) {
+export function do_list_hello(ID, $param, $body, $ctx) {
     _log(NS, `do_list_hello(${ID})....`);
 
     const that = {};
@@ -373,7 +375,7 @@ function do_list_hello(ID, $param, $body, $ctx) {
  * ```sh
  * $ http ':8888/hello/0'
  */
-function do_get_hello(ID, $param, $body, $ctx) {
+export function do_get_hello(ID, $param, $body, $ctx) {
     _log(NS, `do_get_hello(${ID})....`);
 
     const id = $U.N(ID, 0);
@@ -392,7 +394,7 @@ function do_get_hello(ID, $param, $body, $ctx) {
  * ```sh
  * $ echo '{"size":1}' | http PUT ':8888/hello/1'
  */
-function do_put_hello(ID, $param, $body, $ctx) {
+export function do_put_hello(ID, $param, $body, $ctx) {
     _log(NS, `do_put_hello(${ID})....`);
     $param = $param || {};
 
@@ -409,7 +411,7 @@ function do_put_hello(ID, $param, $body, $ctx) {
  * ```sh
  * $ echo '{"name":"lemoncloud"}' | http POST ':8888/hello/0'
  */
-function do_post_hello(ID, $param, $body, $ctx) {
+export function do_post_hello(ID, $param, $body, $ctx) {
     _log(NS, `do_post_hello(${ID})....`);
     $param = $param || {};
     if (!$body && !$body.name) return Promise.reject(new Error('.name is required!'));
@@ -433,7 +435,7 @@ function do_post_hello(ID, $param, $body, $ctx) {
  * @param {*} $body             {error?:'', message:'', data:{...}}
  * @param {*} $ctx              context
  */
-function do_post_hello_slack(ID, $param, $body, $ctx) {
+export function do_post_hello_slack(ID, $param, $body, $ctx) {
     _log(NS, `do_post_hello_slack(${ID})....`);
     _log(NS, '> body =', $body);
     $param = $param || {};
@@ -511,13 +513,14 @@ function do_post_hello_slack(ID, $param, $body, $ctx) {
  * $ cat data/error-1.json | http ':8888/hello/!/event?subject=error'
  * $ cat data/error-2.json | http ':8888/hello/!/event?subject=error'
  */
-function do_post_hello_event(ID, $param, $body, $ctx) {
-    _log(NS, `do_post_hello_event(${ID})....`);
+export function do_post_hello_event(id, $param, $body, $ctx) {
+    _inf(NS, `do_post_hello_event(${id})....`);
     $param = $param || {};
     const subject = `${$param.subject || ''}`;
     const data = $body;
     const context = $ctx;
 
+    //! decode next-chain.
     const chain_next = false
         ? null
         : subject.startsWith('ALARM:')
@@ -539,7 +542,7 @@ function do_post_hello_event(ID, $param, $body, $ctx) {
  * ```sh
  * $ http DELETE ':8888/hello/1'
  */
-function do_delete_hello(ID, $param, $body, $ctx) {
+export function do_delete_hello(ID, $param, $body, $ctx) {
     _log(NS, `do_delete_hello(${ID})....`);
 
     return do_get_hello(ID, null, null, $ctx).then(node => {
@@ -558,7 +561,7 @@ function do_delete_hello(ID, $param, $body, $ctx) {
  * $ http ':8888/hello/alarm/test-sns'
  * $ http ':8888/hello/failure/test-sns'
  */
-function do_get_test_sns(ID, $param, $body, $ctx) {
+export function do_get_test_sns(ID, $param, $body, $ctx) {
     _log(NS, `do_get_test_sns(${ID})....`);
 
     //! build event body, then start promised
@@ -584,8 +587,7 @@ function do_get_test_sns(ID, $param, $body, $ctx) {
 
     //! call sns handler.
     const local_chain_handle_sns = event => {
-        // const $SNS = require('../../SNS')(_$);
-        const SNS = require('../engine').SNS;
+        const SNS = $engine.SNS;
         if (!SNS) return Promise.reject(new Error('.SNS is required!'));
 
         //! validate event
@@ -626,7 +628,7 @@ function do_get_test_sns(ID, $param, $body, $ctx) {
  * ```sh
  * $ http ':8888/hello/0/test-sns-arn'
  */
-function do_get_test_sns_arn(ID, $param, $body, $ctx) {
+export function do_get_test_sns_arn(ID, $param, $body, $ctx) {
     _log(NS, `do_get_test_sns_arn(${ID})....`);
     return $sns.arn().then(arn => {
         _log(NS, '> arn =', arn);
@@ -640,7 +642,7 @@ function do_get_test_sns_arn(ID, $param, $body, $ctx) {
  * ```sh
  * $ http ':8888/hello/0/test-sns-err'
  */
-function do_get_test_sns_err(ID, $param, $body, $ctx) {
+export function do_get_test_sns_err(ID, $param, $body, $ctx) {
     _log(NS, `do_get_test_sns_err(${ID})....`);
     const e = new Error('Test Error');
     return $sns.reportError(e).then(mid => {
@@ -655,7 +657,7 @@ function do_get_test_sns_err(ID, $param, $body, $ctx) {
  * ```sh
  * $ http ':8888/hello/0/test-encrypt'
  */
-function do_get_test_encrypt(ID, $param, $body, $ctx) {
+export function do_get_test_encrypt(ID, $param, $body, $ctx) {
     _log(NS, `do_get_test_encrypt(${ID})....`);
     const message = 'hello lemon';
     return $kms
@@ -673,7 +675,7 @@ function do_get_test_encrypt(ID, $param, $body, $ctx) {
  * ```sh
  * $ http ':8888/hello/0/test-s3-put'
  */
-function do_get_test_s3_put(ID, $param, $body, $ctx) {
+export function do_get_test_s3_put(ID, $param, $body, $ctx) {
     _log(NS, `do_get_test_s3_put(${ID})....`);
     const message = 'hello lemon';
     const data = { message };

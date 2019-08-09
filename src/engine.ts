@@ -26,7 +26,8 @@ import * as $sns from './service/sns-service';
 export { $kms, $s3s, $sns };
 
 //! Load Additional Handlers......
-import { $SNS, $SQS } from 'lemon-core';
+import $SNS from './builder/SNS';
+import { $SQS } from 'lemon-core';
 
 //! build additional handlers.....
 export const SNS = $SNS('hello');

@@ -146,39 +146,42 @@ functions:
   # Common SNS Service.
   SNS:
     handler: handler.SNS
+    timeout: 150            # max timeout. (= 5 min)
     events:
       - sns: 'arn:aws:sns:${self:provider.region}:#{AWS::AccountId}:${self:custom.topicName}'
   #------------------
   # Common SQS Service.
   SQS:
     handler: handler.SQS
+    timeout: 150            # max timeout. (= 5 min)
     events:
       - sqs:
           arn:
             Fn::GetAtt:
               - MyQueue
               - Arn
-          batchSize: 1 # the maximum number of SQS messages that AWS will send to your Lambda function on a single trigger. (default: 10)
-  #------------------
-  # Common WSS (WebSocket Server).
-  # - see: https://serverless.com/framework/docs/providers/aws/events/websocket/
-  WSS:
-    handler: handler.WSS
-    events:
-      - websocket:
-          route: $connect
-      - websocket:
-          route: $disconnect
-      - websocket:
-          route: $default
-          # authorizer: auth
-          # authorizer:
-          #   name: auth
-          #   identitySource:
-          #     - 'route.request.header.Auth'
-          #     - 'route.request.querystring.Auth'
-      - websocket:
-          route: echo             # sample route by routeKey. echo request.
+          batchSize: 1      # the maximum number of SQS messages that AWS will send to your Lambda function on a single trigger. (default: 10)
+#TODO - refactoring WSS
+#   #------------------
+#   # Common WSS (WebSocket Server).
+#   # - see: https://serverless.com/framework/docs/providers/aws/events/websocket/
+#   WSS:
+#     handler: handler.WSS
+#     events:
+#       - websocket:
+#           route: $connect
+#       - websocket:
+#           route: $disconnect
+#       - websocket:
+#           route: $default
+#           # authorizer: auth
+#           # authorizer:
+#           #   name: auth
+#           #   identitySource:
+#           #     - 'route.request.header.Auth'
+#           #     - 'route.request.querystring.Auth'
+#       - websocket:
+#           route: echo             # sample route by routeKey. echo request.
   #------------------
   # REST API : /hello
   hello:
