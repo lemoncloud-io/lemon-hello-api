@@ -13,18 +13,13 @@
  ** ****************************************************************************************************************/
 //! load engine
 import { $U, _log, _inf, _err } from 'lemon-core';
+import AWS from 'aws-sdk';
 
 //! model name;
 const name = 'S3S'; // global service name.
 
 // NAMESPACE TO BE PRINTED.
 const NS = $U.NS(name, 'blue');
-
-//! external service
-const $aws = function() {
-    if (!_$.aws) throw new Error('$aws is required!');
-    return _$.aws;
-};
 
 /** ****************************************************************************************************************
  *  Public Common Interface Exported.
@@ -43,7 +38,6 @@ export const hello = () => {
 
 //! get aws client for S3
 const instance = () => {
-    const AWS = $aws();
     const config = { region };
     return new AWS.S3(config); // SQS Instance. shared one???
 };
@@ -59,7 +53,7 @@ const bucketId = () => {
  * upload a file to S3 Bucket
  *
  * ```js
- * const res = $s3s().putObject(JSON.stringify({ message }), 'test.json', 'application/json');
+ * const res = $s3s.putObject(JSON.stringify({ message }), 'test.json', 'application/json');
  * // response would be like
  * {
  *  "Bucket": "lemon-hello-www",

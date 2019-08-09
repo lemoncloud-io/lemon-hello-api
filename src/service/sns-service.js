@@ -13,18 +13,13 @@
  ** ****************************************************************************************************************/
 //! load engine
 import { $U, _log, _inf, _err } from 'lemon-core';
+import AWS from 'aws-sdk';
 
 //! model name;
 const name = 'SNS'; // global service name.
 
 // NAMESPACE TO BE PRINTED.
 const NS = $U.NS(name, 'blue');
-
-//! external service
-const $aws = function() {
-    if (!_$.aws) throw new Error('$aws is required!');
-    return _$.aws;
-};
 
 /** ****************************************************************************************************************
  *  Public Common Interface Exported.
@@ -48,7 +43,6 @@ export const hello = () => {
  * refer: `https://stackoverflow.com/questions/35563270/finding-my-aws-account-id-using-javascript`
  */
 const accountID = () => {
-    const AWS = $aws();
     const iam = new AWS.IAM();
     const metadata = new AWS.MetadataService();
     return new Promise((resolve, reject) => {
@@ -84,10 +78,10 @@ const accountID = () => {
  *
  * ```js
  * // get default 'arn'
- * const = $sns().arn();
+ * const = $sns.arn();
  *
  * // set 'arn' of 'lemon-hello-sns'
- * const old = $sns().arn('arn:aws:sns:111223344:lemon-hello-sns');
+ * const old = $sns.arn('arn:aws:sns:111223344:lemon-hello-sns');
  * ```
  */
 export const arn = (_arn = undefined, name = 'lemon-hello-sns') => {
@@ -114,7 +108,6 @@ export const arn = (_arn = undefined, name = 'lemon-hello-sns') => {
  */
 export const publish = (subject = '', payload = null) => {
     _inf(NS, `publish(${subject})...`);
-    const AWS = $aws();
     const sns = new AWS.SNS({ region: REGION });
     return arn().then(arn => {
         _log(NS, `> payload[${subject}] =`, $U.json(payload));

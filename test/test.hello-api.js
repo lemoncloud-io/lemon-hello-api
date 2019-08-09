@@ -1,9 +1,15 @@
-/* eslint-disable no-undef */
-//! with supertest via express.app
-const request = require('supertest');
-const express = require('../src/express');
-
-const app = express['app'];
+/**
+ * `test.hello-api.js`
+ * - test runnder for api
+ *
+ *
+ * @author Steve <steve@lemoncloud.io>
+ * @date   2019-08-01 initial version with `supertest`.
+ *
+ * @copyright (C) lemoncloud.io 2019 - All Rights Reserved.
+ */
+import request from 'supertest';
+import { app } from '../src/express';
 const $lemon = express['$lemon'];
 
 // Test Hello

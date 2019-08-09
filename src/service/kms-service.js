@@ -13,18 +13,13 @@
  ** ****************************************************************************************************************/
 //! load engine
 import { $U, _log, _inf, _err } from 'lemon-core';
+import AWS from 'aws-sdk';
 
 //! model name;
 const name = 'KMS'; // global service name.
 
 // NAMESPACE TO BE PRINTED.
 const NS = $U.NS(name, 'blue');
-
-//! external service
-const $aws = function() {
-    if (!_$.aws) throw new Error('$aws is required!');
-    return _$.aws;
-};
 
 /** ****************************************************************************************************************
  *  Public Common Interface Exported.
@@ -51,7 +46,6 @@ export const hello = () => {
  */
 export const do_encrypt = message => {
     _inf(NS, 'do_encrypt()..');
-    const AWS = $aws();
     const kms = new AWS.KMS({ region: REGION });
     const params = {
         KeyId: 'alias/lemon-hello-api',
@@ -75,7 +69,6 @@ export const do_encrypt = message => {
  */
 export const do_decrypt = encryptedSecret => {
     _inf(NS, 'do_decrypt()..');
-    const AWS = $aws();
     const kms = new AWS.KMS({ region: REGION });
     encryptedSecret =
         typeof encryptedSecret == 'string'

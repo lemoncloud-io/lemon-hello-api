@@ -1,5 +1,5 @@
 /**
- * API: `/forms`
+ * API: `/hello`
  * - public service api
  *
  *
@@ -15,6 +15,12 @@
  ** ********************************************************************************************************************/
 //! import core engine + service.
 import { $U, _log, _inf, _err } from 'lemon-core';
+import { loadJsonSync } from 'lemon-core';
+
+import * as $kms from '../service/kms-service';
+import * as $s3s from '../service/s3s-service';
+import * as $sns from '../service/sns-service';
+import AWS from 'aws-sdk';
 
 //! define NS, and export default handler().
 export const NS = $U.NS('HELO', 'yellow'); // NAMESPACE TO BE PRINTED.
@@ -74,27 +80,7 @@ function decode_next_handler(MODE, ID, CMD) {
 
 /** ********************************************************************************************************************
  *  Local Functions.
- ** ******************************************************************************************************************* */
-const $kms = function() {
-    if (!_$.kms) throw new Error('$kms(kms-service) is required!');
-    return _$.kms;
-};
-
-const $sns = function() {
-    if (!_$.sns) throw new Error('$sns(sns-service) is required!');
-    return _$.sns;
-};
-
-const $s3s = function() {
-    if (!_$.s3s) throw new Error('$s3s(s3s-service) is required!');
-    return _$.s3s;
-};
-
-const $aws = () => {
-    if (!_$.aws) throw new Error('$aws is required!');
-    return _$.aws;
-};
-
+ ** ********************************************************************************************************************/
 //! shared memory.
 // WARN! - `serverless offline`는 상태를 유지하지 않으므로, NODES값들이 실행때마다 리셋이될 수 있음.
 const NODES = [
@@ -158,13 +144,11 @@ const do_load_slack_channel = name => {
     return Promise.resolve(webhook)
         .then(_ => {
             if (!_.startsWith('http')) {
-                return $kms()
-                    .do_decrypt(_)
-                    .then(_ => {
-                        const url = `${_}`.trim();
-                        $channels[ENV_NAME] = url;
-                        return url;
-                    });
+                return $kms.do_decrypt(_).then(_ => {
+                    const url = `${_}`.trim();
+                    $channels[ENV_NAME] = url;
+                    return url;
+                });
             }
             return _;
         })
@@ -307,7 +291,6 @@ const chain_process_delivery_failure = ({ subject, data, context }) => {
 
     //! get get-endpoint-attributes
     const local_chain_endpoint_attrs = that => {
-        const AWS = $aws();
         const SNS = new AWS.SNS();
         return SNS.getEndpointAttributes({ EndpointArn })
             .promise()
@@ -361,7 +344,7 @@ const chain_process_callback = ({ subject, data, context }) => {
 
 /** ********************************************************************************************************************
  *  Public API Functions.
- ** ******************************************************************************************************************* */
+ ** ********************************************************************************************************************/
 /**
  * Search by params
  *
@@ -474,7 +457,7 @@ function do_post_hello_slack(ID, $param, $body, $ctx) {
                 return _;
             });
             const json = JSON.stringify(data);
-            return $s3s()
+            return $s3s
                 .putObject(json)
                 .then(({ Bucket, Location }) => {
                     _inf(NS, '> uploaded =', Location);
@@ -601,8 +584,9 @@ function do_get_test_sns(ID, $param, $body, $ctx) {
 
     //! call sns handler.
     const local_chain_handle_sns = event => {
-        const $SNS = require('../../SNS')(_$);
-        if (!$SNS) return Promise.reject(new Error('.SNS is required!'));
+        // const $SNS = require('../../SNS')(_$);
+        const SNS = require('../engine').SNS;
+        if (!SNS) return Promise.reject(new Error('.SNS is required!'));
 
         //! validate event
         event = event || {};
@@ -615,7 +599,7 @@ function do_get_test_sns(ID, $param, $body, $ctx) {
 
         //! call handler.
         return new Promise((resolve, reject) => {
-            $SNS(event, $ctx, (err, res) => {
+            SNS(event, $ctx, (err, res) => {
                 if (err) reject(err);
                 else resolve(res);
             });
@@ -625,11 +609,11 @@ function do_get_test_sns(ID, $param, $body, $ctx) {
     //! decode by ID
     return (() => {
         if (ID == 'alarm') {
-            const data = require('../../data/alarm.json');
+            const data = loadJsonSync('data/alarm.json');
             return build_event_chain('ALARM: "...." in Asia Pacific (Seoul)', data);
         }
         if (ID == 'failure') {
-            const data = require('../../data/delivery-failure.json');
+            const data = loadJsonSync('data/delivery-failure.json');
             return build_event_chain(data['!Subject'] || 'DeliveryFailure', data);
         }
         return Promise.reject(new Error(`404 NOT FOUND - test-sns:${ID}`));
@@ -644,12 +628,10 @@ function do_get_test_sns(ID, $param, $body, $ctx) {
  */
 function do_get_test_sns_arn(ID, $param, $body, $ctx) {
     _log(NS, `do_get_test_sns_arn(${ID})....`);
-    return $sns()
-        .arn()
-        .then(arn => {
-            _log(NS, '> arn =', arn);
-            return arn;
-        });
+    return $sns.arn().then(arn => {
+        _log(NS, '> arn =', arn);
+        return arn;
+    });
 }
 
 /**
@@ -661,12 +643,10 @@ function do_get_test_sns_arn(ID, $param, $body, $ctx) {
 function do_get_test_sns_err(ID, $param, $body, $ctx) {
     _log(NS, `do_get_test_sns_err(${ID})....`);
     const e = new Error('Test Error');
-    return $sns()
-        .reportError(e)
-        .then(mid => {
-            _log(NS, '> message-id =', mid);
-            return mid;
-        });
+    return $sns.reportError(e).then(mid => {
+        _log(NS, '> message-id =', mid);
+        return mid;
+    });
 }
 
 /**
@@ -678,13 +658,9 @@ function do_get_test_sns_err(ID, $param, $body, $ctx) {
 function do_get_test_encrypt(ID, $param, $body, $ctx) {
     _log(NS, `do_get_test_encrypt(${ID})....`);
     const message = 'hello lemon';
-    return $kms()
+    return $kms
         .do_encrypt(message)
-        .then(encrypted =>
-            $kms()
-                .do_decrypt(encrypted)
-                .then(decrypted => ({ encrypted, decrypted, message })),
-        )
+        .then(encrypted => $kms.do_decrypt(encrypted).then(decrypted => ({ encrypted, decrypted, message })))
         .then(_ => {
             const result = _.encrypted && _.message === _.decrypted;
             return Object.assign(_, { result });
@@ -702,6 +678,6 @@ function do_get_test_s3_put(ID, $param, $body, $ctx) {
     const message = 'hello lemon';
     const data = { message };
     const json = JSON.stringify(data);
-    // return $s3s().putObject(json, 'test.json', 'application/json');
-    return $s3s().putObject(json);
+    // return $s3s.putObject(json, 'test.json', 'application/json');
+    return $s3s.putObject(json);
 }
