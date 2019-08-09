@@ -38,53 +38,53 @@ const _inf = (global && global.console && global.console.log) || (() => {});
 
 //! middle ware
 const middle = (req, res, next) => {
-	//! prepare event
-	const event = {
-		queryStringParameters: req.query || {},
-		pathParameters: req.params,
-		httpMethod: req.method,
-		connection: req.connection,
-		url: req.url,
-		headers: req.headers,
-		body: req.body,
-	};
-	const context = { source: 'express' };
-	const callback = (err, data) => {
-		if (data.headers) {
-			Object.keys(data.headers).map(k => res.setHeader(k, data.headers[k]));
-		}
-		res.setHeader('Content-Type', 'application/json');
-		res.status(data.statusCode || 200).send(data.body);
-	};
+    //! prepare event
+    const event = {
+        queryStringParameters: req.query || {},
+        pathParameters: req.params,
+        httpMethod: req.method,
+        connection: req.connection,
+        url: req.url,
+        headers: req.headers,
+        body: req.body,
+    };
+    const context = { source: 'express' };
+    const callback = (err, data) => {
+        if (data.headers) {
+            Object.keys(data.headers).map(k => res.setHeader(k, data.headers[k]));
+        }
+        res.setHeader('Content-Type', 'application/json');
+        res.status(data.statusCode || 200).send(data.body);
+    };
 
-	//! attach to req.
-	req.$event = event;
-	req.$context = context;
-	req.$callback = callback;
+    //! attach to req.
+    req.$event = event;
+    req.$context = context;
+    req.$callback = callback;
 
-	//! use json parser or multer.
-	const method = req.method || '';
-	const ctype = (req.headers && req.headers['content-type']) || '';
-	// _log(NS, '!',method,':', url,' - ', ctype);
+    //! use json parser or multer.
+    const method = req.method || '';
+    const ctype = (req.headers && req.headers['content-type']) || '';
+    // _log(NS, '!',method,':', url,' - ', ctype);
 
-	if (ctype.indexOf('multipart/') >= 0) {
-		const parser = uploader.single('file');
-		parser(req, res, () => {
-			// _inf(NS, '> body =', req.body);
-			event.body = req.body || {};
-			event.body.file = req.file;
-			next();
-		});
-	} else if (method === 'POST' || method === 'PUT') {
-		const parser = bodyParser.json({ limit: '10mb' });
-		parser(req, res, () => {
-			// _inf(NS, '> body =', req.body);
-			event.body = req.body;
-			next();
-		});
-	} else {
-		next();
-	}
+    if (ctype.indexOf('multipart/') >= 0) {
+        const parser = uploader.single('file');
+        parser(req, res, () => {
+            // _inf(NS, '> body =', req.body);
+            event.body = req.body || {};
+            event.body.file = req.file;
+            next();
+        });
+    } else if (method === 'POST' || method === 'PUT') {
+        const parser = bodyParser.json({ limit: '10mb' });
+        parser(req, res, () => {
+            // _inf(NS, '> body =', req.body);
+            event.body = req.body;
+            next();
+        });
+    } else {
+        next();
+    }
 };
 
 /** ********************************************************************************************************************
@@ -92,7 +92,7 @@ const middle = (req, res, next) => {
  ** ****************************************************************************************************************** */
 //! default app.
 app.get('', (req, res) => {
-	res.status(200).send($pack.name || 'LEMON API');
+    res.status(200).send($pack.name || 'LEMON API');
 });
 
 //! handle request to handler.
@@ -110,49 +110,49 @@ app.delete('/hello/:id', middle, handle_hello);
 
 // get running parameter like -h api.
 function getRunParam(o, defval, argv) {
-	// eslint-disable-next-line no-param-reassign
-	argv = argv || process.argv || []; // use scope.
-	const nm = `-${o}`;
-	let i = argv.indexOf(nm);
-	i = i > 0 ? i : argv.indexOf(o);
-	if (i >= 0) {
-		const ret = argv[i + 1];
-		//! decode param.
-		if (typeof defval === 'boolean') {
-			return ret === 'true' || ret === 't' || ret === 'y' || ret === '1';
-		}
-		if (typeof defval === 'number') {
-			return Math.round(ret / 1);
-		}
-		return ret;
-	}
-	return defval;
+    // eslint-disable-next-line no-param-reassign
+    argv = argv || process.argv || []; // use scope.
+    const nm = `-${o}`;
+    let i = argv.indexOf(nm);
+    i = i > 0 ? i : argv.indexOf(o);
+    if (i >= 0) {
+        const ret = argv[i + 1];
+        //! decode param.
+        if (typeof defval === 'boolean') {
+            return ret === 'true' || ret === 't' || ret === 'y' || ret === '1';
+        }
+        if (typeof defval === 'number') {
+            return Math.round(ret / 1);
+        }
+        return ret;
+    }
+    return defval;
 }
 
 //! finally listen to port.
 const createServer = (options = null) => {
-	// eslint-disable-next-line no-param-reassign
-	options = options || {};
-	const server = http.createServer(app);
+    // eslint-disable-next-line no-param-reassign
+    options = options || {};
+    const server = http.createServer(app);
 
-	//! fetch server post.
-	const port = getRunParam('-port', 8081, options.argv);
+    //! fetch server post.
+    const port = getRunParam('-port', 8081, options.argv);
 
-	//! list port.
-	server
-		.listen(port, () => {
-			_inf(NS, 'Server Listen on Port =', server.address().port);
-		})
-		.on('error', e => {
-			_inf(NS, '!ERR - listen.err = ', e);
-		});
+    //! list port.
+    server
+        .listen(port, () => {
+            _inf(NS, 'Server Listen on Port =', server.address().port);
+        })
+        .on('error', e => {
+            _inf(NS, '!ERR - listen.err = ', e);
+        });
 
-	return server;
+    return server;
 };
 
 //! check if this is main
 if (typeof require !== 'undefined' && require.main === module) {
-	createServer();
+    createServer();
 }
 
 // export default
