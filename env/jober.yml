@@ -1,0 +1,30 @@
+#-----------------------------------
+# Lemon Basic Environment Variables.
+#-----------------------------------
+# default
+default_env: &default_env
+  LS: 0                   # log silence.
+  LC: 1                   # line-coloring
+  TS: 1                   # time-stamp in line
+  NAME: 'jober'           # profile name.
+  SLACK_PUBLIC: 'AQICAHhFjDYDEXhEXddniRzHOKgAxk1W6h9jXMJrGQ3BcZS1gwGLRXyzn890n8gjdK5wjL+hAAAAsDCBrQYJKoZIhvcNAQcGoIGfMIGcAgEAMIGWBgkqhkiG9w0BBwEwHgYJYIZIAWUDBAEuMBEEDItR7l6YtQXu8g/iYQIBEIBpA4Y/ppnVuBTb368Wax+KrpOVCQXPTIO9H+MyhghZ+o9hOG5d67pEooJfk6JKr7FpIbbhMMs06DWPRoK2hOdb/LD3YkmHIkPYzN2NttOBOwmd0MvEIFY2EtCW2UcvbJL1uhBS8wZoLaj8'
+
+#-----------------------------------
+# local development configuration.
+local:
+  <<: *default_env
+  STAGE: 'local'
+
+#-----------------------------------
+# development server
+dev:
+  <<: *default_env
+  STAGE: 'develop'
+
+#-----------------------------------
+# production with AWS deploy
+prod:
+  <<: *default_env
+  STAGE: 'production'
+  TS: 0
+

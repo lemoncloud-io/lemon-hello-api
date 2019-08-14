@@ -249,7 +249,7 @@ package:
     - src/**          # un-comment this if use gulp build.
     - env/**
     - bin/**
-    - data/**
+    # - data/**
     - docs/**
     - test/**
   excludeDevDependencies: true

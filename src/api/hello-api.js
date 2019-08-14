@@ -140,8 +140,8 @@ const $channels = {};
 const do_load_slack_channel = name => {
     const ENV_NAME = `SLACK_${name}`.toUpperCase();
     const $env = process.env || {};
-    const webhook = $channels[ENV_NAME] || $env[ENV_NAME] || '';
-    _log(NS, '> webhook :=', webhook);
+    const webhook = `${$channels[ENV_NAME] || $env[ENV_NAME] || ''}`.trim();
+    _inf(NS, `> webhook[${name}] :=`, webhook);
     if (!webhook) return Promise.reject(new Error(`env[${ENV_NAME}] is required!`));
     return Promise.resolve(webhook)
         .then(_ => {
@@ -481,7 +481,8 @@ export function do_post_hello_slack(ID, $param, $body, $ctx) {
                 .catch(e => {
                     message.attachments.push({
                         pretext: 'internal error',
-                        title: `${e.message || e.reason || e.error || e}`,
+                        color: 'red',
+                        title: `${e.message || e.reason || e.error || e}: ${e.stack || ''}`,
                     });
                     return message;
                 });

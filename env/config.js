@@ -38,6 +38,17 @@ const CONF = (serverless) => {
             kmsKey: '*',                                        // KMS key-id
             bucket: 'ssocio-hello-wwww',                        // Name of S3 public bucket.
         },
+        "jober": {
+            name: "jober-app",
+            runtime: "nodejs8.10",
+            region: "ap-northeast-2",
+            env: "jober.yml",                                   // environment file
+            stream: undefined,                                  // Table Stream ARN
+            securityGroupIds: undefined,                        // securityGroupIds in VPC
+            subnetIds: undefined,                               // subnetIds in VPC
+            kmsKey: '*',                                        // KMS key-id
+            bucket: 'jober-hello-wwww',                         // Name of S3 public bucket.
+        },
         "none": {
             name: "none-app",
             runtime: "nodejs6.10",
