@@ -27,9 +27,7 @@ import $engine from '../engine';
 import url from 'url';
 import https from 'https';
 
-import * as $kms from '../service/kms-service';
-import * as $s3s from '../service/s3s-service';
-import * as $sns from '../service/sns-service';
+import { $kms, $s3s, $sns } from '../engine';
 import AWS from 'aws-sdk';
 
 /** ********************************************************************************************************************
@@ -146,7 +144,7 @@ const do_load_slack_channel = name => {
     return Promise.resolve(webhook)
         .then(_ => {
             if (!_.startsWith('http')) {
-                return $kms.do_decrypt(_).then(_ => {
+                return $kms.decrypt(_).then(_ => {
                     const url = `${_}`.trim();
                     $channels[ENV_NAME] = url;
                     return url;
@@ -631,7 +629,7 @@ export function do_get_test_sns(ID, $param, $body, $ctx) {
  */
 export function do_get_test_sns_arn(ID, $param, $body, $ctx) {
     _log(NS, `do_get_test_sns_arn(${ID})....`);
-    return $sns.arn().then(arn => {
+    return $sns.endpoint().then(arn => {
         _log(NS, '> arn =', arn);
         return arn;
     });
@@ -662,8 +660,8 @@ export function do_get_test_encrypt(ID, $param, $body, $ctx) {
     _log(NS, `do_get_test_encrypt(${ID})....`);
     const message = 'hello lemon';
     return $kms
-        .do_encrypt(message)
-        .then(encrypted => $kms.do_decrypt(encrypted).then(decrypted => ({ encrypted, decrypted, message })))
+        .encrypt(message)
+        .then(encrypted => $kms.decrypt(encrypted).then(decrypted => ({ encrypted, decrypted, message })))
         .then(_ => {
             const result = _.encrypted && _.message === _.decrypted;
             return Object.assign(_, { result });

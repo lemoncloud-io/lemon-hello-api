@@ -20,13 +20,13 @@
  ** ********************************************************************************************************************/
 //! import core engine.
 import { $U, _log, _inf, _err } from 'lemon-core';
-import { do_parrallel, AsyncIterable } from 'lemon-core';
+import { do_parrallel } from 'lemon-core';
 import { CoreHandler, WebResult, BrokerBuilder } from 'lemon-core';
 
 import { do_post_hello_event } from '../api/hello-api';
 
 //! Node definition.
-export interface SNSNode extends AsyncIterable {
+export interface SNSNode {
     record: {
         Sns: {
             Subject: string;

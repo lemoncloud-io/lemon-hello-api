@@ -12,18 +12,16 @@
 /** ********************************************************************************************************************
  *  start initializing `lemon-core` with global `process.env`
  ** ********************************************************************************************************************/
-import { $engine } from 'lemon-core';
+import { $engine, $SVC } from 'lemon-core';
 
 /** ********************************************************************************************************************
  *  Loading API Services.
  ** ********************************************************************************************************************/
 import hello from './api/hello-api';
 
-//! load services, and export.
-import * as $kms from './service/kms-service';
-import * as $s3s from './service/s3s-service';
-import * as $sns from './service/sns-service';
-// export { $kms, $s3s, $sns };
+export const $kms = $SVC.KMS;
+export const $s3s = $SVC.S3;
+export const $sns = $SVC.SNS;
 
 //! Load Additional Handlers......
 import $SNS from './builder/SNS';

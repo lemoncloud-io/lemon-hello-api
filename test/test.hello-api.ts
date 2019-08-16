@@ -33,7 +33,7 @@ describe('Test Hello API', () => {
     test('It should get the proper instances', () => {
         expect($engine.$kms.hello().hello).toBe('kms-service');
         expect($engine.$sns.hello().hello).toBe('sns-service');
-        expect($engine.$s3s.hello().hello).toBe('s3s-service');
+        expect($engine.$s3s.hello().hello).toBe('s3-service');
     });
 
     test('It should get the unique id', () => {
