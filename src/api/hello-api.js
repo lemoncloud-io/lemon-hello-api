@@ -631,7 +631,7 @@ export function do_get_test_sns_arn(ID, $param, $body, $ctx) {
     _log(NS, `do_get_test_sns_arn(${ID})....`);
     return $sns.endpoint().then(arn => {
         _log(NS, '> arn =', arn);
-        return arn;
+        return { arn };
     });
 }
 
@@ -646,7 +646,7 @@ export function do_get_test_sns_err(ID, $param, $body, $ctx) {
     const e = new Error('Test Error');
     return $sns.reportError(e).then(mid => {
         _log(NS, '> message-id =', mid);
-        return mid;
+        return { mid };
     });
 }
 
