@@ -2,6 +2,20 @@
 
 All notable changes to this project will be documented in this file. See [standard-version](https://github.com/conventional-changelog/standard-version) for commit guidelines.
 
+## [1.4.0](https://github.com/lemoncloud-io/lemon-hello-api/compare/v1.3.0...v1.4.0) (2019-08-16)
+
+
+### Bug Fixes
+
+* service exports ([33a5b3e](https://github.com/lemoncloud-io/lemon-hello-api/commit/33a5b3e))
+
+
+### Features
+
+* support core-v2 ([1f5a960](https://github.com/lemoncloud-io/lemon-hello-api/commit/1f5a960))
+
+
+
 ## [1.3.0](https://github.com/lemoncloud-io/lemon-hello-api/compare/v1.2.0...v1.3.0) (2019-08-09)
 
 
