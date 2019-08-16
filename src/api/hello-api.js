@@ -27,9 +27,7 @@ import $engine from '../engine';
 import url from 'url';
 import https from 'https';
 
-import * as $kms from '../service/kms-service';
-import * as $s3s from '../service/s3s-service';
-import * as $sns from '../service/sns-service';
+import { $kms, $s3s, $sns } from '../engine';
 import AWS from 'aws-sdk';
 
 /** ********************************************************************************************************************
@@ -140,13 +138,13 @@ const $channels = {};
 const do_load_slack_channel = name => {
     const ENV_NAME = `SLACK_${name}`.toUpperCase();
     const $env = process.env || {};
-    const webhook = $channels[ENV_NAME] || $env[ENV_NAME] || '';
-    _log(NS, '> webhook :=', webhook);
+    const webhook = `${$channels[ENV_NAME] || $env[ENV_NAME] || ''}`.trim();
+    _inf(NS, `> webhook[${name}] :=`, webhook);
     if (!webhook) return Promise.reject(new Error(`env[${ENV_NAME}] is required!`));
     return Promise.resolve(webhook)
         .then(_ => {
             if (!_.startsWith('http')) {
-                return $kms.do_decrypt(_).then(_ => {
+                return $kms.decrypt(_).then(_ => {
                     const url = `${_}`.trim();
                     $channels[ENV_NAME] = url;
                     return url;
@@ -481,7 +479,8 @@ export function do_post_hello_slack(ID, $param, $body, $ctx) {
                 .catch(e => {
                     message.attachments.push({
                         pretext: 'internal error',
-                        title: `${e.message || e.reason || e.error || e}`,
+                        color: 'red',
+                        title: `${e.message || e.reason || e.error || e}: ${e.stack || ''}`,
                     });
                     return message;
                 });
@@ -630,7 +629,7 @@ export function do_get_test_sns(ID, $param, $body, $ctx) {
  */
 export function do_get_test_sns_arn(ID, $param, $body, $ctx) {
     _log(NS, `do_get_test_sns_arn(${ID})....`);
-    return $sns.arn().then(arn => {
+    return $sns.endpoint().then(arn => {
         _log(NS, '> arn =', arn);
         return arn;
     });
@@ -661,8 +660,8 @@ export function do_get_test_encrypt(ID, $param, $body, $ctx) {
     _log(NS, `do_get_test_encrypt(${ID})....`);
     const message = 'hello lemon';
     return $kms
-        .do_encrypt(message)
-        .then(encrypted => $kms.do_decrypt(encrypted).then(decrypted => ({ encrypted, decrypted, message })))
+        .encrypt(message)
+        .then(encrypted => $kms.decrypt(encrypted).then(decrypted => ({ encrypted, decrypted, message })))
         .then(_ => {
             const result = _.encrypted && _.message === _.decrypted;
             return Object.assign(_, { result });
