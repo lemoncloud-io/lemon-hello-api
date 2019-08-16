@@ -41,6 +41,8 @@
         "test.lemon": "ENV=lemon STAGE=local npm test",
         "!release": "---- release with standard -----",
         "release": "standard-version",
+        "release.first": "standard-version --first-release",
+        "release.minor": "standard-version -- --release-as minor",
         "!plato": "----- analysis code complexity -----",
         "plato": "plato -r -d complexity dist"
     },
