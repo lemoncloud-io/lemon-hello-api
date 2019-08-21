@@ -342,6 +342,57 @@ const chain_process_callback = ({ subject, data, context }) => {
     return do_post_slack('', 'callback-report', asText(data), [], '#B71BFF');
 };
 
+//! chain to save message data to S3.
+const do_chain_message_save_to_s3 = message => {
+    const SLACK_PUT_S3 = _$.environ('SLACK_PUT_S3', 1);
+    const attachments = message.attachments;
+    if (SLACK_PUT_S3 && attachments && attachments.length) {
+        const attachment = attachments[0] || {};
+        const pretext = attachment.pretext || '';
+        const title = attachment.title || '';
+        const color = attachment.color || '';
+        _log(NS, `> title[${pretext}] =`, title);
+        const data = Object.assign({}, message); // copy.
+        data.attachments = data.attachments.map(_ => {
+            _ = Object.assign({}, _); // copy.
+            const text = `${_.text}`;
+            if (text.startsWith('{') && text.endsWith('}')) _.text = JSON.parse(_.text);
+            if (_.text['stack-trace'] && typeof _.text['stack-trace'] == 'string')
+                _.text['stack-trace'] = _.text['stack-trace'].split('\n');
+            return _;
+        });
+        const json = JSON.stringify(data);
+        return $s3s
+            .putObject(json)
+            .then(({ Bucket, Location }) => {
+                _inf(NS, '> uploaded =', Location);
+                const title_link = Location;
+                message = {
+                    attachments: [
+                        {
+                            pretext: title == 'error-report' ? title : pretext,
+                            title: title == 'error-report' ? pretext : title,
+                            color,
+                            title_link,
+                            mrkdwn: true,
+                            mrkdwn_in: ['pretext', 'text'],
+                        },
+                    ],
+                };
+                return message;
+            })
+            .catch(e => {
+                message.attachments.push({
+                    pretext: 'WARN! internal error in `lemon-hello-api`',
+                    color: 'red',
+                    title: `${e.message || e.reason || e.error || e}: ${e.stack || ''}`,
+                });
+                return message;
+            });
+    }
+    return message;
+};
+
 /** ********************************************************************************************************************
  *  Public API Functions.
  ** ********************************************************************************************************************/
@@ -438,64 +489,13 @@ export function do_post_hello_slack(ID, $param, $body, $ctx) {
     _log(NS, '> body =', $body);
     $param = $param || {};
 
-    //! save main data to S3.
-    const local_chain_save_to_s3 = message => {
-        const attachments = message.attachments;
-        if (attachments && attachments.length) {
-            const attachment = attachments[0] || {};
-            const pretext = attachment.pretext || '';
-            const title = attachment.title || '';
-            const color = attachment.color || '';
-            _log(NS, `> title[${pretext}] =`, title);
-            const data = Object.assign({}, message); // copy.
-            data.attachments = data.attachments.map(_ => {
-                _ = Object.assign({}, _); // copy.
-                const text = `${_.text}`;
-                if (text.startsWith('{') && text.endsWith('}')) _.text = JSON.parse(_.text);
-                if (_.text['stack-trace'] && typeof _.text['stack-trace'] == 'string')
-                    _.text['stack-trace'] = _.text['stack-trace'].split('\n');
-                return _;
-            });
-            const json = JSON.stringify(data);
-            return $s3s
-                .putObject(json)
-                .then(({ Bucket, Location }) => {
-                    _inf(NS, '> uploaded =', Location);
-                    const title_link = Location;
-                    message = {
-                        attachments: [
-                            {
-                                pretext: title == 'error-report' ? title : pretext,
-                                title: title == 'error-report' ? pretext : title,
-                                color,
-                                title_link,
-                                mrkdwn: true,
-                                mrkdwn_in: ['pretext', 'text'],
-                            },
-                        ],
-                    };
-                    return message;
-                })
-                .catch(e => {
-                    message.attachments.push({
-                        pretext: 'internal error',
-                        color: 'red',
-                        title: `${e.message || e.reason || e.error || e}: ${e.stack || ''}`,
-                    });
-                    return message;
-                });
-        }
-        return message;
-    };
-
     //! load target webhook via environ.
     return do_load_slack_channel(ID).then(webhook => {
         _log(NS, '> webhook :=', webhook);
         //! prepare slack message via body.
         const message = typeof $body === 'string' ? { text: $body } : $body;
-        //! filter message.
         return Promise.resolve(message)
-            .then(local_chain_save_to_s3)
+            .then(do_chain_message_save_to_s3)
             .then(message => postMessage(webhook, message));
     });
 }
