@@ -25,6 +25,7 @@
         "!deploy": "-----  빌드후 dist 폴더에 압축한 다음, serverless를 통해서 deploy 실행 -----",
         "deploy.lemon": "npm run build && sls deploy --profile lemon --stage prod",
         "deploy.jober": "npm run build && sls deploy --profile jober --stage prod",
+        "deploy.ssocio": "npm run build && sls deploy --profile ssocio --stage prod",
         "!info": "------- print sls infor by profile -----",
         "info": "sls info --stage prod",
         "info.lemon": "sls info --profile lemon --stage prod",
