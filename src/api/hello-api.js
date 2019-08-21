@@ -101,7 +101,7 @@ const NODES = [
  * @param {*} hookUrl       URL
  * @param {*} message       Object or String.
  */
-const postMessage = (hookUrl, message) => {
+export const postMessage = (hookUrl, message) => {
     const body = typeof message === 'string' ? message : JSON.stringify(message);
     const options = url.parse(hookUrl);
     options.method = 'POST';
@@ -135,7 +135,7 @@ const postMessage = (hookUrl, message) => {
 
 //! store channel map in cache
 const $channels = {};
-const do_load_slack_channel = name => {
+export const do_load_slack_channel = name => {
     const ENV_NAME = `SLACK_${name}`.toUpperCase();
     const $env = process.env || {};
     const webhook = `${$channels[ENV_NAME] || $env[ENV_NAME] || ''}`.trim();
@@ -160,32 +160,18 @@ const do_load_slack_channel = name => {
         });
 };
 
-const asText = data => {
+export const asText = data => {
     const keys = (data && Object.keys(data)) || [];
     return keys.length > 0 ? JSON.stringify(data) : '';
 };
 
 //! post to slack channel.
-const do_post_slack = (
-    pretext = '',
-    title = '',
-    text = '',
-    fields = [],
-    color = '#FFB71B',
-    username = 'hello-alarm',
-) => {
-    if (pretext && typeof pretext === 'object') {
-        const args = pretext || {};
-        pretext = args.pretext || '';
-        title = args.title || title;
-        text = args.text || text;
-        fields = args.fields || fields;
-        color = args.color || color;
-        username = args.username || username;
-    }
+export const do_post_slack = (pretext = '', title = '', text = '', fields = [], color = '', username = '') => {
+    color = color || '#FFB71B';
+    username = username || 'hello-alarm';
+
     // Set the request body
     const now = new Date().getTime();
-
     //! build attachment.
     const attachment = {
         username,
@@ -206,8 +192,12 @@ const do_post_slack = (
     return do_post_hello_slack('public', {}, body);
 };
 
+export const chain_post_slack = ({ pretext, title, text, fields, color, username }) => {
+    return do_post_slack(pretext, title, text, fields, color, username);
+};
+
 //! chain for ALARM type. (see data/alarm.jsonc)
-const chain_process_alarm = ({ subject, data, context }) => {
+export const chain_process_alarm = ({ subject, data, context }) => {
     _log(`chain_process_alarm(${subject})...`);
     data = data || {};
     _log('> data=', data);
@@ -249,7 +239,7 @@ const chain_process_alarm = ({ subject, data, context }) => {
 };
 
 //! chain for DeliveryFailure type. (see data/delivery-failure.json)
-const chain_process_delivery_failure = ({ subject, data, context }) => {
+export const chain_process_delivery_failure = ({ subject, data, context }) => {
     _log(`chain_process_delivery_failure(${subject})...`);
     data = data || {};
     _log('> data=', data);
@@ -309,18 +299,14 @@ const chain_process_delivery_failure = ({ subject, data, context }) => {
     };
 
     // return do_post_slack(pretext, title, text, fields)
-    return Promise.resolve({
-        pretext,
-        title,
-        text,
-        fields,
-    })
+    const message = { pretext, title, text, fields };
+    return Promise.resolve(message)
         .then(local_chain_endpoint_attrs)
-        .then(do_post_slack);
+        .then(chain_post_slack);
 };
 
 //! chain for ALARM type. (see data/alarm.jsonc)
-const chain_process_error = ({ subject, data, context }) => {
+export const chain_process_error = ({ subject, data, context }) => {
     _log(`chain_process_error(${subject})...`);
     data = data || {};
     _log('> data=', data);
@@ -333,7 +319,7 @@ const chain_process_error = ({ subject, data, context }) => {
 };
 
 //! chain for ALARM type. (see data/alarm.jsonc)
-const chain_process_callback = ({ subject, data, context }) => {
+export const chain_process_callback = ({ subject, data, context }) => {
     _log(`chain_process_callback(${subject})...`);
     data = data || {};
     _log('> data=', data);
@@ -343,7 +329,7 @@ const chain_process_callback = ({ subject, data, context }) => {
 };
 
 //! chain to save message data to S3.
-const do_chain_message_save_to_s3 = message => {
+export const do_chain_message_save_to_s3 = message => {
     const SLACK_PUT_S3 = $U.N($U.env('SLACK_PUT_S3', 1), 0);
     _log(NS, `do_chain_message_save_to_s3(${SLACK_PUT_S3})...`);
     const attachments = message.attachments;
