@@ -344,7 +344,8 @@ const chain_process_callback = ({ subject, data, context }) => {
 
 //! chain to save message data to S3.
 const do_chain_message_save_to_s3 = message => {
-    const SLACK_PUT_S3 = _$.environ('SLACK_PUT_S3', 1);
+    const SLACK_PUT_S3 = $U.N($U.env('SLACK_PUT_S3', 1), 0);
+    _log(NS, `do_chain_message_save_to_s3(${SLACK_PUT_S3})...`);
     const attachments = message.attachments;
     if (SLACK_PUT_S3 && attachments && attachments.length) {
         const attachment = attachments[0] || {};
@@ -365,7 +366,7 @@ const do_chain_message_save_to_s3 = message => {
         return $s3s
             .putObject(json)
             .then(({ Bucket, Location }) => {
-                _inf(NS, '> uploaded =', Location);
+                _inf(NS, `> uploaded[${Bucket}] =`, Location);
                 const title_link = Location;
                 message = {
                     attachments: [
@@ -383,7 +384,7 @@ const do_chain_message_save_to_s3 = message => {
             })
             .catch(e => {
                 message.attachments.push({
-                    pretext: 'WARN! internal error in `lemon-hello-api`',
+                    pretext: '**WARN** internal error in `lemon-hello-api`',
                     color: 'red',
                     title: `${e.message || e.reason || e.error || e}: ${e.stack || ''}`,
                 });
@@ -411,7 +412,7 @@ export function do_list_hello(ID, $param, $body, $ctx) {
     _log(NS, `do_list_hello(${ID})....`);
 
     const that = {};
-    that.name = _$.environ('NAME'); // read via process.env
+    that.name = $U.env('NAME'); // read via process.env
     return Promise.resolve(that).then(_ => {
         _.list = NODES;
         return _;
