@@ -53,6 +53,7 @@ function decode_next_handler(MODE, ID, CMD) {
             else if (ID !== '!' && CMD === 'test-sns-arn') next = do_get_test_sns_arn;
             else if (ID !== '!' && CMD === 'test-sns-err') next = do_get_test_sns_err;
             else if (ID !== '!' && CMD === 'test-encrypt') next = do_get_test_encrypt;
+            else if (ID !== '!' && CMD === 'test-error') next = do_get_test_error;
             else if (ID !== '!' && CMD === 'test-s3-put') next = do_get_test_s3_put;
             break;
         case 'PUT':
@@ -170,8 +171,6 @@ export const do_post_slack = (pretext = '', title = '', text = '', fields = [], 
     color = color || '#FFB71B';
     username = username || 'hello-alarm';
 
-    // Set the request body
-    const now = new Date().getTime();
     //! build attachment.
     const attachment = {
         username,
@@ -179,16 +178,12 @@ export const do_post_slack = (pretext = '', title = '', text = '', fields = [], 
         pretext,
         title,
         text,
-        ts: Math.floor(now / 1000),
-        // "title_link": link||'',
-        // "thumb_url" : thumb || '',
-        // "image_url" : image || '',
+        ts: Math.floor(new Date().getTime() / 1000),
         fields,
     };
-    //! build body for slack
-    const body = { attachments: [attachment] };
 
-    //! call post-slack
+    //! build body for slack, and call
+    const body = { attachments: [attachment] };
     return do_post_hello_slack('public', {}, body);
 };
 
@@ -337,7 +332,7 @@ export const do_chain_message_save_to_s3 = message => {
         const attachment = attachments[0] || {};
         const pretext = attachment.pretext || '';
         const title = attachment.title || '';
-        const color = attachment.color || '';
+        const color = attachment.color || 'green';
         _log(NS, `> title[${pretext}] =`, title);
         const data = Object.assign({}, message); // copy.
         data.attachments = data.attachments.map(_ => {
@@ -351,16 +346,19 @@ export const do_chain_message_save_to_s3 = message => {
         const json = JSON.stringify(data);
         return $s3s
             .putObject(json)
-            .then(({ Bucket, Location }) => {
-                _inf(NS, `> uploaded[${Bucket}] =`, Location);
-                const title_link = Location;
+            .then(res => {
+                const { Bucket, Key, Location } = res;
+                _inf(NS, `> uploaded[${Bucket}] =`, res);
+                const link = Location;
+                const _pretext = title == 'error-report' ? title : pretext;
+                const text = title == 'error-report' ? pretext : title;
+                const tag = [':slack:', ':cubimal_chick:', ':rotating_light:'][2];
                 message = {
                     attachments: [
                         {
-                            pretext: title == 'error-report' ? title : pretext,
-                            title: title == 'error-report' ? pretext : title,
+                            pretext: _pretext,
+                            text: `<${link}|${tag}> ${text}`,
                             color,
-                            title_link,
                             mrkdwn: true,
                             mrkdwn_in: ['pretext', 'text'],
                         },
@@ -369,6 +367,7 @@ export const do_chain_message_save_to_s3 = message => {
                 return message;
             })
             .catch(e => {
+                _err(NS, 'WARN! internal.err =', e);
                 message.attachments.push({
                     pretext: '**WARN** internal error in `lemon-hello-api`',
                     color: 'red',
@@ -465,6 +464,9 @@ export function do_post_hello(ID, $param, $body, $ctx) {
  * # post message to slack/general
  * $ echo '{"text":"hello"}' | http ':8888/hello/public/slack'
  * $ echo 'hahah' | http ':8888/hello/public/slack'
+ *
+ * # use sample
+ * $ cat data/error-hello.json | http ':8888/hello/public/slack'
  * ```
  * @param {*} ID                slack-channel id (see environment)
  * @param {*} $param            (optional)
@@ -653,6 +655,17 @@ export function do_get_test_encrypt(ID, $param, $body, $ctx) {
             const result = _.encrypted && _.message === _.decrypted;
             return Object.assign(_, { result });
         });
+}
+
+/**
+ * Raise Error
+ *
+ * ```sh
+ * $ http ':8888/hello/0/test-error'
+ */
+export async function do_get_test_error(ID, $param, $body, $ctx) {
+    _log(NS, `do_get_test_error(${ID})....`);
+    throw new Error('hello lemon');
 }
 
 /**
