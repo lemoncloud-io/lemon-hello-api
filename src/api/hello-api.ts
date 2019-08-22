@@ -14,8 +14,8 @@
  *  Common Headers
  ** ********************************************************************************************************************/
 //! import core engine + service.
-import { $U, _log, _inf, _err, NextDecoder, NextHanlder } from 'lemon-core';
-import { loadJsonSync } from 'lemon-core';
+import { $U, _log, _inf, _err, NextDecoder, NextHanlder, SlackAttachment } from 'lemon-core';
+import { loadJsonSync, SlackPostBody } from 'lemon-core';
 
 //! define NS, and export default handler().
 export const NS = $U.NS('HELO', 'yellow'); // NAMESPACE TO BE PRINTED.
@@ -199,8 +199,18 @@ export const chain_post_slack = ({ pretext, title, text, fields, color, username
     return do_post_slack(pretext, title, text, fields, color, username);
 };
 
+export interface RecordChainData {
+    subject: string;
+    data: any;
+    context: any;
+}
+
+export interface RecordChainWork {
+    (param: RecordChainData): Promise<any>;
+}
+
 //! chain for ALARM type. (see data/alarm.jsonc)
-export const chain_process_alarm = ({ subject, data, context }: { subject: string; data: any; context: any }) => {
+export const chain_process_alarm: RecordChainWork = ({ subject, data, context }) => {
     _log(`chain_process_alarm(${subject})...`);
     data = data || {};
     _log('> data=', data);
@@ -242,15 +252,7 @@ export const chain_process_alarm = ({ subject, data, context }: { subject: strin
 };
 
 //! chain for DeliveryFailure type. (see data/delivery-failure.json)
-export const chain_process_delivery_failure = ({
-    subject,
-    data,
-    context,
-}: {
-    subject: string;
-    data: any;
-    context: any;
-}) => {
+export const chain_process_delivery_failure: RecordChainWork = ({ subject, data, context }) => {
     _log(`chain_process_delivery_failure(${subject})...`);
     data = data || {};
     _log('> data=', data);
@@ -316,8 +318,8 @@ export const chain_process_delivery_failure = ({
         .then(chain_post_slack);
 };
 
-//! chain for ALARM type. (see data/alarm.jsonc)
-export const chain_process_error = ({ subject, data, context }: { subject: string; data: any; context: any }) => {
+//! chain for ERROR type. (see data/error.json)
+export const chain_process_error: RecordChainWork = ({ subject, data, context }) => {
     _log(`chain_process_error(${subject})...`);
     data = data || {};
     _log('> data=', data);
@@ -329,8 +331,8 @@ export const chain_process_error = ({ subject, data, context }: { subject: strin
     return do_post_slack(message, 'error-report', asText(data), []);
 };
 
-//! chain for ALARM type. (see data/alarm.jsonc)
-export const chain_process_callback = ({ subject, data, context }: { subject: string; data: any; context: any }) => {
+//! chain for ALARM type. (see data/alarm.json)
+export const chain_process_callback: RecordChainWork = ({ subject, data, context }) => {
     _log(`chain_process_callback(${subject})...`);
     data = data || {};
     _log('> data=', data);
@@ -339,9 +341,38 @@ export const chain_process_callback = ({ subject, data, context }: { subject: st
     return do_post_slack('', 'callback-report', asText(data), [], '#B71BFF');
 };
 
+//! chain for ALARM type. (see `lemon-core/doReportSlack()`)
+export const chain_process_slack: RecordChainWork = ({ subject, data, context }) => {
+    _log(`chain_process_slack(${subject})...`);
+    _log('> data=', data);
+
+    //! extract data.
+    const channel = data.channel || '';
+    const service = data.service || '';
+    const ctx = data.context || {};
+    const param: any = data.param || {};
+    const body: SlackPostBody = data.body;
+
+    //! add additional attachment about caller contex.t
+    const att: SlackAttachment = {
+        pretext: service,
+        fields: [
+            {
+                title: 'context',
+                value: (context && JSON.stringify(context)) || '',
+            },
+        ],
+    };
+    if (context && body && body.attachments) body.attachments.push(att);
+
+    //NOTE - DO NOT CHANGE ARGUMENT ORDER.
+    return do_post_hello_slack(channel, param, body, ctx);
+};
+
 //! chain to save message data to S3.
 export const do_chain_message_save_to_s3 = (message: any) => {
-    const SLACK_PUT_S3 = $U.N($U.env('SLACK_PUT_S3'), 0);
+    const val = $U.env('SLACK_PUT_S3', '1') as string;
+    const SLACK_PUT_S3 = $U.N(val, 0);
     _log(NS, `do_chain_message_save_to_s3(${SLACK_PUT_S3})...`);
     const attachments = message.attachments;
     if (SLACK_PUT_S3 && attachments && attachments.length) {
@@ -352,11 +383,16 @@ export const do_chain_message_save_to_s3 = (message: any) => {
         _log(NS, `> title[${pretext}] =`, title);
         const data = Object.assign({}, message); // copy.
         data.attachments = data.attachments.map((_: any) => {
+            //! convert internal data.
             _ = Object.assign({}, _); // copy.
-            const text = `${_.text}`;
-            if (text.startsWith('{') && text.endsWith('}')) _.text = JSON.parse(_.text);
-            if (_.text['stack-trace'] && typeof _.text['stack-trace'] == 'string')
-                _.text['stack-trace'] = _.text['stack-trace'].split('\n');
+            const text = `${_.text || ''}`;
+            try {
+                if (text.startsWith('{') && text.endsWith('}')) _.text = JSON.parse(_.text);
+                if (_.text && _.text['stack-trace'] && typeof _.text['stack-trace'] == 'string')
+                    _.text['stack-trace'] = _.text['stack-trace'].split('\n');
+            } catch (e) {
+                _err(NS, '> WARN! ignored =', e);
+            }
             return _;
         });
         const json = JSON.stringify(data);
@@ -536,6 +572,8 @@ export const do_post_hello_event: NextHanlder = (id, $param, $body, $ctx) => {
         ? chain_process_error
         : subject === 'callback'
         ? chain_process_callback
+        : subject === 'slack'
+        ? chain_process_slack
         : noop;
 
     return Promise.resolve({ subject, data, context }).then(chain_next);
