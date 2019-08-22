@@ -515,7 +515,7 @@ export const do_post_hello: NextHanlder = (ID, $param, $body, $ctx) => {
  * ```sh
  * # post message to slack/general
  * $ echo '{"text":"hello"}' | http ':8888/hello/public/slack'
- * $ echo 'hahah' | http ':8888/hello/public/slack'
+ * $ echo '{"text":"hello"}' | http ':8888/hello/alarm/slack'
  *
  * # use sample
  * $ cat data/error-hello.json | http ':8888/hello/public/slack'
