@@ -1,6 +1,6 @@
 {
     "name": "lemon-hello-api",
-    "version": "1.4.0",
+    "version": "1.4.1",
     "description": "Basic Serverless Hello API with `Lambda` + `API Gateway` + `Web Socket` + `SNS` + `SQS` + `KMS`",
     "main": "dist/index.js",
     "types": "dist/index.d.ts",
@@ -25,6 +25,7 @@
         "!deploy": "-----  빌드후 dist 폴더에 압축한 다음, serverless를 통해서 deploy 실행 -----",
         "deploy.lemon": "npm run build && sls deploy --profile lemon --stage prod",
         "deploy.jober": "npm run build && sls deploy --profile jober --stage prod",
+        "deploy.ssocio": "npm run build && sls deploy --profile ssocio --stage prod",
         "!info": "------- print sls infor by profile -----",
         "info": "sls info --stage prod",
         "info.lemon": "sls info --profile lemon --stage prod",
@@ -41,15 +42,15 @@
         "test.lemon": "ENV=lemon STAGE=local npm test",
         "!release": "---- release with standard -----",
         "release": "standard-version",
-        "release.first": "standard-version --first-release",
-        "release.minor": "standard-version -- --release-as minor",
+        "release.first": "npm run release --first-release",
+        "release.minor": "npm run release --release-as minor",
         "!plato": "----- analysis code complexity -----",
         "plato": "plato -r -d complexity dist"
     },
     "dependencies": {
         "aws-sdk": "^2.456.0",
         "https": "^1.0.0",
-        "lemon-core": "^1.2.0",
+        "lemon-core": "^1.2.8",
         "url": "^0.11.0"
     },
     "devDependencies": {

@@ -25,7 +25,7 @@ const $engine = engine();
 
 //! build express engine.
 import { buildExpress } from 'lemon-core';
-export const { express, app, createServer } = buildExpress($engine);
+export const { app, createServer } = buildExpress($engine);
 
 //! default exports.
-export default { express, app, createServer };
+export default { app, createServer };
