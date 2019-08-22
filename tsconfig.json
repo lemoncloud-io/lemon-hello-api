@@ -1,6 +1,6 @@
 {
     "compilerOptions": {
-        "allowJs": true,
+        "allowJs": false,
         "experimentalDecorators": true,
         "module": "commonjs",
         "resolveJsonModule": true,
@@ -25,7 +25,7 @@
             }
         ],
         "incremental": false,
-        "declaration": false
+        "declaration": true
     },
     "include": [
         "src/**/*"
