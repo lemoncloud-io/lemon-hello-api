@@ -374,12 +374,13 @@ export const do_chain_message_save_to_s3 = (message: any) => {
     const val = $U.env('SLACK_PUT_S3', '1') as string;
     const SLACK_PUT_S3 = $U.N(val, 0);
     _log(NS, `do_chain_message_save_to_s3(${SLACK_PUT_S3})...`);
-    const attachments = message.attachments;
+    const attachments: SlackAttachment[] = message.attachments;
     if (SLACK_PUT_S3 && attachments && attachments.length) {
         const attachment = attachments[0] || {};
         const pretext = attachment.pretext || '';
         const title = attachment.title || '';
         const color = attachment.color || 'green';
+        const thumb_url = attachment.thumb_url ? attachment.thumb_url : undefined;
         _log(NS, `> title[${pretext}] =`, title);
         const data = Object.assign({}, message); // copy.
         data.attachments = data.attachments.map((_: any) => {
@@ -413,6 +414,7 @@ export const do_chain_message_save_to_s3 = (message: any) => {
                             color,
                             mrkdwn: true,
                             mrkdwn_in: ['pretext', 'text'],
+                            thumb_url,
                         },
                     ],
                 };
