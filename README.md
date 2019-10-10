@@ -106,6 +106,17 @@ Basic Serverless Hello API with `Lambda` + `API Gateway` + `Web Socket` + `SNS` 
     $ http ':8888/hello/0/test-encrypt'    
     ```
 
+## Travis 연동
+
+- Get NPM Token via [tokens](https://www.npmjs.com/settings/stevelemon/tokens)
+
+```bash
+# install travis-cli (MacOS)
+$ brew install travis
+
+# encrypt npm token
+$ travis encrypt <NPM Token> --add deploy.api_key
+```
 
 ## 기여하기 (Contribution)
 
