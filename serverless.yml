@@ -11,6 +11,7 @@ plugins:
   - serverless-offline
   - serverless-aws-documentation
   - serverless-pseudo-parameters
+  - '@cruglobal/serverless-merge-config'
 
 #------------------------------------------------
 # Custome: 초기 환경 설정 로딩을 위한 핵심 설정.
@@ -136,7 +137,10 @@ provider:
   # -------------------------------------------------------
   # you can define service wide environment variables here
   # WARN! - 환경변수에는 object/null 으로 설정할 수 없음.
-  environment: ${file(./env/${self:custom.CONF.${self:custom.CORE.profile}.env}):${self:provider.stage}}
+  environment:
+    DEFAULT_REGION: '${self:provider.region}'
+    CORE_S3_BUCKET: '${self:custom.bucketName}'
+    $<<: ${file(./env/${self:custom.CONF.${self:custom.CORE.profile}.env}):${self:provider.stage}}
 
 #------------------------------------------------
 # Functions
