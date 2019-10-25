@@ -37,11 +37,15 @@ custom:
   #------------------------------------------------
   # SQS Queue
   #------------------------------------------------
-  queueName: lemon-hello-sqs
+  queueName:
+    dev: lemon-hello-sqs-dev
+    prod: lemon-hello-sqs
   #------------------------------------------------
   # SNS Registration
   #------------------------------------------------
-  topicName: lemon-hello-sns
+  topicName:
+    dev: lemon-hello-sns-dev
+    prod: lemon-hello-sns
   topicArn:
     Fn::Join:
       - ''
@@ -106,7 +110,7 @@ provider:
       Action:
         - "sqs:DeleteMessage"
         - "sqs:ReceiveMessage"
-      Resource: "arn:aws:sqs:${opt:region, self:provider.region}:*:${self:custom.queueName}"
+      Resource: "arn:aws:sqs:${opt:region, self:provider.region}:*:${self:custom.queueName.${self:custom.CORE.stage}}"
     # SNS
     - Effect: "Allow"
       Action:
@@ -140,6 +144,7 @@ provider:
   environment:
     DEFAULT_REGION: '${self:provider.region}'
     CORE_S3_BUCKET: '${self:custom.bucketName}'
+    REPORT_ERROR_ARN: 'arn:aws:sns:${self:provider.region}:#{AWS::AccountId}:lemon-hello-sns'
     $<<: ${file(./env/${self:custom.CONF.${self:custom.CORE.profile}.env}):${self:provider.stage}}
 
 #------------------------------------------------
@@ -152,7 +157,7 @@ functions:
     handler: handler.SNS
     timeout: 150            # max timeout. (= 5 min)
     events:
-      - sns: 'arn:aws:sns:${self:provider.region}:#{AWS::AccountId}:${self:custom.topicName}'
+      - sns: 'arn:aws:sns:${self:provider.region}:#{AWS::AccountId}:${self:custom.topicName.${self:custom.CORE.stage}}'
   #------------------
   # Common SQS Service.
   SQS:
@@ -295,7 +300,7 @@ resources:
       Type: 'AWS::SQS::Queue'
       # https://docs.aws.amazon.com/ko_kr/AWSSimpleQueueService/latest/APIReference/API_SetQueueAttributes.html
       Properties:
-        QueueName: '${self:custom.queueName}'
+        QueueName: '${self:custom.queueName.${self:custom.CORE.stage}}'
         MessageRetentionPeriod: 1800      # 30 mins
         VisibilityTimeout: 300            # 5 mins
         MaximumMessageSize: 4096          # 4 Kb
@@ -308,7 +313,7 @@ resources:
     MyInputTopic:
       Type: 'AWS::SNS::Topic'
       Properties:
-        TopicName: '${self:custom.topicName}'
+        TopicName: '${self:custom.topicName.${self:custom.CORE.stage}}'
 
     # -------------------------------
     # S3 Bucket

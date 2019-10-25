@@ -14,7 +14,8 @@
  *  Common Headers
  ** ********************************************************************************************************************/
 //! import core engine + service.
-import { $U, _log, _inf, _err, NextDecoder, NextHanlder, SlackAttachment } from 'lemon-core';
+import { $U, _log, _inf, _err } from 'lemon-core';
+import { NextDecoder, NextHanlder, SlackAttachment, doReportError } from 'lemon-core';
 import { loadJsonSync, SlackPostBody } from 'lemon-core';
 
 //! define NS, and export default handler().
@@ -719,9 +720,12 @@ export const do_get_test_encrypt: NextHanlder = (ID, $param, $body, $ctx) => {
  *
  * ```sh
  * $ http ':8888/hello/0/test-error'
+ * $ http ':8888/hello/0/test-error?report=1'
  */
 export const do_get_test_error: NextHanlder = async (ID, $param, $body, $ctx) => {
     _log(NS, `do_get_test_error(${ID})....`);
+    const report = $U.N($param.report, $param.report === '' ? 1 : 0);
+    if (report) return await doReportError(new Error('hello-error'), null, null);
     throw new Error('hello lemon');
 };
 
