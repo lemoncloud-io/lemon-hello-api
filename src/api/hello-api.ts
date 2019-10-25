@@ -55,6 +55,7 @@ const decode_next_handler: NextDecoder = (MODE, ID, CMD) => {
             else if (ID !== '!' && CMD === 'test-sns-err') next = do_get_test_sns_err;
             else if (ID !== '!' && CMD === 'test-encrypt') next = do_get_test_encrypt;
             else if (ID !== '!' && CMD === 'test-error') next = do_get_test_error;
+            // else if (ID !== '!' && CMD === 'test-env') next = do_get_test_env;
             else if (ID !== '!' && CMD === 'test-s3-put') next = do_get_test_s3_put;
             break;
         case 'PUT':
@@ -727,6 +728,19 @@ export const do_get_test_error: NextHanlder = async (ID, $param, $body, $ctx) =>
     const report = $U.N($param.report, $param.report === '' ? 1 : 0);
     if (report) return await doReportError(new Error('hello-error'), null, null);
     throw new Error('hello lemon');
+};
+
+/**
+ * Test Env
+ *
+ * ```sh
+ * $ http ':8888/hello/0/test-env'
+ */
+export const do_get_test_env: NextHanlder = async (ID, $param, $body, $ctx) => {
+    _log(NS, `do_get_test_error(${ID})....`);
+    const report = $U.N($param.report, $param.report === '' ? 1 : 0);
+    const env = process.env;
+    return { env };
 };
 
 /**
