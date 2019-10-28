@@ -60,6 +60,17 @@ const CONF = (serverless) => {
             kmsKey: '*',                                        // KMS key-id
             bucket: 'jober-hello-wwww',                         // Name of S3 public bucket.
         },
+        "comics": {
+            name: "comics-app",
+            runtime: 'nodejs10.x',                              // Node is powered by the V8 JavaScript Engine (used in Chromium)
+            region: "ap-northeast-2",
+            env: "comics.yml",                                  // environment file
+            stream: undefined,                                  // Table Stream ARN
+            securityGroupIds: undefined,                        // securityGroupIds in VPC
+            subnetIds: undefined,                               // subnetIds in VPC
+            kmsKey: '*',                                        // KMS key-id
+            bucket: 'comics-hello-wwww',                        // Name of S3 public bucket.
+        },
         "none": {
             name: "none-app",
             runtime: 'nodejs10.x',                              // Node is powered by the V8 JavaScript Engine (used in Chromium)

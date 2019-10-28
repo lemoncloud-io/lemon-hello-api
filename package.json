@@ -29,6 +29,7 @@
         "deploy.jober": "npm run build && sls deploy --profile jober --stage prod",
         "deploy.ssocio": "npm run build && sls deploy --profile ssocio --stage prod",
         "deploy.kong": "npm run build && sls deploy --profile kong --stage prod",
+        "deploy.comics": "npm run build && sls deploy --profile comics --stage prod",
         "!info": "------- print sls infor by profile -----",
         "info": "sls info --stage prod",
         "info.lemon": "sls info --profile lemon --stage prod",
