@@ -50,6 +50,7 @@ const decode_next_handler: NextDecoder = (MODE, ID, CMD) => {
         case 'GET':
             if (false) noop();
             else if (ID !== '!' && CMD === '') next = do_get_hello;
+            else if (ID !== '!' && CMD === 'test-channel') next = do_get_test_channel;
             else if (ID !== '!' && CMD === 'test-sns') next = do_get_test_sns;
             else if (ID !== '!' && CMD === 'test-sns-arn') next = do_get_test_sns_arn;
             else if (ID !== '!' && CMD === 'test-sns-err') next = do_get_test_sns_err;
@@ -598,6 +599,19 @@ export const do_delete_hello: NextHanlder = (ID, $param, $body, $ctx) => {
         // NODES.splice(id, 1);                // remove single node.
         delete NODES[id]; // set null in order to keep id.
         return node;
+    });
+};
+
+/**
+ * Read the channel url.
+ *
+ * ```sh
+ * $ http ':8888/hello/public/test-channel'
+ */
+export const do_get_test_channel: NextHanlder = (id, $param, $body, $ctx) => {
+    _log(NS, `do_get_test_channel(${id})....`);
+    return do_load_slack_channel(id).then((channel: string) => {
+        return { id, channel };
     });
 };
 
