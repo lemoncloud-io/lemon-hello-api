@@ -24,6 +24,7 @@
         "express.jober": "ENV=jober STAGE=local npm run start",
         "express.ssocio": "ENV=ssocio STAGE=local npm run start",
         "express.kong": "ENV=kong STAGE=local npm run start",
+        "express.comics": "ENV=comics STAGE=local npm run start",
         "!deploy": "-----  빌드후 dist 폴더에 압축한 다음, serverless를 통해서 deploy 실행 -----",
         "deploy.lemon": "npm run build && sls deploy --profile lemon --stage prod",
         "deploy.jober": "npm run build && sls deploy --profile jober --stage prod",
