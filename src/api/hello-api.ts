@@ -26,9 +26,10 @@ import { $WEB } from 'lemon-core';
 import $engine from '../engine';
 import url from 'url';
 import https from 'https';
+import AWS from 'aws-sdk';
 
 import { $kms, $s3s, $sns } from '../engine';
-import AWS from 'aws-sdk';
+import { CallbackSlackData, CallbackPayload } from '../common/types';
 
 /** ********************************************************************************************************************
  *  Decode Next Handler
@@ -221,7 +222,7 @@ export interface RecordChainWork {
 export const chain_process_alarm: RecordChainWork = ({ subject, data, context }) => {
     _log(`chain_process_alarm(${subject})...`);
     data = data || {};
-    _log('> data=', data);
+    _log(`> data[${subject}] =`, $U.json(data));
 
     const AlarmName = data.AlarmName || '';
     const AlarmDescription = data.AlarmDescription || '';
@@ -263,7 +264,7 @@ export const chain_process_alarm: RecordChainWork = ({ subject, data, context })
 export const chain_process_delivery_failure: RecordChainWork = ({ subject, data, context }) => {
     _log(`chain_process_delivery_failure(${subject})...`);
     data = data || {};
-    _log('> data=', data);
+    _log(`> data[${subject}] =`, $U.json(data));
 
     const FailName = data.EventType || '';
     const FailDescription = data.FailureMessage || '';
@@ -343,23 +344,25 @@ export const chain_process_error: RecordChainWork = ({ subject, data, context })
 //! chain for ALARM type. (see data/alarm.json)
 export const chain_process_callback: RecordChainWork = ({ subject, data, context }) => {
     _log(`chain_process_callback(${subject})...`);
-    data = data || {};
-    _log('> data=', data);
+    const $body: CallbackPayload = data || {};
+    _log(`> data[${subject}] =`, $U.json($body));
 
     //! restrieve service & cmd
-    const channel = subject.indexOf('/') ? subject.split('/', 2)[1] : data && data.channel;
-    const service = (data && data.service) || '';
-    const cmd = (data && data.data && data.data.cmd) || '';
-    const title = !service ? `callback-report` : `#callback ${service}/${cmd}`;
+    const $data: CallbackSlackData = $body.data || {};
+    const channel = subject.indexOf('/') ? subject.split('/', 2)[1] : $data && $data.channel;
+    const service = ($body && $body.service) || '';
+    const cmd = ($data && $data.cmd) || '';
+    const title = ($data && $data.title) || (!service ? `callback-report` : `#callback ${service}/${cmd}`);
 
     //NOTE - DO NOT CHANGE ARGUMENT ORDER.
-    return do_post_slack_channel(`${channel || ''}`)('', title, asText(data), [], '#B71BFF');
+    return do_post_slack_channel(`${channel || ''}`)('', title, asText($body), [], '#B71BFF');
 };
 
 //! chain for ALARM type. (see `lemon-core/doReportSlack()`)
 export const chain_process_slack: RecordChainWork = ({ subject, data, context }) => {
     _log(`chain_process_slack(${subject})...`);
-    _log('> data=', data);
+    data = data || {};
+    _log(`> data[${subject}] =`, $U.json(data));
 
     //! extract data.
     const channel = subject.indexOf('/') ? subject.split('/', 2)[1] : data && data.channel;
