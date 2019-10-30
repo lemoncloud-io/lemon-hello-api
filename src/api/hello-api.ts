@@ -170,8 +170,20 @@ export const asText = (data: any): string => {
     return keys.length > 0 ? JSON.stringify(data) : '';
 };
 
-//! post to slack channel.
+//! post to slack default channel.
 export const do_post_slack = (
+    pretext: string = '',
+    title: string = '',
+    text: string = '',
+    fields: string[] = [],
+    color: string = '',
+    username: string = '',
+) => {
+    return do_post_slack_channel('')(pretext, title, text, fields, color, username);
+};
+
+//! post to slack channel(default is public).
+export const do_post_slack_channel = (channel: string) => (
     pretext: string = '',
     title: string = '',
     text: string = '',
@@ -183,19 +195,12 @@ export const do_post_slack = (
     username = username || 'hello-alarm';
 
     //! build attachment.
-    const attachment = {
-        username,
-        color,
-        pretext,
-        title,
-        text,
-        ts: Math.floor(new Date().getTime() / 1000),
-        fields,
-    };
+    const ts = Math.floor(new Date().getTime() / 1000);
+    const attachment = { username, color, pretext, title, text, ts, fields };
 
     //! build body for slack, and call
     const body = { attachments: [attachment] };
-    return do_post_hello_slack('public', {}, body);
+    return do_post_hello_slack(`${channel || 'public'}`, {}, body);
 };
 
 export const chain_post_slack = ({ pretext, title, text, fields, color, username }: { [key: string]: any }) => {
@@ -328,10 +333,11 @@ export const chain_process_error: RecordChainWork = ({ subject, data, context })
     _log('> data=', data);
 
     //! get error reason.
+    const channel = subject.indexOf('/') ? subject.split('/', 2)[1] : data && data.channel;
     const message = data.message || data.error;
 
     //NOTE - DO NOT CHANGE ARGUMENT ORDER.
-    return do_post_slack(message, 'error-report', asText(data), []);
+    return do_post_slack_channel(channel)(message, 'error-report', asText(data), []);
 };
 
 //! chain for ALARM type. (see data/alarm.json)
@@ -340,8 +346,14 @@ export const chain_process_callback: RecordChainWork = ({ subject, data, context
     data = data || {};
     _log('> data=', data);
 
+    //! restrieve service & cmd
+    const channel = subject.indexOf('/') ? subject.split('/', 2)[1] : data && data.channel;
+    const service = (data && data.service) || '';
+    const cmd = (data && data.data && data.data.cmd) || '';
+    const title = !service ? `callback-report` : `#callback ${service}/${cmd}`;
+
     //NOTE - DO NOT CHANGE ARGUMENT ORDER.
-    return do_post_slack('', 'callback-report', asText(data), [], '#B71BFF');
+    return do_post_slack_channel(`${channel || ''}`)('', title, asText(data), [], '#B71BFF');
 };
 
 //! chain for ALARM type. (see `lemon-core/doReportSlack()`)
@@ -350,7 +362,7 @@ export const chain_process_slack: RecordChainWork = ({ subject, data, context })
     _log('> data=', data);
 
     //! extract data.
-    const channel = data.channel || '';
+    const channel = subject.indexOf('/') ? subject.split('/', 2)[1] : data && data.channel;
     const service = data.service || '';
     const ctx = data.context || {};
     const param: any = data.param || {};
@@ -369,7 +381,7 @@ export const chain_process_slack: RecordChainWork = ({ subject, data, context })
     if (context && body && body.attachments) body.attachments.push(att);
 
     //NOTE - DO NOT CHANGE ARGUMENT ORDER.
-    return do_post_hello_slack(channel, param, body, ctx);
+    return do_post_hello_slack(`${channel || ''}`, param, body, ctx);
 };
 
 //! chain to save message data to S3.
@@ -525,18 +537,18 @@ export const do_post_hello: NextHanlder = (ID, $param, $body, $ctx) => {
  * # use sample
  * $ cat data/error-hello.json | http ':8888/hello/public/slack'
  * ```
- * @param {*} ID                slack-channel id (see environment)
+ * @param {*} id                slack-channel id (see environment)
  * @param {*} $param            (optional)
  * @param {*} $body             {error?:'', message:'', data:{...}}
  * @param {*} $ctx              context
  */
-export const do_post_hello_slack: NextHanlder = (ID, $param, $body, $ctx) => {
-    _log(NS, `do_post_hello_slack(${ID})....`);
+export const do_post_hello_slack: NextHanlder = (id, $param, $body, $ctx) => {
+    _log(NS, `do_post_hello_slack(${id})....`);
     _log(NS, '> body =', $body);
     $param = $param || {};
 
     //! load target webhook via environ.
-    return do_load_slack_channel(ID).then(webhook => {
+    return do_load_slack_channel(id).then(webhook => {
         _log(NS, '> webhook :=', webhook);
         //! prepare slack message via body.
         const message = typeof $body === 'string' ? { text: $body } : $body;
@@ -557,6 +569,8 @@ export const do_post_hello_slack: NextHanlder = (ID, $param, $body, $ctx) => {
  * # error case
  * $ cat data/error-1.json | http ':8888/hello/!/event?subject=error'
  * $ cat data/error-2.json | http ':8888/hello/!/event?subject=error'
+ * $ cat data/error-2.json | http ':8888/hello/!/event?subject=error/alarm'
+ * $ cat data/error-2.json | http ':8888/hello/!/event?subject=callback/alarm'
  */
 export const do_post_hello_event: NextHanlder = (id, $param, $body, $ctx) => {
     _inf(NS, `do_post_hello_event(${id})....`);
@@ -573,11 +587,11 @@ export const do_post_hello_event: NextHanlder = (id, $param, $body, $ctx) => {
         ? chain_process_alarm
         : subject.startsWith('DeliveryFailure')
         ? chain_process_delivery_failure
-        : subject === 'error'
+        : subject === 'error' || subject.startsWith('error/')
         ? chain_process_error
-        : subject === 'callback'
+        : subject === 'callback' || subject.startsWith('callback/')
         ? chain_process_callback
-        : subject === 'slack'
+        : subject === 'slack' || subject.startsWith('slack/')
         ? chain_process_slack
         : noop;
 
