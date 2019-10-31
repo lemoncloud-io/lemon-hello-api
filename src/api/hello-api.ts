@@ -141,10 +141,13 @@ export const postMessage = (hookUrl: string, message: any) => {
 
 //! store channel map in cache
 const $channels: any = {};
-export const do_load_slack_channel = (name: string): Promise<string> => {
+export const do_load_slack_channel = (name: string, defName?: string): Promise<string> => {
     const ENV_NAME = `SLACK_${name}`.toUpperCase();
+    const ENV_DEFAULT = defName ? `SLACK_${defName}`.toUpperCase() : '';
     const $env = process.env || {};
-    const webhook = `${$channels[ENV_NAME] || $env[ENV_NAME] || ''}`.trim();
+    const webhook_name = `${$channels[ENV_NAME] || $env[ENV_NAME] || ''}`.trim();
+    const webhook_default = `${$channels[ENV_DEFAULT] || $env[ENV_DEFAULT] || ''}`.trim();
+    const webhook = webhook_name || webhook_default;
     _inf(NS, `> webhook[${name}] :=`, webhook);
     if (!webhook) return Promise.reject(new Error(`env[${ENV_NAME}] is required!`));
     return Promise.resolve(webhook)
@@ -192,8 +195,10 @@ export const do_post_slack_channel = (channel: string) => (
     color: string = '',
     username: string = '',
 ) => {
+    _log(NS, `do_post_slack_channel(${channel})...`);
     color = color || '#FFB71B';
     username = username || 'hello-alarm';
+    _log(NS, `> param[${channel}] =`, $U.json({ pretext, title, color, username }));
 
     //! build attachment.
     const ts = Math.floor(new Date().getTime() / 1000);
@@ -201,7 +206,7 @@ export const do_post_slack_channel = (channel: string) => (
 
     //! build body for slack, and call
     const body = { attachments: [attachment] };
-    return do_post_hello_slack(`${channel || 'public'}`, {}, body);
+    return do_post_hello_slack(`${channel || ''}`, {}, body);
 };
 
 export const chain_post_slack = ({ pretext, title, text, fields, color, username }: { [key: string]: any }) => {
@@ -349,7 +354,7 @@ export const chain_process_callback: RecordChainWork = ({ subject, data, context
 
     //! restrieve service & cmd
     const $data: CallbackSlackData = $body.data || {};
-    const channel = subject.indexOf('/') ? subject.split('/', 2)[1] : $data && $data.channel;
+    const channel = subject.indexOf('/') > 0 ? subject.split('/', 2)[1] : $data && $data.channel;
     const service = ($body && $body.service) || '';
     const cmd = ($data && $data.cmd) || '';
     const title = ($data && $data.title) || (!service ? `callback-report` : `#callback ${service}/${cmd}`);
@@ -551,7 +556,7 @@ export const do_post_hello_slack: NextHanlder = (id, $param, $body, $ctx) => {
     $param = $param || {};
 
     //! load target webhook via environ.
-    return do_load_slack_channel(id).then(webhook => {
+    return do_load_slack_channel(id, 0 ? '' : 'public').then(webhook => {
         _log(NS, '> webhook :=', webhook);
         //! prepare slack message via body.
         const message = typeof $body === 'string' ? { text: $body } : $body;
