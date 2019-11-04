@@ -560,8 +560,11 @@ export const do_post_hello_slack: NextHanlder = (id, $param, $body, $ctx) => {
         _log(NS, '> webhook :=', webhook);
         //! prepare slack message via body.
         const message = typeof $body === 'string' ? { text: $body } : $body;
+        const noop = (_: any) => _;
+        //NOTE! filter message only if sending to slack-hook.
+        const fileter = webhook.startsWith('https://hooks.slack.com') ? do_chain_message_save_to_s3 : noop;
         return Promise.resolve(message)
-            .then(do_chain_message_save_to_s3)
+            .then(fileter)
             .then(message => postMessage(webhook, message));
     });
 };
