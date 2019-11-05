@@ -55,7 +55,7 @@
     "dependencies": {
         "aws-sdk": "^2.456.0",
         "https": "^1.0.0",
-        "lemon-core": "^1.2.13",
+        "lemon-core": "^1.2.15",
         "url": "^0.11.0"
     },
     "devDependencies": {
@@ -69,7 +69,7 @@
         "@typescript-eslint/eslint-plugin": "^1.7.0",
         "@typescript-eslint/parser": "^1.7.0",
         "codecov": "^3.5.0",
-        "concurrently": "^4.1.0",
+        "concurrently": "^5.0.0",
         "eslint": "^5.16.0",
         "eslint-config-prettier": "^6.0.0",
         "eslint-plugin-prettier": "^3.1.0",
