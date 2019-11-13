@@ -440,11 +440,12 @@ export const do_chain_message_save_to_s3 = (message: any) => {
                 const link = Location;
                 const _pretext = title == 'error-report' ? title : pretext;
                 const text = title == 'error-report' ? pretext : title;
+                const tag0 = `${text}`.startsWith('#error') ? ':rotating_light:' : '';
                 message = {
                     attachments: [
                         {
                             pretext: _pretext,
-                            text: `<${link}|${tag || '*'}> ${text}`,
+                            text: `<${link}|${tag0 || tag || '*'}> ${text}`,
                             color,
                             mrkdwn: true,
                             mrkdwn_in: ['pretext', 'text'],
