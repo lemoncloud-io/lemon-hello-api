@@ -398,6 +398,8 @@ export const do_chain_message_save_to_s3 = (message: any) => {
     const SLACK_PUT_S3 = $U.N(val, 0);
     _log(NS, `do_chain_message_save_to_s3(${SLACK_PUT_S3})...`);
     const attachments: SlackAttachment[] = message.attachments;
+
+    //! if put to s3, then filter attachments
     if (SLACK_PUT_S3 && attachments && attachments.length) {
         const attachment = attachments[0] || {};
         const pretext = attachment.pretext || '';
@@ -419,6 +421,16 @@ export const do_chain_message_save_to_s3 = (message: any) => {
             }
             return _;
         });
+        const TAGS = [':slack:', ':cubimal_chick:', ':rotating_light:'];
+        const MOONS = ':new_moon:,:waxing_crescent_moon:,:first_quarter_moon:,:moon:,:full_moon:,:waning_gibbous_moon:,:last_quarter_moon:,:waning_crescent_moon:'.split(
+            ',',
+        );
+        const CLOCKS = ':clock12:,:clock1230:,:clock1:,:clock130:,:clock2:,:clock230:,:clock3:,:clock330:,:clock4:,:clock430:,:clock5:,:clock530:,:clock6:,:clock630:,:clock7:,:clock730:,:clock8:,:clock830:,:clock9:,:clock930:,:clock10:,:clock1030:,:clock11:,:clock1130:'.split(
+            ',',
+        );
+        const now = new Date();
+        const hour = now.getHours();
+        const tag = 0 ? TAGS[2] : MOONS[Math.floor((MOONS.length * hour) / 24)];
         const json = JSON.stringify(data);
         return $s3s
             .putObject(json)
@@ -428,12 +440,11 @@ export const do_chain_message_save_to_s3 = (message: any) => {
                 const link = Location;
                 const _pretext = title == 'error-report' ? title : pretext;
                 const text = title == 'error-report' ? pretext : title;
-                const tag = [':slack:', ':cubimal_chick:', ':rotating_light:'][2];
                 message = {
                     attachments: [
                         {
                             pretext: _pretext,
-                            text: `<${link}|${tag}> ${text}`,
+                            text: `<${link}|${tag || '*'}> ${text}`,
                             color,
                             mrkdwn: true,
                             mrkdwn_in: ['pretext', 'text'],
