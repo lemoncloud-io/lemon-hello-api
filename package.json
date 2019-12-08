@@ -55,7 +55,7 @@
     "dependencies": {
         "aws-sdk": "^2.456.0",
         "https": "^1.0.0",
-        "lemon-core": "^1.2.15",
+        "lemon-core": "^2.0.7",
         "url": "^0.11.0"
     },
     "devDependencies": {
@@ -63,9 +63,7 @@
         "@types/cors": "^2.8.5",
         "@types/dotenv": "^6.1.1",
         "@types/jest": "^24.0.12",
-        "@types/morgan": "^1.7.35",
         "@types/supertest": "^2.0.7",
-        "@types/winston": "^2.4.4",
         "@typescript-eslint/eslint-plugin": "^1.7.0",
         "@typescript-eslint/parser": "^1.7.0",
         "codecov": "^3.5.0",
@@ -99,11 +97,12 @@
         "dist/**/*"
     ],
     "engines": {
-        "node": ">=8.10.0"
+        "node": ">=10.8.0"
     },
     "keywords": [
         "lemoncloud",
-        "serverless"
+        "serverless",
+        "lemon-core"
     ],
     "bugs": {
         "url": "https://github.com/lemoncloud-io/lemon-hello-api/issues",
