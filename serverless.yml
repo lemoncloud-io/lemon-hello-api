@@ -38,12 +38,14 @@ custom:
   # SQS Queue
   #------------------------------------------------
   queueName:
+    local: lemon-hello-sqs-dev
     dev: lemon-hello-sqs-dev
     prod: lemon-hello-sqs
   #------------------------------------------------
   # SNS Registration
   #------------------------------------------------
   topicName:
+    local: lemon-hello-sns-dev
     dev: lemon-hello-sns-dev
     prod: lemon-hello-sns
   topicArn:
@@ -142,8 +144,10 @@ provider:
   # you can define service wide environment variables here
   # WARN! - 환경변수에는 object/null 으로 설정할 수 없음.
   environment:
-    DEFAULT_REGION: '${self:provider.region}'
-    CORE_S3_BUCKET: '${self:custom.bucketName}'
+    REGION: '${self:provider.region}'
+    MY_S3_BUCKET: '${self:custom.bucketName}'
+    MY_SQS_ENDPOINT: 'https://sqs.${self:provider.region}.amazonaws.com/#{AWS::AccountId}/${self:custom.queueName.${self:provider.stage}}' # see `sqs-service`
+    MY_SNS_ENDPOINT: 'arn:aws:sns:${self:provider.region}:#{AWS::AccountId}:${self:custom.topicName.${self:provider.stage}}'               # see `sns-service`
     REPORT_ERROR_ARN: 'arn:aws:sns:${self:provider.region}:#{AWS::AccountId}:lemon-hello-sns'
     $<<: ${file(./env/${self:custom.CONF.${self:custom.CORE.profile}.env}):${self:provider.stage}}
 
@@ -151,27 +155,24 @@ provider:
 # Functions
 #------------------------------------------------
 functions:
-  #------------------
-  # Common SNS Service.
-  SNS:
-    handler: handler.SNS
-    timeout: 150            # max timeout. (= 5 min)
+  #WARN - must use `lambda` as name for `lemon-protocol`.
+  lambda:
+    handler: handler.lambda     # use core `lambda-handler`.
+    timeout: 300                # max timeout. (= 5 min)
     events:
+      # -------------------------------------------------------
+      # Shared SNS Service.
       - sns: 'arn:aws:sns:${self:provider.region}:#{AWS::AccountId}:${self:custom.topicName.${self:custom.CORE.stage}}'
-  #------------------
-  # Common SQS Service.
-  SQS:
-    handler: handler.SQS
-    timeout: 150            # max timeout. (= 5 min)
-    events:
+      # -------------------------------------------------------
+      # Shared SQS Service.
       - sqs:
           arn:
             Fn::GetAtt:
               - MyQueue
               - Arn
-          batchSize: 1      # the maximum number of SQS messages that AWS will send to your Lambda function on a single trigger. (default: 10)
+          batchSize: 1              # the maximum number of SQS messages that AWS will send to your Lambda function on a single trigger. (default: 10)
 #TODO - refactoring WSS
-#   #------------------
+#   # -------------------------------------------------------
 #   # Common WSS (WebSocket Server).
 #   # - see: https://serverless.com/framework/docs/providers/aws/events/websocket/
 #   WSS:
@@ -191,12 +192,9 @@ functions:
 #           #     - 'route.request.querystring.Auth'
 #       - websocket:
 #           route: echo             # sample route by routeKey. echo request.
-  #------------------
-  # REST API : /hello
-  hello:
-    handler: handler.hello
-    events:
-      # - stream: ${self:custom.CONF.${self:custom.CORE.profile}.stream}
+        # - stream: ${self:custom.CONF.${self:custom.CORE.profile}.stream}
+      # -------------------------------------------------------
+      # REST API : /hello
       - http:
           path: /hello
           method: get
@@ -247,20 +245,18 @@ functions:
           documentation:
             summary: "delete item"
 
-#------------------------------------------------
-# you can add packaging information here
-#------------------------------------------------
+#--------------------------------------------------------------
+# ! INCLUDE ONLY DISTRIBUTIONS !
+#--------------------------------------------------------------
 package:
-#  include:
-#    - include-me.js
-#    - include-me-dir/**
   exclude:
-    - src/**          # un-comment this if use gulp build.
-    - env/**
-    - bin/**
-    # - data/**
-    - docs/**
-    - test/**
+    - ./**
+    - '!node_modules/**'
+  include:
+    - handler.js
+    - package.json
+    - dist/**
+    - data/**
   excludeDevDependencies: true
 
 

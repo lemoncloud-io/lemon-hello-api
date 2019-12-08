@@ -1,6 +1,6 @@
 {
     "name": "lemon-hello-api",
-    "version": "1.4.1",
+    "version": "2.0.1",
     "description": "Basic Serverless Hello API with `Lambda` + `API Gateway` + `Web Socket` + `SNS` + `SQS` + `KMS`",
     "main": "dist/index.js",
     "types": "dist/index.d.ts",
@@ -55,7 +55,8 @@
     "dependencies": {
         "aws-sdk": "^2.456.0",
         "https": "^1.0.0",
-        "lemon-core": "^2.0.7",
+        "lemon-core": "^2.0.8",
+        "source-map-support": "^0.5.12",
         "url": "^0.11.0"
     },
     "devDependencies": {
@@ -66,7 +67,7 @@
         "@types/supertest": "^2.0.7",
         "@typescript-eslint/eslint-plugin": "^1.7.0",
         "@typescript-eslint/parser": "^1.7.0",
-        "codecov": "^3.5.0",
+        "codecov": "^3.6.1",
         "concurrently": "^5.0.0",
         "eslint": "^5.16.0",
         "eslint-config-prettier": "^6.0.0",
