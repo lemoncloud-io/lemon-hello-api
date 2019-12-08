@@ -21,8 +21,6 @@
 //! import core engine.
 import { $U, _log, _inf, _err } from 'lemon-core';
 import { do_parrallel } from 'lemon-core';
-import { CoreHandler, WebResult, BrokerBuilder } from 'lemon-core';
-
 import { do_post_hello_event } from '../api/hello-api';
 
 //! Node definition.
@@ -34,6 +32,13 @@ export interface SNSNode {
         };
     };
     context: any;
+}
+
+interface CoreHandler<T> {
+    (event: any, context: any, cb: any): any;
+}
+interface BrokerBuilder<T> {
+    (type: string, ns: string): any;
 }
 
 /**
@@ -83,7 +88,7 @@ const builder: BrokerBuilder<any> = (defType, NS) => {
         //--------------------------------------------------------
         //WARN! - do prevent error looping. call directly.
         return do_post_hello_event(id, param, body, context)
-            .then((_: WebResult) => {
+            .then((_: any) => {
                 _log(NS, '>> res =', _);
                 return `${_.statusCode || '000'} ${_.body || _}`;
             })
