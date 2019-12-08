@@ -2,10 +2,14 @@
  * `index.ts`
  * - main index to export
  *
+ * **NOTE**
+ * - DO `NOT EXPORT` ANY ADDITIONALS DUE TO TIME OF ENGINE INITIALIZER.
  *
- * @author  Steve Jung <steve@lemoncloud.io>
- * @date    2019-07-31 support ECMA 2016.
- * @date    2019-08-09 optimized with `lemon-core#1.0.1`
+ *
+ * @author      Steve Jung <steve@lemoncloud.io>
+ * @date        2019-07-31 support ECMA 2016.
+ * @date        2019-08-09 optimized with `lemon-core#1.1.1`
+ * @date        2019-11-26 optimized with `lemon-core#2.0.0`
  *
  * @copyright (C) lemoncloud.io 2019 - All Rights Reserved.
  */
@@ -38,7 +42,7 @@ export const express = () => {
  * # run express in local
  * $ node .
  * # batch run from 1 to 2 page.
- * $ node . -ep hello -sid lemon -cmd run -opt 'dummy=1' -ipp 1 -page 1~2
+ * $ node . -ep forms -sid lemon -cmd run -opt 'dummy=1' -ipp 1 -page 1~2
  * ```
  ** *******************************************************************************************************************/
 if (typeof require !== 'undefined' && require.main === module) {

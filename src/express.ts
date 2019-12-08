@@ -3,8 +3,11 @@
  * - standalone http service with express.
  *
  *
- * @author  Steve Jung <steve@lemoncloud.io>
- * @date    2019-08-09 optimized with `lemon-core#1.0.1`
+ * @author      Steve Jung <steve@lemoncloud.io>
+ * @date        2019-08-09 optimized with `lemon-core#1.0.1`
+ * @date        2019-11-06 add `credentials()` for loading profile.
+ * @date        2019-11-26 optimized with `lemon-core#2.0.0`
+ * @date        2019-12-08 added `/echo` router for testing.
  *
  * @copyright (C) lemoncloud.io 2019 - All Rights Reserved.
  */
@@ -19,13 +22,53 @@ import environ from 'lemon-core/dist/environ';
 const $env = environ(process);
 process.env = $env;
 
-//! next 2 lines important to init core properly.
-import { engine } from './index';
-const $engine = engine();
+// eslint-disable-next-line @typescript-eslint/no-unused-vars
+import { $engine, $U, _log, _inf, _err } from 'lemon-core';
+import { $web } from './engine';
+const NS = $U.NS('EXPR', 'yellow');
 
-//! build express engine.
 import { buildExpress } from 'lemon-core';
-export const { app, createServer } = buildExpress($engine);
+import $core from 'lemon-core';
+export const { app, createServer } = buildExpress($engine, $web);
+
+//! dynamic loading credentials by profile. (search PROFILE -> NAME)
+export const credentials = async (name?: string) => {
+    _log(NS, `credentials(${name})..`);
+    const NAME = name || ($engine.environ('NAME', '') as string);
+    const profile = $engine.environ('PROFILE', NAME) as string;
+    return $core.tools.credentials(profile);
+};
+
+//! load yml data via './data/<file>.yml'
+export const loadDataYml = (file: string) => {
+    _log(NS, `loadDataYml(${name})..`);
+    return $core.tools.loadDataYml(file, 'data');
+};
+
+//! customize createServer().
+const _createServer = () => {
+    //NOTE - `app` is ready during default initializer.
+
+    /**
+     * echo request information.
+     *
+     * ```sh
+     * $ http POST ':8888/echo?x=y' x-head:1 a=b
+     */
+    app.post('/echo', (req: any, res: any) => {
+        _log(NS, 'echo()...');
+        const method = req.method;
+        const headers = req.headers;
+        const body = req.body;
+        const param = req.query;
+        param && _log(NS, `> param =`, param);
+        body && _log(NS, `> body =`, body);
+        res.status(200).json({ method, headers, body, param });
+    });
+
+    //! create-server....
+    return createServer();
+};
 
 //! default exports.
-export default { app, createServer };
+export default { app, createServer: _createServer };

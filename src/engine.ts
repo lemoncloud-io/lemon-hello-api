@@ -3,33 +3,36 @@
  * - main index to export
  *
  *
- * @author  Steve Jung <steve@lemoncloud.io>
- * @date    2019-07-31 support ECMA 2016.
- * @date    2019-08-09 optimized with `lemon-core#1.0.1`
+ * @author      Steve Jung <steve@lemoncloud.io>
+ * @date        2019-07-31 support ECMA 2016.
+ * @date        2019-08-09 optimized with `lemon-core#1.0.1`
+ * @date        2019-11-26 optimized with `lemon-core#2.0.0`
+ * @date        2019-12-03 optimized with `lemon-core#2.0.3`
  *
  * @copyright (C) lemoncloud.io 2019 - All Rights Reserved.
  */
 /** ********************************************************************************************************************
  *  start initializing `lemon-core` with global `process.env`
  ** ********************************************************************************************************************/
-import { $engine, $SVC } from 'lemon-core';
+import { $engine } from 'lemon-core';
 
-/** ********************************************************************************************************************
- *  Loading API Services.
- ** ********************************************************************************************************************/
-import hello from './api/hello-api';
+// Loading API Service of NextDecoder
+import hello from './api/hello-api'; //NOTE - it should be `NextDecoder`.
 
-export const $kms = $SVC.KMS;
-export const $s3s = $SVC.S3;
-export const $sns = $SVC.SNS;
+//! import the default core services.
+import $core from 'lemon-core';
 
-//! Load Additional Handlers......
-import $SNS from './builder/SNS';
-import { $SQS } from 'lemon-core';
+const $lambda = $core.cores.lambda;
+const $web = $lambda.web;
+const $sqs = $lambda.sqs;
+const $sns = $lambda.sns;
 
-//! build additional handlers.....
-const SNS = $SNS('hello');
-const SQS = $SQS('hello');
+//! register sub handlers, and listeners.
+$web.setHandler('hello', hello);
 
-//! export default.
-export default Object.assign($engine, { hello, SNS, SQS, $kms, $s3s, $sns });
+//! export with used cores services.
+export { $lambda, $web, $sqs, $sns };
+
+//! default exports with lambda handler.
+const lambda = async (e: any, c: any) => $lambda.lambda.handle(e, c);
+export default { $engine, lambda };

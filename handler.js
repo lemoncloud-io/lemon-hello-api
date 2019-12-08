@@ -4,9 +4,10 @@
  * - ONLY FOR Lambda Deployment.
  *
  *
- * @author  Steve Jung <steve@lemoncloud.io>
- * @date    2019-07-31 cleanup for ts support.
- * @date    2019-08-09 optimized with `lemon-core#1.0.1`
+ * @author      Steve Jung <steve@lemoncloud.io>
+ * @date        2019-07-31 cleanup for ts support.
+ * @date        2019-08-09 optimized with `lemon-core#1.0.1`
+ * @date        2019-11-26 optimized with `lemon-core#2.0.0`
  *
  * @copyright (C) lemoncloud.io 2019 - All Rights Reserved.
  */
@@ -30,7 +31,7 @@ const SRC = $env.SRC || './dist/';
 //! load configuration.
 const engine = require(`${SRC}index`).engine;
 const $engine = engine();
-if (!$engine) throw new Error('$engine is required! check environ.');
+if (!$engine || !$engine.lambda) throw new Error('.lambda is required! check lemon-core#2.0.0.');
 
 //! export as serverless handlers.
 module.exports = $engine;

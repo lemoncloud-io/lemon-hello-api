@@ -14,22 +14,25 @@
  *  Common Headers
  ** ********************************************************************************************************************/
 //! import core engine + service.
-import { $U, _log, _inf, _err } from 'lemon-core';
-import { NextDecoder, NextHanlder, SlackAttachment, doReportError } from 'lemon-core';
-import { loadJsonSync, SlackPostBody } from 'lemon-core';
-
-//! define NS, and export default handler().
+import $core, { $U, _log, _inf, _err } from 'lemon-core';
 export const NS = $U.NS('HELO', 'yellow'); // NAMESPACE TO BE PRINTED.
-import { $WEB } from 'lemon-core';
 
 //! import dependency
-import $engine from '../engine';
 import url from 'url';
 import https from 'https';
 import AWS from 'aws-sdk';
 
-import { $kms, $s3s, $sns } from '../engine';
+import { NextDecoder, NextHandler, SlackAttachment, doReportError } from 'lemon-core';
+import { loadJsonSync, SlackPostBody } from 'lemon-core';
 import { CallbackSlackData, CallbackPayload } from '../common/types';
+
+/** ********************************************************************************************************************
+ *  Core Service Instances
+ ** ********************************************************************************************************************/
+import { AWSKMSService, AWSS3Service, AWSSNSService } from 'lemon-core';
+const $kms = new AWSKMSService();
+const $sns = new AWSSNSService();
+const $s3s = new AWSS3Service();
 
 /** ********************************************************************************************************************
  *  Decode Next Handler
@@ -74,18 +77,19 @@ const decode_next_handler: NextDecoder = (MODE, ID, CMD) => {
             if (false) noop();
             else if (ID !== '!' && CMD === '') next = do_delete_hello;
             break;
-        case 'EVENT':
-            break;
-        // For WSS. use dummy handler.
-        case 'CONNECT':
-        case 'DISCONNECT':
-            return async () => 'ok';
+        // case 'EVENT':
+        //     break;
+        // // For WSS. use dummy handler.
+        // case 'CONNECT':
+        // case 'DISCONNECT':
+        //     return async () => 'ok';
         default:
             break;
     }
     return next;
 };
-export default $WEB(NS, decode_next_handler);
+//NOTE! - export `next-decoder` since `lemon-core#2.0.1`
+export default decode_next_handler;
 
 /** ********************************************************************************************************************
  *  Local Functions.
@@ -482,7 +486,7 @@ export const do_chain_message_save_to_s3 = (message: any) => {
  * @param {*} $body			body parameters (json)
  * @param {*} $ctx			context (optional)
  */
-export const do_list_hello: NextHanlder = (ID, $param, $body, $ctx) => {
+export const do_list_hello: NextHandler = (ID, $param, $body, $ctx) => {
     _log(NS, `do_list_hello(${ID})....`);
 
     const that: any = {};
@@ -499,7 +503,7 @@ export const do_list_hello: NextHanlder = (ID, $param, $body, $ctx) => {
  * ```sh
  * $ http ':8888/hello/0'
  */
-export const do_get_hello: NextHanlder = (ID, $param, $body, $ctx) => {
+export const do_get_hello: NextHandler = (ID, $param, $body, $ctx) => {
     _log(NS, `do_get_hello(${ID})....`);
 
     const id = $U.N(ID, 0);
@@ -518,7 +522,7 @@ export const do_get_hello: NextHanlder = (ID, $param, $body, $ctx) => {
  * ```sh
  * $ echo '{"size":1}' | http PUT ':8888/hello/1'
  */
-export const do_put_hello: NextHanlder = (ID, $param, $body, $ctx) => {
+export const do_put_hello: NextHandler = (ID, $param, $body, $ctx) => {
     _log(NS, `do_put_hello(${ID})....`);
     $param = $param || {};
 
@@ -535,7 +539,7 @@ export const do_put_hello: NextHanlder = (ID, $param, $body, $ctx) => {
  * ```sh
  * $ echo '{"name":"lemoncloud"}' | http POST ':8888/hello/0'
  */
-export const do_post_hello: NextHanlder = (ID, $param, $body, $ctx) => {
+export const do_post_hello: NextHandler = (ID, $param, $body, $ctx) => {
     _log(NS, `do_post_hello(${ID})....`);
     $param = $param || {};
     if (!$body && !$body.name) return Promise.reject(new Error('.name is required!'));
@@ -562,7 +566,7 @@ export const do_post_hello: NextHanlder = (ID, $param, $body, $ctx) => {
  * @param {*} $body             {error?:'', message:'', data:{...}}
  * @param {*} $ctx              context
  */
-export const do_post_hello_slack: NextHanlder = (id, $param, $body, $ctx) => {
+export const do_post_hello_slack: NextHandler = (id, $param, $body, $ctx) => {
     _log(NS, `do_post_hello_slack(${id})....`);
     _log(NS, '> body =', $body);
     $param = $param || {};
@@ -595,7 +599,7 @@ export const do_post_hello_slack: NextHanlder = (id, $param, $body, $ctx) => {
  * $ cat data/error-2.json | http ':8888/hello/!/event?subject=error/alarm'
  * $ cat data/error-2.json | http ':8888/hello/!/event?subject=callback/alarm'
  */
-export const do_post_hello_event: NextHanlder = (id, $param, $body, $ctx) => {
+export const do_post_hello_event: NextHandler = (id, $param, $body, $ctx) => {
     _inf(NS, `do_post_hello_event(${id})....`);
     $param = $param || {};
     const subject = `${$param.subject || ''}`;
@@ -620,6 +624,8 @@ export const do_post_hello_event: NextHanlder = (id, $param, $body, $ctx) => {
 
     return Promise.resolve({ subject, data, context }).then(chain_next);
 };
+//! attach sns listener
+$core.cores.lambda.sns.addListener(do_post_hello_event);
 
 /**
  * Delete Node (or mark deleted)
@@ -627,7 +633,7 @@ export const do_post_hello_event: NextHanlder = (id, $param, $body, $ctx) => {
  * ```sh
  * $ http DELETE ':8888/hello/1'
  */
-export const do_delete_hello: NextHanlder = (ID, $param, $body, $ctx) => {
+export const do_delete_hello: NextHandler = (ID, $param, $body, $ctx) => {
     _log(NS, `do_delete_hello(${ID})....`);
 
     return do_get_hello(ID, null, null, $ctx).then(node => {
@@ -645,7 +651,7 @@ export const do_delete_hello: NextHanlder = (ID, $param, $body, $ctx) => {
  * ```sh
  * $ http ':8888/hello/public/test-channel'
  */
-export const do_get_test_channel: NextHanlder = (id, $param, $body, $ctx) => {
+export const do_get_test_channel: NextHandler = (id, $param, $body, $ctx) => {
     _log(NS, `do_get_test_channel(${id})....`);
     return do_load_slack_channel(id).then((channel: string) => {
         return { id, channel };
@@ -659,7 +665,7 @@ export const do_get_test_channel: NextHanlder = (id, $param, $body, $ctx) => {
  * $ http ':8888/hello/alarm/test-sns'
  * $ http ':8888/hello/failure/test-sns'
  */
-export const do_get_test_sns: NextHanlder = (ID, $param, $body, $ctx) => {
+export const do_get_test_sns: NextHandler = (ID, $param, $body, $ctx) => {
     _log(NS, `do_get_test_sns(${ID})....`);
 
     //! build event body, then start promised
@@ -685,9 +691,7 @@ export const do_get_test_sns: NextHanlder = (ID, $param, $body, $ctx) => {
 
     //! call sns handler.
     const local_chain_handle_sns = (event: any) => {
-        const SNS = $engine.SNS;
-        if (!SNS) return Promise.reject(new Error('.SNS is required!'));
-
+        // if (event) return event;
         //! validate event
         event = event || {};
         if (!event.Records || !Array.isArray(event.Records))
@@ -698,12 +702,7 @@ export const do_get_test_sns: NextHanlder = (ID, $param, $body, $ctx) => {
             return Promise.reject(new Error('.Records[0].Sns.Subject is required!'));
 
         //! call handler.
-        return new Promise((resolve, reject) => {
-            SNS(event, $ctx, (err, res) => {
-                if (err) reject(err);
-                else resolve(res);
-            });
-        });
+        return $core.cores.lambda.sns.handle(event, null);
     };
 
     //! decode by ID
@@ -726,7 +725,7 @@ export const do_get_test_sns: NextHanlder = (ID, $param, $body, $ctx) => {
  * ```sh
  * $ http ':8888/hello/0/test-sns-arn'
  */
-export const do_get_test_sns_arn: NextHanlder = (ID, $param, $body, $ctx) => {
+export const do_get_test_sns_arn: NextHandler = (ID, $param, $body, $ctx) => {
     _log(NS, `do_get_test_sns_arn(${ID})....`);
     return $sns.endpoint('').then(arn => {
         _log(NS, '> arn =', arn);
@@ -740,7 +739,7 @@ export const do_get_test_sns_arn: NextHanlder = (ID, $param, $body, $ctx) => {
  * ```sh
  * $ http ':8888/hello/0/test-sns-err'
  */
-export const do_get_test_sns_err: NextHanlder = (ID, $param, $body, $ctx) => {
+export const do_get_test_sns_err: NextHandler = (ID, $param, $body, $ctx) => {
     _log(NS, `do_get_test_sns_err(${ID})....`);
     const e = new Error('Test Error');
     return $sns.reportError(e, undefined, undefined).then(mid => {
@@ -755,7 +754,7 @@ export const do_get_test_sns_err: NextHanlder = (ID, $param, $body, $ctx) => {
  * ```sh
  * $ http ':8888/hello/0/test-encrypt'
  */
-export const do_get_test_encrypt: NextHanlder = (ID, $param, $body, $ctx) => {
+export const do_get_test_encrypt: NextHandler = (ID, $param, $body, $ctx) => {
     _log(NS, `do_get_test_encrypt(${ID})....`);
     const message = 'hello lemon';
     return $kms
@@ -774,7 +773,7 @@ export const do_get_test_encrypt: NextHanlder = (ID, $param, $body, $ctx) => {
  * $ http ':8888/hello/0/test-error'
  * $ http ':8888/hello/0/test-error?report=1'
  */
-export const do_get_test_error: NextHanlder = async (ID, $param, $body, $ctx) => {
+export const do_get_test_error: NextHandler = async (ID, $param, $body, $ctx) => {
     _log(NS, `do_get_test_error(${ID})....`);
     const report = $U.N($param.report, $param.report === '' ? 1 : 0);
     if (report) return await doReportError(new Error('hello-error'), null, null);
@@ -787,7 +786,7 @@ export const do_get_test_error: NextHanlder = async (ID, $param, $body, $ctx) =>
  * ```sh
  * $ http ':8888/hello/0/test-env'
  */
-export const do_get_test_env: NextHanlder = async (ID, $param, $body, $ctx) => {
+export const do_get_test_env: NextHandler = async (ID, $param, $body, $ctx) => {
     _log(NS, `do_get_test_error(${ID})....`);
     const report = $U.N($param.report, $param.report === '' ? 1 : 0);
     const env = process.env;
@@ -800,7 +799,7 @@ export const do_get_test_env: NextHanlder = async (ID, $param, $body, $ctx) => {
  * ```sh
  * $ http ':8888/hello/0/test-s3-put'
  */
-export const do_get_test_s3_put: NextHanlder = (ID, $param, $body, $ctx) => {
+export const do_get_test_s3_put: NextHandler = (ID, $param, $body, $ctx) => {
     _log(NS, `do_get_test_s3_put(${ID})....`);
     const message = 'hello lemon';
     const data = { message };
