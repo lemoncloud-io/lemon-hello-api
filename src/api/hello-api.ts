@@ -14,19 +14,25 @@
  *  Common Headers
  ** ********************************************************************************************************************/
 //! import core engine + service.
-import { $U, _log, _inf, _err } from 'lemon-core';
+import $core, { $U, _log, _inf, _err } from 'lemon-core';
 export const NS = $U.NS('HELO', 'yellow'); // NAMESPACE TO BE PRINTED.
 
 //! import dependency
-import $engine from '../engine';
 import url from 'url';
 import https from 'https';
 import AWS from 'aws-sdk';
 
 import { NextDecoder, NextHandler, SlackAttachment, doReportError } from 'lemon-core';
 import { loadJsonSync, SlackPostBody } from 'lemon-core';
-import { $kms, $s3s, $sns } from '../engine';
 import { CallbackSlackData, CallbackPayload } from '../common/types';
+
+/** ********************************************************************************************************************
+ *  Core Service Instances
+ ** ********************************************************************************************************************/
+import { AWSKMSService, AWSS3Service, AWSSNSService } from 'lemon-core';
+const $kms = new AWSKMSService();
+const $sns = new AWSSNSService();
+const $s3s = new AWSS3Service();
 
 /** ********************************************************************************************************************
  *  Decode Next Handler
@@ -64,7 +70,6 @@ const decode_next_handler: NextDecoder = (MODE, ID, CMD) => {
         case 'POST':
             if (false) noop();
             else if (ID !== '!' && CMD === '') next = do_post_hello;
-            else if (ID !== '!' && CMD === 'echo') next = do_post_hello_echo;
             else if (ID !== '!' && CMD === 'slack') next = do_post_hello_slack;
             else if (ID === '!' && CMD === 'event') next = do_post_hello_event;
             break;
@@ -546,23 +551,6 @@ export const do_post_hello: NextHandler = (ID, $param, $body, $ctx) => {
 };
 
 /**
- * Insert new Node at position 0.
- *
- * ```sh
- * $ echo '{"name":"lemoncloud"}' | http POST ':8888/hello/0'
- */
-export const do_post_hello_echo: NextHandler = (ID, $param, $body, $ctx) => {
-    _log(NS, `do_post_echo(${ID})....`);
-    $param = $param || {};
-    if (!$body && !$body.name) return Promise.reject(new Error('.name is required!'));
-
-    return Promise.resolve($body).then(node => {
-        NODES.push(node);
-        return NODES.length - 1; // returns ID.
-    });
-};
-
-/**
  * Post message via Slack Web Hook
  *
  * ```sh
@@ -636,6 +624,8 @@ export const do_post_hello_event: NextHandler = (id, $param, $body, $ctx) => {
 
     return Promise.resolve({ subject, data, context }).then(chain_next);
 };
+//! attach sns listener
+$core.cores.lambda.sns.addListener(do_post_hello_event);
 
 /**
  * Delete Node (or mark deleted)
@@ -701,9 +691,7 @@ export const do_get_test_sns: NextHandler = (ID, $param, $body, $ctx) => {
 
     //! call sns handler.
     const local_chain_handle_sns = (event: any) => {
-        const SNS = $engine.SNS;
-        if (!SNS) return Promise.reject(new Error('.SNS is required!'));
-
+        // if (event) return event;
         //! validate event
         event = event || {};
         if (!event.Records || !Array.isArray(event.Records))
@@ -714,12 +702,7 @@ export const do_get_test_sns: NextHandler = (ID, $param, $body, $ctx) => {
             return Promise.reject(new Error('.Records[0].Sns.Subject is required!'));
 
         //! call handler.
-        return new Promise((resolve, reject) => {
-            SNS(event, $ctx, (err, res) => {
-                if (err) reject(err);
-                else resolve(res);
-            });
-        });
+        return $core.cores.lambda.sns.handle(event, null);
     };
 
     //! decode by ID
