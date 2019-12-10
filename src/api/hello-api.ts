@@ -511,7 +511,6 @@ export const do_get_hello: NextHandler = (ID, $param, $body, $ctx) => {
     if (!node) return Promise.reject(new Error(`404 NOT FOUND - id:${id}`));
     return Promise.resolve(node).then(_ => {
         const node: any = Object.assign({}, _); // copy node.
-        node._id = id;
         return node;
     });
 };
@@ -527,7 +526,7 @@ export const do_put_hello: NextHandler = (ID, $param, $body, $ctx) => {
     $param = $param || {};
 
     return do_get_hello(ID, null, null, $ctx).then(node => {
-        const id = node._id;
+        const id = node._id || node.id || ID;
         Object.assign(NODES[id], $body || {});
         return Object.assign(node, $body || {});
     });
