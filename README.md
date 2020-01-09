@@ -130,6 +130,12 @@ $ travis encrypt <NPM Token> --add deploy.api_key
 
 
 ----------------
+# TODO #
+
+- [ ] support dummy restfull api w/ dummy-storage.
+
+
+----------------
 # VERSION INFO #
 
 Version History
