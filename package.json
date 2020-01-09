@@ -1,6 +1,6 @@
 {
     "name": "lemon-hello-api",
-    "version": "2.0.1",
+    "version": "2.1.4",
     "description": "Basic Serverless Hello API with `Lambda` + `API Gateway` + `Web Socket` + `SNS` + `SQS` + `KMS`",
     "main": "dist/index.js",
     "types": "dist/index.d.ts",
@@ -55,7 +55,7 @@
     "dependencies": {
         "aws-sdk": "^2.456.0",
         "https": "^1.0.0",
-        "lemon-core": "^2.0.8",
+        "lemon-core": "^2.1.4",
         "source-map-support": "^0.5.12",
         "url": "^0.11.0"
     },

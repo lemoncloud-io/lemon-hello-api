@@ -136,6 +136,7 @@ Version History
 
 | Version   | Description
 |--         |--
+| 2.1.4     | optimized with `lemon-core#2.1.4`.
 | 1.3.1     | refactoring with [lemon-core](/lemoncloud-io/lemon-core).
 | 1.2.3     | fix: iota of `NS` in sns-service.
 | 1.1.0     | Release version with `npm run release`.
