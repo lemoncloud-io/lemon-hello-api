@@ -503,12 +503,12 @@ export const do_list_hello: NextHandler = (ID, $param, $body, $ctx) => {
  * ```sh
  * $ http ':8888/hello/0'
  */
-export const do_get_hello: NextHandler = (ID, $param, $body, $ctx) => {
+export const do_get_hello: NextHandler = async (ID, $param, $body, $ctx) => {
     _log(NS, `do_get_hello(${ID})....`);
 
     const id = $U.N(ID, 0);
     const node = NODES[id];
-    if (!node) return Promise.reject(new Error(`404 NOT FOUND - id:${id}`));
+    if (!node) throw new Error(`404 NOT FOUND - id:${id}`);
     return Promise.resolve(node).then(_ => {
         const node: any = Object.assign({}, _); // copy node.
         return node;
@@ -538,11 +538,12 @@ export const do_put_hello: NextHandler = (ID, $param, $body, $ctx) => {
  * ```sh
  * $ echo '{"name":"lemoncloud"}' | http POST ':8888/hello/0'
  */
-export const do_post_hello: NextHandler = (ID, $param, $body, $ctx) => {
+export const do_post_hello: NextHandler = async (ID, $param, $body, $ctx) => {
     _log(NS, `do_post_hello(${ID})....`);
+    if (ID == 'echo') return { id: '!', cmd: 'echo', param: $param, body: $body, context: $ctx };
+    //! do some thing.
     $param = $param || {};
-    if (!$body && !$body.name) return Promise.reject(new Error('.name is required!'));
-
+    if (!$body || !$body.name) return Promise.reject(new Error('.name is required!'));
     return Promise.resolve($body).then(node => {
         NODES.push(node);
         return NODES.length - 1; // returns ID.
