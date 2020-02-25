@@ -224,6 +224,12 @@ functions:
           documentation:
             summary: "update item."
       - http:
+          path: /hello/subscribe
+          method: post
+          cors: true
+          documentation:
+            summary: "special purposed public APIs"
+      - http:
           path: /hello/{id}
           method: post
           cors: true

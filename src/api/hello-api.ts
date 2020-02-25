@@ -14,7 +14,7 @@
  *  Common Headers
  ** ********************************************************************************************************************/
 //! import core engine + service.
-import $core, { $U, _log, _inf, _err } from 'lemon-core';
+import $core, { APIService, $U, _log, _inf, _err } from 'lemon-core';
 export const NS = $U.NS('HELO', 'yellow'); // NAMESPACE TO BE PRINTED.
 
 //! import dependency
@@ -72,6 +72,7 @@ const decode_next_handler: NextDecoder = (MODE, ID, CMD) => {
             else if (ID !== '!' && CMD === '') next = do_post_hello;
             else if (ID !== '!' && CMD === 'slack') next = do_post_hello_slack;
             else if (ID === '!' && CMD === 'event') next = do_post_hello_event;
+            else if (ID === '!' && CMD === 'notification') next = do_post_hello_notification;
             break;
         case 'DELETE':
             if (false) noop();
@@ -632,6 +633,51 @@ export const do_post_hello_event: NextHandler = (id, $param, $body, $ctx) => {
 };
 //! attach sns listener
 $core.cores.lambda.sns.addListener(do_post_hello_event);
+
+/**
+ * Notification handler via broadcast of ProtocolService (HTTP/S web-hook)
+ *
+ * ``` sh
+ * $ cat data/notification-1.json | http ':8888/hello/!/notification'
+ * $ cat data/notification-2.json | http ':8888/hello/!/notification'
+ */
+const do_post_hello_notification: NextHandler = async (id, $param, $body, $ctx) => {
+    _inf(NS, `do_post_hello_notification(${id})....`);
+    $param && _inf(NS, `> param[${id}] =`, $U.json($param));
+    $body && _inf(NS, `> body[${id}] =`, $U.json($body));
+    $ctx && _inf(NS, `> context[${id}] =`, $U.json($ctx));
+
+    $param = $param || {};
+    $body = $body || {};
+
+    // Send HTTP GET to subscribe URL in request for subscription confirmation
+    if ($param.snsMessageType == 'SubscriptionConfirmation' && $param.subscribeURL) {
+        const uri = new URL($param.subscribeURL);
+        const path = `${uri.pathname || ''}`;
+        const search = `${uri.search || ''}`;
+        const api = new APIService('web', `${uri.origin}${path == '/' ? '' : path}`);
+        const res = await api.doGet(null, null, search.startsWith('?') ? search.substring(1) : search);
+        _log(NS, `> subscribe =`, $U.json(res));
+        return 'OK';
+    }
+
+    // Publish notification on Slack public channel
+    const subject = `${$body.subject || 'slack/public'}`;
+    const data = {
+        service: $body.channel,
+        body: {
+            text: `account ID (${$body.accountId})가 로그인 하였습니다.`,
+            channel: 'public',
+            context: $body,
+        },
+    };
+    const context = $ctx;
+    // return Promise.resolve({ subject, data, context }).then(chain_process_slack);
+    _log(NS, data);
+    return 'OK';
+};
+//! attach notification listener
+$core.cores.lambda.notification.addListener(do_post_hello_notification);
 
 /**
  * Delete Node (or mark deleted)
