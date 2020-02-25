@@ -638,8 +638,7 @@ $core.cores.lambda.sns.addListener(do_post_hello_event);
  * Notification handler via broadcast of ProtocolService (HTTP/S web-hook)
  *
  * ``` sh
- * $ cat data/notification-1.json | http ':8888/hello/!/notification'
- * $ cat data/notification-2.json | http ':8888/hello/!/notification'
+ * $ cat data/notification.json | http ':8888/hello/!/notification'
  */
 const do_post_hello_notification: NextHandler = async (id, $param, $body, $ctx) => {
     _inf(NS, `do_post_hello_notification(${id})....`);
@@ -662,19 +661,14 @@ const do_post_hello_notification: NextHandler = async (id, $param, $body, $ctx) 
     }
 
     // Publish notification on Slack public channel
-    const subject = `${$body.subject || 'slack/public'}`;
-    const data = {
-        service: $body.channel,
-        body: {
-            text: `account ID (${$body.accountId})가 로그인 하였습니다.`,
-            channel: 'public',
-            context: $body,
-        },
-    };
-    const context = $ctx;
-    // return Promise.resolve({ subject, data, context }).then(chain_process_slack);
-    _log(NS, data);
-    return 'OK';
+    const pretext = `\`#notification\` from \`${$body.service}:${$body.stage}\``;
+    let title;
+    if ($body.event === 'login' && $body.type === 'oauth') {
+        title = `[${$body.event.toUpperCase()}] account \`${$body.data.accountId}/${$body.data.provider}\``;
+    } else {
+        title = `[${$body.event || ''}] event received.`;
+    }
+    return do_post_slack_channel('public')(pretext, title, asText($body), []);
 };
 //! attach notification listener
 $core.cores.lambda.notification.addListener(do_post_hello_notification);
