@@ -1,0 +1,32 @@
+#-----------------------------------
+# Adam Basic Environment Variables.
+#-----------------------------------
+# default
+default_env: &default_env
+  LS: 0                   # log silence.
+  LC: 1                   # line-coloring
+  TS: 1                   # time-stamp in line
+  NAME: 'adam'            # profile name.
+  SLACK_PUT_S3: 0         # flag to auto save into s3 bucket if slack message.
+  SLACK_PUBLIC:           # TODO: aws 결제 정보 등록 후 KMS에 키 생성하여 public 채널의 webhook URL을 encrypt 하여 등록
+
+#-----------------------------------
+# local development configuration.
+local:
+  <<: *default_env
+  STAGE: 'local'
+
+#-----------------------------------
+# development server
+dev:
+  <<: *default_env
+  STAGE: 'develop'
+
+#-----------------------------------
+# production with AWS deploy
+prod:
+  <<: *default_env
+  STAGE: 'production'
+  TS: 0
+  SLACK_PUT_S3: 1         # flag to auto save into s3 bucket if slack message.
+

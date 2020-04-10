@@ -72,6 +72,17 @@ const CONF = (serverless) => {
             kmsKey: '*',                                        // KMS key-id
             bucket: 'comics-hello-wwww',                        // Name of S3 public bucket.
         },
+        "adam": {
+            name: "adam-app",
+            runtime: 'nodejs10.x',                              // Node is powered by the V8 JavaScript Engine (used in Chromium)
+            region: "ap-northeast-2",
+            env: "adam.yml",                                    // environment file
+            stream: undefined,                                  // Table Stream ARN
+            securityGroupIds: undefined,                        // securityGroupIds in VPC
+            subnetIds: undefined,                               // subnetIds in VPC
+            kmsKey: '*',                                        // KMS key-id
+            bucket: 'adam-hello-www',                           // Name of S3 public bucket.
+        },
         "none": {
             name: "none-app",
             runtime: 'nodejs10.x',                              // Node is powered by the V8 JavaScript Engine (used in Chromium)
