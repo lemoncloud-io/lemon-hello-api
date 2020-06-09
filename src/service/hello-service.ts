@@ -219,7 +219,7 @@ export class HelloMocksService implements HelloProxyService {
     }
 
     public do_load_slack_channel(name: string, defName?: string): Promise<string> {
-        throw `https://hooks.slack.com/services/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`;
+        throw `https://hooks.slack.com/services/AAAAAAAAA/BBBBBBBBB/CCCCCCCCCCCCCCCC`;
     }
 
     public do_chain_message_save_to_s3(message: any) {
@@ -229,6 +229,7 @@ export class HelloMocksService implements HelloProxyService {
 
 export default class MyHelloService implements HelloProxyService {
     public service: HelloProxyService;
+
     public constructor(type: string = '') {
         this.service = type == 'dummy' ? new HelloService() : new HelloService();
     }
