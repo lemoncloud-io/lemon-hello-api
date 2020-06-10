@@ -6,7 +6,7 @@
  * @author      Tyler <tyler@lemoncloud.io>
  * @copyright (C) 2020 LemonCloud Co Ltd. - All Rights Reserved.
  */
-import $engine, { _log, _inf, _err, $U } from 'lemon-core';
+import $engine, { _log, _inf, _err, $U, SlackPostBody, NextHandler } from 'lemon-core';
 import { SlackAttachment } from 'lemon-core';
 const NS = $U.NS('HLL', 'blue'); // NAMESPACE TO BE PRINTED.
 
@@ -14,6 +14,7 @@ const NS = $U.NS('HLL', 'blue'); // NAMESPACE TO BE PRINTED.
 import url from 'url';
 import https from 'https';
 import AWS from 'aws-sdk';
+import { CallbackSlackData, CallbackPayload } from '../common/types';
 
 /** ********************************************************************************************************************
  *  Core Service Instances
@@ -30,11 +31,40 @@ export interface RecordChainWork {
     (param: RecordChainData): Promise<any>;
 }
 
+export interface BindParamOfSlack {
+    pretext?: string;
+    title?: string;
+    text?: string;
+    fields?: string[];
+    color?: string;
+    username?: string;
+}
+
+export interface ParamForSlack {
+    channel?: string;
+    body?: {
+        attachments?: {
+            username?: string;
+            color?: string;
+            pretext?: string;
+            title?: string;
+            text?: string;
+            ts?: number;
+            fields?: string[];
+        }[];
+    };
+}
+
 export interface HelloProxyService {
     hello(): string;
     postMessage(hookUrl: string, message: any): Promise<any>;
     do_load_slack_channel(name: string, defName?: string): Promise<string>;
-    do_chain_message_save_to_s3(message: any): any;
+    message_save_to_s3(message: any): any;
+    process_alarm(body: RecordChainData): Promise<ParamForSlack>;
+    process_delivery_failure(body: RecordChainData): Promise<ParamForSlack>;
+    process_error(body: RecordChainData): Promise<ParamForSlack>;
+    process_callback(body: RecordChainData): Promise<ParamForSlack>;
+    process_slack(body: RecordChainData): Promise<ParamForSlack>;
 }
 
 export class HelloService implements HelloProxyService {
@@ -128,7 +158,7 @@ export class HelloService implements HelloProxyService {
     };
 
     //! chain to save message data to S3.
-    public do_chain_message_save_to_s3 = async (message: any) => {
+    public message_save_to_s3 = async (message: any) => {
         _log(NS, `do_chain_message_save_to_s3()...`);
         const val = $U.env('SLACK_PUT_S3', '1') as string;
         const SLACK_PUT_S3 = $U.N(val, 0);
@@ -202,6 +232,202 @@ export class HelloService implements HelloProxyService {
         }
         return message;
     };
+
+    public async process_alarm({ subject, data, context }: RecordChainData): Promise<ParamForSlack> {
+        _log(`process_alarm(${subject})...`);
+        data = data || {};
+        _log(`> data[${subject}] =`, $U.json(data));
+
+        const AlarmName = data.AlarmName || '';
+        const AlarmDescription = data.AlarmDescription || '';
+
+        //!  build fields.
+        const Fields: any[] = [];
+        const pop_to_fields = (param: string, short = true) => {
+            short = short === undefined ? true : short;
+            const [name, nick] = param.split('/', 2);
+            const val = data[name];
+            if (val !== undefined && val !== '') {
+                Fields.push({
+                    title: nick || name,
+                    value: typeof val === 'object' ? JSON.stringify(val) : val,
+                    short,
+                });
+            }
+            delete data[name];
+        };
+        pop_to_fields('AlarmName', false);
+        pop_to_fields('AlarmDescription');
+        pop_to_fields('AWSAccountId');
+        pop_to_fields('NewStateValue');
+        pop_to_fields('NewStateReason', false);
+        pop_to_fields('StateChangeTime');
+        pop_to_fields('Region');
+        pop_to_fields('OldStateValue');
+        pop_to_fields('Trigger', false);
+
+        const pretext = `Alarm: ${AlarmName}`;
+        const title = AlarmDescription || '';
+        const text = this.asText(data);
+        const fields = Fields;
+
+        return this.packageDefaultChannel({ pretext, title, text, fields });
+    }
+
+    public async process_delivery_failure({ subject, data, context }: RecordChainData): Promise<ParamForSlack> {
+        _log(`process_delivery_failure(${subject})...`);
+        data = data || {};
+        _log(`> data[${subject}] =`, $U.json(data));
+
+        const FailName = data.EventType || '';
+        const FailDescription = data.FailureMessage || '';
+        const EndpointArn = data.EndpointArn || '';
+
+        //!  build fields.
+        const Fields: any[] = [];
+        const pop_to_fields = (param: string, short = true) => {
+            short = short === undefined ? true : short;
+            const [name, nick] = param.split('/', 2);
+            const val = data[name];
+            if (val !== undefined && val !== '' && nick !== '') {
+                Fields.push({
+                    title: nick || name,
+                    value: typeof val === 'object' ? JSON.stringify(val) : val,
+                    short,
+                });
+            }
+            delete data[name];
+        };
+        pop_to_fields('EventType/'); // clear this
+        pop_to_fields('FailureMessage/'); // clear this
+        pop_to_fields('FailureType');
+        pop_to_fields('DeliveryAttempts/'); // DeliveryAttempts=1
+        pop_to_fields('Service/'); // Service=SNS
+        pop_to_fields('MessageId');
+        pop_to_fields('EndpointArn', false);
+        pop_to_fields('Resource', false);
+        pop_to_fields('Time/', false); // clear this
+
+        const pretext = `SNS: ${FailName}`;
+        const title = FailDescription || '';
+        // const text = asText(data);
+        const text = `For more details, run below. \n\`\`\`aws sns get-endpoint-attributes --endpoint-arn "${EndpointArn}"\`\`\``;
+        const fields = Fields;
+
+        const message = { pretext, title, text, fields };
+
+        //! get get-endpoint-attributes
+        const SNS = new AWS.SNS();
+        const result = await SNS.getEndpointAttributes({ EndpointArn })
+            .promise()
+            .then(_ => {
+                _log(NS, '> EndpointAttributes=', _);
+                const Attr = (_ && _.Attributes) || {};
+                message.fields.push({ title: 'Enabled', value: Attr.Enabled || '', short: true });
+                message.fields.push({ title: 'CustomUserData', value: Attr.CustomUserData || '', short: true });
+                message.fields.push({ title: 'Token', value: Attr.Token || '', short: false });
+                return message;
+            })
+            .catch(e => {
+                _err(NS, '!ERR EndpointAttributes=', e);
+                return message;
+            });
+
+        // package default.
+        return this.packageDefaultChannel(result);
+    }
+
+    public async process_error({ subject, data, context }: RecordChainData): Promise<ParamForSlack> {
+        _log(`process_error(${subject})...`);
+        data = data || {};
+        _log('> data=', data);
+
+        //! get error reason.
+        const channel = subject.indexOf('/') ? subject.split('/', 2)[1] : data && data.channel;
+        const message = data.message || data.error;
+
+        //NOTE - DO NOT CHANGE ARGUMENT ORDER.
+        return this.packageWithChannel(channel)(message, 'error-report', this.asText(data), []);
+    }
+
+    public async process_callback({ subject, data, context }: RecordChainData): Promise<ParamForSlack> {
+        _log(`process_callback(${subject})...`);
+        const $body: CallbackPayload = data || {};
+        _log(`> data[${subject}] =`, $U.json($body));
+
+        //! restrieve service & cmd
+        const $data: CallbackSlackData = $body.data || {};
+        const channel = subject.indexOf('/') > 0 ? subject.split('/', 2)[1] : $data && $data.channel;
+        const service = ($body && $body.service) || '';
+        const cmd = ($data && $data.cmd) || '';
+        const title = ($data && $data.title) || (!service ? `callback-report` : `#callback ${service}/${cmd}`);
+
+        //NOTE - DO NOT CHANGE ARGUMENT ORDER.
+        return this.packageWithChannel(`${channel || ''}`)('', title, this.asText($body), [], '#B71BFF');
+    }
+
+    public async process_slack({ subject, data, context }: RecordChainData): Promise<ParamForSlack> {
+        _log(`process_slack(${subject})...`);
+        data = data || {};
+        _log(`> data[${subject}] =`, $U.json(data));
+
+        //! extract data.
+        const channel = subject.indexOf('/') ? subject.split('/', 2)[1] : data && data.channel;
+        const service = data.service || '';
+        const ctx = data.context || {};
+        const param: any = data.param || {};
+        const body: any = data.body;
+
+        //! add additional attachment about caller contex.t
+        const att: SlackAttachment = {
+            pretext: service,
+            fields: [
+                {
+                    title: 'context',
+                    value: (context && JSON.stringify(context)) || '',
+                },
+            ],
+        };
+        if (context && body && body.attachments) body.attachments.push(att);
+
+        //NOTE - DO NOT CHANGE ARGUMENT ORDER.
+        return { channel: `${channel || ''}`, body };
+    }
+
+    //! post to slack channel(default is public).
+    public packageWithChannel = (channel: string) => (
+        pretext: string = '',
+        title: string = '',
+        text: string = '',
+        fields: string[] = [],
+        color: string = '',
+        username: string = '',
+    ) => {
+        _log(NS, `packageWithChannel(${channel})...`);
+        color = color || '#FFB71B';
+        username = username || 'hello-alarm';
+        _log(NS, `> param[${channel}] =`, $U.json({ pretext, title, color, username }));
+
+        //! build attachment.
+        const ts = Math.floor(new Date().getTime() / 1000);
+        const attachment = { username, color, pretext, title, text, ts, fields };
+
+        //! build body for slack, and call
+        const body = { attachments: [attachment] };
+        return { channel: `${channel || ''}`, body };
+    };
+
+    //! post to slack default channel.
+    public packageDefaultChannel = ({ pretext, title, text, fields, color, username }: BindParamOfSlack) => {
+        return this.packageWithChannel('')(
+            pretext || '',
+            title || '',
+            text || '',
+            fields || [],
+            color || '',
+            username || '',
+        ) as ParamForSlack;
+    };
 }
 
 export class DummyHelloService extends HelloService {
@@ -253,7 +479,7 @@ export class DummyHelloService extends HelloService {
     };
 
     //! chain to save message data to S3.
-    public do_chain_message_save_to_s3 = async (message: any) => {
+    public message_save_to_s3 = async (message: any) => {
         const val = $U.env('SLACK_PUT_S3', '1') as string;
         const SLACK_PUT_S3 = $U.N(val, 0);
         _log(NS, `do_chain_message_save_to_s3(${SLACK_PUT_S3})...`);
