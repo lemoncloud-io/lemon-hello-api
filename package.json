@@ -57,7 +57,7 @@
     "dependencies": {
         "aws-sdk": "^2.640.0",
         "https": "^1.0.0",
-        "lemon-core": "^2.1.14",
+        "lemon-core": "^2.2.1",
         "source-map-support": "^0.5.16",
         "url": "^0.11.0"
     },

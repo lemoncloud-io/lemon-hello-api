@@ -6,7 +6,7 @@
  * @author      Tyler <tyler@lemoncloud.io>
  * @copyright (C) 2020 LemonCloud Co Ltd. - All Rights Reserved.
  */
-import $engine, { _log, _inf, _err, $U, $_, GETERR, ProtocolBody } from 'lemon-core';
+import $engine, { _log, _inf, _err, $U } from 'lemon-core';
 import { SlackAttachment } from 'lemon-core';
 const NS = $U.NS('HLL', 'blue'); // NAMESPACE TO BE PRINTED.
 
@@ -19,9 +19,6 @@ import AWS from 'aws-sdk';
  *  Core Service Instances
  ** ********************************************************************************************************************/
 import { AWSKMSService, AWSS3Service, AWSSNSService } from 'lemon-core';
-const $kms = new AWSKMSService();
-const $sns = new AWSSNSService();
-const $s3s = new AWSS3Service();
 
 export interface RecordChainData {
     subject: string;
@@ -41,9 +38,22 @@ export interface HelloProxyService {
 }
 
 export class HelloService implements HelloProxyService {
-    private $channels: any = {};
+    protected $channels: any = {};
+    protected $kms: AWSKMSService;
+    protected $sns: AWSSNSService;
+    protected $s3s: AWSS3Service;
 
+    public constructor($kms?: AWSKMSService, $sns?: AWSSNSService, $s3s?: AWSS3Service) {
+        this.$kms = $kms || new AWSKMSService();
+        this.$sns = $sns || new AWSSNSService();
+        this.$s3s = $s3s || new AWSS3Service();
+    }
+
+    /**
+     * hello.
+     */
     public hello = () => `hello-service`;
+
     /**
      * POST message to hookUrl.
      *
@@ -96,7 +106,7 @@ export class HelloService implements HelloProxyService {
         return Promise.resolve(webhook)
             .then(_ => {
                 if (!_.startsWith('http')) {
-                    return $kms.decrypt(_).then(_ => {
+                    return this.$kms.decrypt(_).then(_ => {
                         const url = `${_}`.trim();
                         this.$channels[ENV_NAME] = url;
                         return url;
@@ -157,7 +167,7 @@ export class HelloService implements HelloProxyService {
             const hour = now.getHours();
             const tag = 0 ? TAGS[2] : MOONS[Math.floor((MOONS.length * hour) / 24)];
             const json = JSON.stringify(data);
-            return $s3s
+            return this.$s3s
                 .putObject(json)
                 .then(res => {
                     const { Bucket, Key, Location } = res;
@@ -194,10 +204,13 @@ export class HelloService implements HelloProxyService {
     };
 }
 
-export class HelloMocksService implements HelloProxyService {
-    private readonly $channels: any = {
-        SLACK_AA: 'https://hooks.slack.com/services/AAAAAAAAA/BBBBBBBBB/CCCCCCCCCCCCCCCC',
-    };
+export class DummyHelloService extends HelloService {
+    public constructor() {
+        super();
+        this.$channels = {
+            SLACK_AA: 'https://hooks.slack.com/services/AAAAAAAAA/BBBBBBBBB/CCCCCCCCCCCCCCCC',
+        };
+    }
 
     public hello = () => `hello-mocks-service`;
 
@@ -278,7 +291,6 @@ export class HelloMocksService implements HelloProxyService {
             const now = new Date();
             const hour = now.getHours();
             const tag = 0 ? TAGS[2] : MOONS[Math.floor((MOONS.length * hour) / 24)];
-            // const json = JSON.stringify(data);
             return Promise.resolve(data)
                 .then(res => {
                     const { Bucket, Key, Location } = res;
@@ -315,25 +327,11 @@ export class HelloMocksService implements HelloProxyService {
     };
 }
 
-export class MyHelloService implements HelloProxyService {
-    private static service: HelloProxyService;
-    // NOTE static을 안쓰고 service를 생성하면 왜 서비스가 undefined가 될까?
-    // private readonly service: HelloProxyService;
-
-    public constructor(type: string = '') {
-        MyHelloService.service = type == 'dummy' ? new HelloMocksService() : new HelloService();
-        // console.trace(MyHelloService.service);
-    }
-
-    public hello = () => MyHelloService.service.hello();
-
-    public async postMessage(hookUrl: string, message: any): Promise<any> {
-        return MyHelloService.service.postMessage(hookUrl, message);
-    }
-    public async do_load_slack_channel(name: string, defName?: string): Promise<string> {
-        return MyHelloService.service.do_load_slack_channel(name, defName);
-    }
-    public async do_chain_message_save_to_s3(message: any) {
-        return MyHelloService.service.do_chain_message_save_to_s3(message);
+//! prepare main instance.
+export class HelloServiceMain extends HelloService {
+    public constructor() {
+        super();
     }
 }
+
+export default new HelloServiceMain();
