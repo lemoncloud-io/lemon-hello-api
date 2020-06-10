@@ -25,6 +25,31 @@ describe('QueueService', () => {
         const { service } = instance('dummy');
         expect2(service.hello()).toEqual('hello-mocks-service');
         /* eslint-disable prettier/prettier */
+        expect2(await service.do_load_slack_channel('hello', 'Hello').catch(GETERR)).toEqual('env[SLACK_HELLO] is required!');
+        expect2(await service.do_load_slack_channel('hello', 'AA')).toEqual('https://hooks.slack.com/services/AAAAAAAAA/BBBBBBBBB/CCCCCCCCCCCCCCCC');
+        expect2(await service.do_load_slack_channel('AA', null)).toEqual('https://hooks.slack.com/services/AAAAAAAAA/BBBBBBBBB/CCCCCCCCCCCCCCCC');
+        /* eslint-enable prettier/prettier */
+        done();
+    });
+
+    it('should pass postMessage()', async done => {
+        const { service } = instance('dummy');
+        expect2(service.hello()).toEqual('hello-mocks-service');
+        const webhook = 'https://hooks.slack.com/services/AAAAAAAAA/BBBBBBBBB/CCCCCCCCCCCCCCCC';
+        const error_msg = {
+            attachments: [
+                {
+                    pretext: 'error-report',
+                    text:
+                        '<https://lemon-hello-www.s3.ap-northeast-2.amazonaws.com/be173267-406e-4c88-8bba-599f55fa2b77.json|:waning_gibbous_moon:> hello lemon',
+                    color: '#FFB71B',
+                    mrkdwn: true,
+                    mrkdwn_in: ['pretext', 'text'],
+                },
+            ],
+        };
+        /* eslint-disable prettier/prettier */
+        expect2(await service.postMessage(webhook, error_msg)).toEqual({ body: "ok", statusCode: 200, statusMessage: "OK" });
         /* eslint-enable prettier/prettier */
         done();
     });

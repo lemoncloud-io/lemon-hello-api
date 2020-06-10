@@ -30,7 +30,7 @@ import { CallbackSlackData, CallbackPayload } from '../common/types';
  *  Core Service Instances
  ** ********************************************************************************************************************/
 import { AWSKMSService, AWSS3Service, AWSSNSService } from 'lemon-core';
-import MyHelloService from '../service/hello-service';
+import { MyHelloService } from '../service/hello-service';
 
 const $kms = new AWSKMSService();
 const $sns = new AWSSNSService();
@@ -116,7 +116,9 @@ const NODES = [
  * @param {*} message       Object or String.
  */
 export const postMessage = (hookUrl: string, message: any) => {
+    _log(NS, `postMessage()...`);
     const body = typeof message === 'string' ? message : JSON.stringify(message);
+    _log(NS, `message >> ${body}`);
     const options: any = url.parse(hookUrl);
     options.method = 'POST';
     options.headers = {
@@ -584,7 +586,7 @@ export const do_post_hello_slack: NextHandler = (id, $param, $body, $ctx) => {
             const message = typeof $body === 'string' ? { text: $body } : $body;
             const noop = (_: any) => _;
             //NOTE! filter message only if sending to slack-hook.
-            const fileter = webhook.startsWith('https://hooks.slack.com') ? do_chain_message_save_to_s3 : noop;
+            const fileter = webhook.startsWith('https://hooks.slack.com') ? $service.do_chain_message_save_to_s3 : noop;
             return Promise.resolve(message)
                 .then(fileter)
                 .then(message => postMessage(webhook, message));
