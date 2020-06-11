@@ -54,9 +54,9 @@ export interface ParamToSlack {
 export interface HelloProxyService {
     hello(): string;
     postMessage(hookUrl: string, message: any): Promise<any>;
+    getSubscriptionConfirmation(param: { snsMessageType: string; subscribeURL: string }): Promise<string>;
     loadSlackChannel(name: string, defName?: string): Promise<string>;
     saveMessageToS3(message: any): any;
-    RequestSubscriptionConfirmation(param: { snsMessageType: string; subscribeURL: string }): Promise<string>;
     buildSlackNotification(param: any, body: any): Promise<ParamToSlack>;
     buildAlarmForm(body: RecordData): Promise<ParamToSlack>;
     buildDeliveryFailure(body: RecordData): Promise<ParamToSlack>;
@@ -150,8 +150,8 @@ export class HelloService implements HelloProxyService {
             });
     };
 
-    public RequestSubscriptionConfirmation = async (param: { snsMessageType: string; subscribeURL: string }) => {
-        _log(NS, `RequestSubscriptionConfirmation()...`);
+    public getSubscriptionConfirmation = async (param: { snsMessageType: string; subscribeURL: string }) => {
+        _log(NS, `getSubscriptionConfirmation()...`);
         // Send HTTP GET to subscribe URL in request for subscription confirmation
         if (param.snsMessageType == 'SubscriptionConfirmation' && param.subscribeURL) {
             const uri = new URL(param.subscribeURL);

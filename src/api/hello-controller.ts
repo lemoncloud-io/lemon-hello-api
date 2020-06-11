@@ -228,7 +228,7 @@ class HelloAPIController extends GeneralWEBController {
         $param = $param || {};
         $body = $body || {};
 
-        const subCheck = await this.service.RequestSubscriptionConfirmation($param);
+        const subCheck = await this.service.getSubscriptionConfirmation($param);
         _inf(NS, `subCheck [${subCheck}]`);
         if (subCheck == 'PASS') {
             const { channel, body } = await this.service.buildSlackNotification($param, $body);
