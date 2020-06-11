@@ -6,7 +6,7 @@
  * @author      Tyler <tyler@lemoncloud.io>
  * @copyright (C) 2020 LemonCloud Co Ltd. - All Rights Reserved.
  */
-import $engine, { _log, _inf, _err, $U, SlackPostBody, NextHandler } from 'lemon-core';
+import $engine, { _log, _inf, _err, $U, SlackPostBody, NextHandler, APIService } from 'lemon-core';
 import { SlackAttachment } from 'lemon-core';
 const NS = $U.NS('HLL', 'blue'); // NAMESPACE TO BE PRINTED.
 
@@ -58,13 +58,13 @@ export interface ParamForSlack {
 export interface HelloProxyService {
     hello(): string;
     postMessage(hookUrl: string, message: any): Promise<any>;
-    do_load_slack_channel(name: string, defName?: string): Promise<string>;
-    message_save_to_s3(message: any): any;
-    process_alarm(body: RecordChainData): Promise<ParamForSlack>;
-    process_delivery_failure(body: RecordChainData): Promise<ParamForSlack>;
-    process_error(body: RecordChainData): Promise<ParamForSlack>;
-    process_callback(body: RecordChainData): Promise<ParamForSlack>;
-    process_slack(body: RecordChainData): Promise<ParamForSlack>;
+    loadSlackChannel(name: string, defName?: string): Promise<string>;
+    saveMessageToS3(message: any): any;
+    buildAlarmForm(body: RecordChainData): Promise<ParamForSlack>;
+    buildDeliveryFailure(body: RecordChainData): Promise<ParamForSlack>;
+    buildErrorForm(body: RecordChainData): Promise<ParamForSlack>;
+    buildCallbackForm(body: RecordChainData): Promise<ParamForSlack>;
+    buildCommonSlackForm(body: RecordChainData): Promise<ParamForSlack>;
 }
 
 export class HelloService implements HelloProxyService {
@@ -123,7 +123,7 @@ export class HelloService implements HelloProxyService {
     };
 
     //! store channel map in cache
-    public do_load_slack_channel = async (name: string, defName?: string): Promise<string> => {
+    public loadSlackChannel = async (name: string, defName?: string): Promise<string> => {
         const ENV_NAME = `SLACK_${name}`.toUpperCase();
         const ENV_DEFAULT = defName ? `SLACK_${defName}`.toUpperCase() : '';
         const $env = process.env || {};
@@ -152,13 +152,39 @@ export class HelloService implements HelloProxyService {
             });
     };
 
+    public RequestSubscriptionConfirmation = async (param: { snsMessageType: string; subscribeURL: string }) => {
+        // Send HTTP GET to subscribe URL in request for subscription confirmation
+        if (param.snsMessageType == 'SubscriptionConfirmation' && param.subscribeURL) {
+            const uri = new URL(param.subscribeURL);
+            const path = `${uri.pathname || ''}`;
+            const search = `${uri.search || ''}`;
+            const api = new APIService('web', `${uri.origin}${path == '/' ? '' : path}`);
+            const res = await api.doGet(null, null, search.startsWith('?') ? search.substring(1) : search);
+            _log(NS, `> subscribe =`, $U.json(res));
+            return 'OK';
+        }
+        return 'PASS';
+    };
+
+    public buildSlackNotification = async ($param: any, $body: any) => {
+        // Publish notification on Slack public channel
+        const pretext = `\`#notification\` from \`${$body.service}:${$body.stage}\``;
+        let title;
+        if ($body.event === 'login' && $body.type === 'oauth') {
+            title = `[${$body.event.toUpperCase()}] account \`${$body.data.accountId}/${$body.data.provider}\``;
+        } else {
+            title = `[${$body.event || ''}] event received.`;
+        }
+        return this.packageWithChannel('public')(pretext, title, this.asText($body), []);
+    };
+
     public asText = (data: any): string => {
         const keys = (data && Object.keys(data)) || [];
         return keys.length > 0 ? JSON.stringify(data) : '';
     };
 
     //! chain to save message data to S3.
-    public message_save_to_s3 = async (message: any) => {
+    public saveMessageToS3 = async (message: any) => {
         _log(NS, `do_chain_message_save_to_s3()...`);
         const val = $U.env('SLACK_PUT_S3', '1') as string;
         const SLACK_PUT_S3 = $U.N(val, 0);
@@ -233,8 +259,8 @@ export class HelloService implements HelloProxyService {
         return message;
     };
 
-    public async process_alarm({ subject, data, context }: RecordChainData): Promise<ParamForSlack> {
-        _log(`process_alarm(${subject})...`);
+    public async buildAlarmForm({ subject, data, context }: RecordChainData): Promise<ParamForSlack> {
+        _log(`processAlarm(${subject})...`);
         data = data || {};
         _log(`> data[${subject}] =`, $U.json(data));
 
@@ -274,8 +300,8 @@ export class HelloService implements HelloProxyService {
         return this.packageDefaultChannel({ pretext, title, text, fields });
     }
 
-    public async process_delivery_failure({ subject, data, context }: RecordChainData): Promise<ParamForSlack> {
-        _log(`process_delivery_failure(${subject})...`);
+    public async buildDeliveryFailure({ subject, data, context }: RecordChainData): Promise<ParamForSlack> {
+        _log(`processDeliveryFailure(${subject})...`);
         data = data || {};
         _log(`> data[${subject}] =`, $U.json(data));
 
@@ -337,8 +363,8 @@ export class HelloService implements HelloProxyService {
         return this.packageDefaultChannel(result);
     }
 
-    public async process_error({ subject, data, context }: RecordChainData): Promise<ParamForSlack> {
-        _log(`process_error(${subject})...`);
+    public async buildErrorForm({ subject, data, context }: RecordChainData): Promise<ParamForSlack> {
+        _log(`processError(${subject})...`);
         data = data || {};
         _log('> data=', data);
 
@@ -350,8 +376,8 @@ export class HelloService implements HelloProxyService {
         return this.packageWithChannel(channel)(message, 'error-report', this.asText(data), []);
     }
 
-    public async process_callback({ subject, data, context }: RecordChainData): Promise<ParamForSlack> {
-        _log(`process_callback(${subject})...`);
+    public async buildCallbackForm({ subject, data, context }: RecordChainData): Promise<ParamForSlack> {
+        _log(`processCallback(${subject})...`);
         const $body: CallbackPayload = data || {};
         _log(`> data[${subject}] =`, $U.json($body));
 
@@ -366,7 +392,7 @@ export class HelloService implements HelloProxyService {
         return this.packageWithChannel(`${channel || ''}`)('', title, this.asText($body), [], '#B71BFF');
     }
 
-    public async process_slack({ subject, data, context }: RecordChainData): Promise<ParamForSlack> {
+    public async buildCommonSlackForm({ subject, data, context }: RecordChainData): Promise<ParamForSlack> {
         _log(`process_slack(${subject})...`);
         data = data || {};
         _log(`> data[${subject}] =`, $U.json(data));
@@ -456,7 +482,7 @@ export class DummyHelloService extends HelloService {
     };
 
     //! store channel map in cache
-    public do_load_slack_channel = async (name: string, defName?: string): Promise<string> => {
+    public loadSlackChannel = async (name: string, defName?: string): Promise<string> => {
         const ENV_NAME = `SLACK_${name}`.toUpperCase();
         const ENV_DEFAULT = defName ? `SLACK_${defName}`.toUpperCase() : '';
         const $env = process.env || {};
@@ -479,7 +505,7 @@ export class DummyHelloService extends HelloService {
     };
 
     //! chain to save message data to S3.
-    public message_save_to_s3 = async (message: any) => {
+    public saveMessageToS3 = async (message: any) => {
         const val = $U.env('SLACK_PUT_S3', '1') as string;
         const SLACK_PUT_S3 = $U.N(val, 0);
         _log(NS, `do_chain_message_save_to_s3(${SLACK_PUT_S3})...`);

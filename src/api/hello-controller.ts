@@ -23,7 +23,7 @@ const NS = $U.NS('HELO', 'yellow'); // NAMESPACE TO BE PRINTED.
 
 //! import core services.
 import { NextHandler, GeneralWEBController } from 'lemon-core';
-import $service, { HelloService, HelloProxyService, ParamForSlack } from '../service/hello-service';
+import $service, { HelloService, ParamForSlack } from '../service/hello-service';
 
 /** ********************************************************************************************************************
  *  MAIN IMPLEMENTATION.
@@ -55,6 +55,7 @@ class HelloAPIController extends GeneralWEBController {
 
         //! attach sns listener
         $core.cores.lambda.sns.addListener(this.postHelloEvent);
+        $core.cores.lambda.notification.addListener(this.postHelloNotification);
     }
 
     /**
@@ -150,14 +151,14 @@ class HelloAPIController extends GeneralWEBController {
         //! load target webhook via environ.
         // TODO chain code 풀기.
         return this.service
-            .do_load_slack_channel(id, 0 ? '' : 'public')
+            .loadSlackChannel(id, 0 ? '' : 'public')
             .then(webhook => {
                 _log(NS, '> webhook :=', webhook);
                 //! prepare slack message via body.
                 const message = typeof $body === 'string' ? { text: $body } : $body;
                 const noop = (_: any) => _;
                 //NOTE! filter message only if sending to slack-hook.
-                const fileter = webhook.startsWith('https://hooks.slack.com') ? this.service.message_save_to_s3 : noop;
+                const fileter = webhook.startsWith('https://hooks.slack.com') ? this.service.saveMessageToS3 : noop;
                 return Promise.resolve(message)
                     .then(fileter)
                     .then(message => postMessage(webhook, message));
@@ -192,23 +193,46 @@ class HelloAPIController extends GeneralWEBController {
         const noop = (_: any) => _;
 
         //! decode next-chain.
-        const chain_next = false
+        const buildForm = false
             ? null
             : subject.startsWith('ALARM:')
-            ? this.service.process_alarm
+            ? this.service.buildAlarmForm
             : subject.startsWith('DeliveryFailure')
-            ? this.service.process_delivery_failure
+            ? this.service.buildDeliveryFailure
             : subject === 'error' || subject.startsWith('error/')
-            ? this.service.process_error
+            ? this.service.buildErrorForm
             : subject === 'callback' || subject.startsWith('callback/')
-            ? this.service.process_callback
+            ? this.service.buildCallbackForm
             : subject === 'slack' || subject.startsWith('slack/')
-            ? this.service.process_slack
+            ? this.service.buildCommonSlackForm
             : noop;
 
         // TODO disable to chain
-        const { channel, body } = chain_next({ subject, data, context }) as ParamForSlack;
+        const { channel, body } = buildForm({ subject, data, context }) as ParamForSlack;
         return this.postHelloSlack(channel, {}, body, $ctx);
+    };
+
+    /**
+     * Notification handler via broadcast of ProtocolService (HTTP/S web-hook)
+     *
+     * ``` sh
+     * $ cat data/notification.json | http ':8888/hello/!/notification'
+     */
+    public postHelloNotification: NextHandler = async (id, $param, $body, $ctx) => {
+        _inf(NS, `postHelloNotification(${id})....`);
+        $param && _inf(NS, `> param[${id}] =`, $U.json($param));
+        $body && _inf(NS, `> body[${id}] =`, $U.json($body));
+        $ctx && _inf(NS, `> context[${id}] =`, $U.json($ctx));
+
+        $param = $param || {};
+        $body = $body || {};
+
+        const subCheck = await this.service.RequestSubscriptionConfirmation($param);
+        if (subCheck == 'PASS') {
+            const { channel, body } = await this.service.buildSlackNotification($param, $body);
+            return this.postHelloSlack(channel, {}, body, $ctx);
+        }
+        return subCheck;
     };
 
     /**
@@ -218,8 +242,8 @@ class HelloAPIController extends GeneralWEBController {
      * $ http ':8888/hello/public/test-channel'
      */
     public getHelloTestChannel: NextHandler = async (id, $param, $body, $ctx) => {
-        _log(NS, `do_get_test_channel(${id})....`);
-        return this.service.do_load_slack_channel(id).then((channel: string) => {
+        _log(NS, `getHelloTestChannel(${id})....`);
+        return this.service.loadSlackChannel(id).then((channel: string) => {
             return { id, channel };
         });
     };
@@ -361,12 +385,30 @@ class HelloAPIController extends GeneralWEBController {
      * ```sh
      * $ http ':8888/hello/0/test-s3-put'
      */
-    public getHelloTestS3Put: NextHandler = (ID, $param, $body, $ctx) => {
+    public getHelloTestS3Put: NextHandler = async (ID, $param, $body, $ctx) => {
         _log(NS, `getHelloTestS3Put(${ID})....`);
         const message = 'hello lemon';
         const data = { message };
         const json = JSON.stringify(data);
         return this.$s3s.putObject(json);
+    };
+
+    /**
+     * Delete Node (or mark deleted)
+     *
+     * ```sh
+     * $ http DELETE ':8888/hello/1'
+     */
+    public deleteHello: NextHandler = async (ID, $param, $body, $ctx) => {
+        _log(NS, `do_delete_hello(${ID})....`);
+
+        return this.getHello(ID, null, null, $ctx).then(node => {
+            const id = node._id;
+            if (id === undefined) return Promise.reject(new Error('._id is required!'));
+            // NODES.splice(id, 1); // remove single node.
+            delete this.NODES[id]; // set null in order to keep id.
+            return node;
+        });
     };
 }
 
