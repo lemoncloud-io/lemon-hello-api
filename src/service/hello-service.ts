@@ -22,9 +22,17 @@ import { CallbackSlackData, CallbackPayload } from '../common/types';
 import { AWSKMSService, AWSS3Service, AWSSNSService } from 'lemon-core';
 
 export interface RecordData {
-    subject: string;
-    data: any;
-    context: any;
+    subject?: string;
+    data?: any;
+    context?: any;
+}
+
+export interface NotificationParam {
+    service?: string;
+    stage?: string;
+    event?: string;
+    type?: string;
+    data?: { accountId?: string; provider?: string };
 }
 
 export interface BindParamOfSlack {
@@ -57,7 +65,7 @@ export interface HelloProxyService {
     getSubscriptionConfirmation(param: { snsMessageType: string; subscribeURL: string }): Promise<string>;
     loadSlackChannel(name: string, defName?: string): Promise<string>;
     saveMessageToS3(message: any): any;
-    buildSlackNotification(param: any, body: any): Promise<ParamToSlack>;
+    buildSlackNotification(body: any): Promise<ParamToSlack>;
     buildAlarmForm(body: RecordData): Promise<ParamToSlack>;
     buildDeliveryFailure(body: RecordData): Promise<ParamToSlack>;
     buildErrorForm(body: RecordData): Promise<ParamToSlack>;
@@ -165,19 +173,6 @@ export class HelloService implements HelloProxyService {
         return 'PASS';
     };
 
-    public buildSlackNotification = async ($param: any, $body: any) => {
-        _log(NS, `buildSlackNotification()...`);
-        // Publish notification on Slack public channel
-        const pretext = `\`#notification\` from \`${$body.service}:${$body.stage}\``;
-        let title;
-        if ($body.event === 'login' && $body.type === 'oauth') {
-            title = `[${$body.event.toUpperCase()}] account \`${$body.data.accountId}/${$body.data.provider}\``;
-        } else {
-            title = `[${$body.event || ''}] event received.`;
-        }
-        return this.packageWithChannel('public')(pretext, title, this.asText($body), []);
-    };
-
     public asText = (data: any) => {
         const keys = (data && Object.keys(data)) || [];
         return keys.length > 0 ? JSON.stringify(data) : '';
@@ -257,6 +252,22 @@ export class HelloService implements HelloProxyService {
                 });
         }
         return message;
+    };
+
+    public buildSlackNotification = async (body: any) => {
+        _log(NS, `buildSlackNotification()...`);
+        // Publish notification on Slack public channel
+        body = body || {};
+        const pretext = `\`#notification\` from \`${body.service}:${body.stage}\``;
+        let title = '';
+        if (body.event === 'login' && body.type === 'oauth') {
+            const accountId = (body.data && body.data.accountId) || '';
+            const provider = (body.data && body.data.provider) || '';
+            title = `[${body.event.toUpperCase()}] account \`${accountId}/${provider}\``;
+        } else {
+            title = `[${body.event || ''}] event received.`;
+        }
+        return this.packageWithChannel('public')(pretext, title, this.asText(body), []);
     };
 
     public buildAlarmForm = async ({ subject, data, context }: RecordData): Promise<ParamToSlack> => {
@@ -366,6 +377,7 @@ export class HelloService implements HelloProxyService {
     public buildErrorForm = async ({ subject, data, context }: RecordData): Promise<ParamToSlack> => {
         _log(`buildErrorForm(${subject})...`);
         data = data || {};
+        subject = subject || '';
         _log('> data=', data);
 
         //! get error reason.
@@ -378,6 +390,7 @@ export class HelloService implements HelloProxyService {
 
     public buildCallbackForm = async ({ subject, data, context }: RecordData): Promise<ParamToSlack> => {
         _log(`buildCallbackForm(${subject})...`);
+        subject = subject || '';
         const $body: CallbackPayload = data || {};
         _log(`> data[${subject}] =`, $U.json($body));
 
@@ -394,15 +407,14 @@ export class HelloService implements HelloProxyService {
 
     public buildCommonSlackForm = async ({ subject, data, context }: RecordData): Promise<ParamToSlack> => {
         _log(`process_slack(${subject})...`);
-        data = data || {};
-        _log(`> data[${subject}] =`, $U.json(data));
+        const $data = data || {};
+        subject = subject || '';
+        _log(`> data[${subject}] =`, $U.json($data));
 
         //! extract data.
-        const channel = subject.indexOf('/') ? subject.split('/', 2)[1] : data && data.channel;
-        const service = data.service || '';
-        const ctx = data.context || {};
-        const param: any = data.param || {};
-        const body: any = data.body;
+        const channel = subject.indexOf('/') > 0 ? subject.split('/', 2)[1] : $data.channel || '';
+        const service = $data.service || '';
+        const body: any = $data.body;
 
         //! add additional attachment about caller contex.t
         const att: SlackAttachment = {
@@ -417,7 +429,8 @@ export class HelloService implements HelloProxyService {
         if (context && body && body.attachments) body.attachments.push(att);
 
         //NOTE - DO NOT CHANGE ARGUMENT ORDER.
-        return { channel: `${channel || ''}`, body };
+
+        return { channel: channel, body };
     };
 
     //! post to slack channel(default is public).
@@ -467,13 +480,15 @@ export class DummyHelloService extends HelloService {
 
     public hello = () => `hello-mocks-service`;
 
+    /**
+     *  {
+     *      "body": "ok",
+     *      "statusCode": 200,
+     *      "statusMessage": "OK"
+     *  }
+     */
     public postMessage = async (hookUrl: string, message: any) => {
-        return new Promise((resolve, reject) => {
-            // {
-            //     "body": "ok",
-            //     "statusCode": 200,
-            //     "statusMessage": "OK"
-            // }
+        return new Promise(resolve => {
             const body = 'ok';
             const statusCode = 200;
             const statusMessage = 'OK';
@@ -493,7 +508,7 @@ export class DummyHelloService extends HelloService {
         _inf(NS, `> webhook[${name}] :=`, webhook);
         if (!webhook) return Promise.reject(new Error(`env[${ENV_NAME}] is required!`));
         return Promise.resolve(webhook)
-            .then(_ => {
+            .then(() => {
                 // dummy url
                 return 'https://hooks.slack.com/services/AAAAAAAAA/BBBBBBBBB/CCCCCCCCCCCCCCCC';
             })
@@ -505,11 +520,25 @@ export class DummyHelloService extends HelloService {
             });
     };
 
+    public getSubscriptionConfirmation = async (param: { snsMessageType: string; subscribeURL: string }) => {
+        _log(NS, `getSubscriptionConfirmation()...`);
+        // Send HTTP GET to subscribe URL in request for subscription confirmation
+        if (param.snsMessageType == 'SubscriptionConfirmation' && param.subscribeURL) {
+            const uri = new URL(param.subscribeURL);
+            const path = `${uri.pathname || ''}`;
+            const search = `${uri.search || ''}`;
+            const res = { subscribe: true };
+            _log(NS, `> subscribe =`, $U.json(res));
+            return 'OK';
+        }
+        return 'PASS';
+    };
+
     //! chain to save message data to S3.
     public saveMessageToS3 = async (message: any) => {
         const val = $U.env('SLACK_PUT_S3', '1') as string;
         const SLACK_PUT_S3 = $U.N(val, 0);
-        _log(NS, `do_chain_message_save_to_s3(${SLACK_PUT_S3})...`);
+        _log(NS, `saveMessageToS3(${SLACK_PUT_S3})...`);
         const attachments: SlackAttachment[] = message.attachments;
 
         //! if put to s3, then filter attachments
@@ -577,6 +606,70 @@ export class DummyHelloService extends HelloService {
                 });
         }
         return message;
+    };
+
+    public buildDeliveryFailure = async ({ subject, data, context }: RecordData): Promise<ParamToSlack> => {
+        _log(`buildDeliveryFailure(${subject})...`);
+        data = data || {};
+        _log(`> data[${subject}] =`, $U.json(data));
+
+        const FailName = data.EventType || '';
+        const FailDescription = data.FailureMessage || '';
+        const EndpointArn = data.EndpointArn || '';
+
+        //!  build fields.
+        const Fields: any[] = [];
+        const pop_to_fields = (param: string, short = true) => {
+            short = short === undefined ? true : short;
+            const [name, nick] = param.split('/', 2);
+            const val = data[name];
+            if (val !== undefined && val !== '' && nick !== '') {
+                Fields.push({
+                    title: nick || name,
+                    value: typeof val === 'object' ? JSON.stringify(val) : val,
+                    short,
+                });
+            }
+            delete data[name];
+        };
+        pop_to_fields('EventType/'); // clear this
+        pop_to_fields('FailureMessage/'); // clear this
+        pop_to_fields('FailureType');
+        pop_to_fields('DeliveryAttempts/'); // DeliveryAttempts=1
+        pop_to_fields('Service/'); // Service=SNS
+        pop_to_fields('MessageId');
+        pop_to_fields('EndpointArn', false);
+        pop_to_fields('Resource', false);
+        pop_to_fields('Time/', false); // clear this
+
+        const pretext = `SNS: ${FailName}`;
+        const title = FailDescription || '';
+        // const text = asText(data);
+        const text = `For more details, run below. \n\`\`\`aws sns get-endpoint-attributes --endpoint-arn "${EndpointArn}"\`\`\``;
+        const fields = Fields;
+
+        const message = { pretext, title, text, fields };
+
+        //! get get-endpoint-attributes
+        const result = await Promise.resolve({ EndpointArn })
+            .then(_ => {
+                _log(NS, '> EndpointAttributes=', _);
+                message.fields.push({ title: 'Enabled', value: 'on', short: true });
+                message.fields.push({
+                    title: 'CustomUserData',
+                    value: Math.floor(new Date().getTime() / 1000),
+                    short: true,
+                });
+                message.fields.push({ title: 'Token', value: '1234-1234-1234-1234', short: false });
+                return message;
+            })
+            .catch(e => {
+                _err(NS, '!ERR EndpointAttributes=', e);
+                return message;
+            });
+
+        // package default.
+        return this.packageDefaultChannel(result);
     };
 }
 
