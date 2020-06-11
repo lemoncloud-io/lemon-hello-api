@@ -67,7 +67,7 @@ class HelloAPIController extends GeneralWEBController {
      * list hello
      *
      * ```sh
-     * $ http ':8086/hello'
+     * $ http ':8888/hello'
      */
     public listHello: NextHandler = (ID, $param, $body, $ctx) => {
         _log(NS, `listHello(${ID})....`);
@@ -84,7 +84,7 @@ class HelloAPIController extends GeneralWEBController {
      * get hello hello
      *
      * ```sh
-     * $ http ':8086/hello/0'
+     * $ http ':8888/hello/0'
      */
     public getHello: NextHandler = async (id, param, body, context) => {
         _log(NS, `getHello(${id})...`);
@@ -149,6 +149,7 @@ class HelloAPIController extends GeneralWEBController {
         $param = $param || {};
 
         //! load target webhook via environ.
+
         // TODO chain code 풀기.
         return this.service
             .loadSlackChannel(id, 0 ? '' : 'public')
@@ -161,7 +162,7 @@ class HelloAPIController extends GeneralWEBController {
                 const fileter = webhook.startsWith('https://hooks.slack.com') ? this.service.saveMessageToS3 : noop;
                 return Promise.resolve(message)
                     .then(fileter)
-                    .then(message => postMessage(webhook, message));
+                    .then(message => this.service.postMessage(webhook, message));
             })
             .catch(e => {
                 //! ignore error, or it will make recursive error-report.
@@ -175,7 +176,7 @@ class HelloAPIController extends GeneralWEBController {
      *
      * ```sh
      * # alarm data
-     * $ cat data/alarm.json | http ':8888/hello/!/event?subject=ALARM: test'
+     * $ cat data/alarm.json | http ':8888/hello/!/event?subject=ALARM:test'
      * # delivery failure
      * $ cat data/delivery-failure.json | http ':8888/hello/!/event?subject=DeliveryFailure test'
      * # error case
@@ -228,8 +229,10 @@ class HelloAPIController extends GeneralWEBController {
         $body = $body || {};
 
         const subCheck = await this.service.RequestSubscriptionConfirmation($param);
+        _inf(NS, `subCheck [${subCheck}]`);
         if (subCheck == 'PASS') {
             const { channel, body } = await this.service.buildSlackNotification($param, $body);
+            _inf(NS, `build channel [${channel}]`);
             return this.postHelloSlack(channel, {}, body, $ctx);
         }
         return subCheck;

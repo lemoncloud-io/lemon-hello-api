@@ -9,11 +9,11 @@
  */
 import { loadProfile } from 'lemon-core/dist/environ';
 import { GETERR, expect2, _it, loadJsonSync } from 'lemon-core';
-import { HelloProxyService, HelloMocksService, HelloService } from './hello-service';
+import { HelloProxyService, HelloService, DummyHelloService } from './hello-service';
 
 //! create service instance.
 export const instance = (type = 'dummy') => {
-    const service: HelloProxyService = type == 'dummy' ? new HelloMocksService() : new HelloService();
+    const service: HelloProxyService = type == 'dummy' ? new DummyHelloService() : new HelloService();
     return { service };
 };
 
@@ -25,9 +25,9 @@ describe('QueueService', () => {
         const { service } = instance('dummy');
         expect2(service.hello()).toEqual('hello-mocks-service');
         /* eslint-disable prettier/prettier */
-        expect2(await service.do_load_slack_channel('hello', 'Hello').catch(GETERR)).toEqual('env[SLACK_HELLO] is required!');
-        expect2(await service.do_load_slack_channel('hello', 'AA')).toEqual('https://hooks.slack.com/services/AAAAAAAAA/BBBBBBBBB/CCCCCCCCCCCCCCCC');
-        expect2(await service.do_load_slack_channel('AA', null)).toEqual('https://hooks.slack.com/services/AAAAAAAAA/BBBBBBBBB/CCCCCCCCCCCCCCCC');
+        expect2(await service.loadSlackChannel('hello', 'Hello').catch(GETERR)).toEqual('env[SLACK_HELLO] is required!');
+        expect2(await service.loadSlackChannel('hello', 'AA')).toEqual('https://hooks.slack.com/services/AAAAAAAAA/BBBBBBBBB/CCCCCCCCCCCCCCCC');
+        expect2(await service.loadSlackChannel('AA', null)).toEqual('https://hooks.slack.com/services/AAAAAAAAA/BBBBBBBBB/CCCCCCCCCCCCCCCC');
         /* eslint-enable prettier/prettier */
         done();
     });
