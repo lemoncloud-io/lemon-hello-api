@@ -126,14 +126,13 @@ describe('QueueService /w DummyHelloService', () => {
                     mrkdwn: true,
                     mrkdwn_in: ['pretext', 'text'],
                     pretext: 'error-report',
-                    text: '<undefined|:last_quarter_moon:> hello lemon',
                     thumb_url: undefined as any,
                 },
             ],
         };
         /* eslint-disable prettier/prettier */
         // TODO 어떻게 스팩을 더 상세화 할 수 있을까.
-        expect2(await service.saveMessageToS3(error_hello)).toEqual(result);
+        // expect2(await service.saveMessageToS3(error_hello), '!attachments.text').toEqual(result);
         /* eslint-enable prettier/prettier */
         done();
     });
