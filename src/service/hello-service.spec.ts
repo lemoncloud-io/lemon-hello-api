@@ -118,8 +118,7 @@ describe('QueueService /w DummyHelloService', () => {
     it('should pass saveMessageToS3()', async done => {
         const { service } = instance('dummy');
         expect2(service.hello()).toEqual('hello-mocks-service');
-        const error_hello = loadJsonSync('./data/error-hello2.json');
-        /* eslint-disable prettier/prettier */
+        const error_hello = loadJsonSync('./data/error-hello.json');
         const result = {
             attachments: [
                 {
@@ -127,11 +126,12 @@ describe('QueueService /w DummyHelloService', () => {
                     mrkdwn: true,
                     mrkdwn_in: ['pretext', 'text'],
                     pretext: 'error-report',
-                    text: '<undefined|:last_quarter_moon:> 403 SESSION FAILURE',
+                    text: '<undefined|:last_quarter_moon:> hello lemon',
                     thumb_url: undefined as any,
                 },
             ],
         };
+        /* eslint-disable prettier/prettier */
         // TODO 어떻게 스팩을 더 상세화 할 수 있을까.
         expect2(await service.saveMessageToS3(error_hello)).toEqual(result);
         /* eslint-enable prettier/prettier */
