@@ -23,7 +23,7 @@ const NS = $U.NS('HELO', 'yellow'); // NAMESPACE TO BE PRINTED.
 
 //! import core services.
 import { NextHandler, GeneralWEBController } from 'lemon-core';
-import $service, { HelloService, ParamForSlack } from '../service/hello-service';
+import $service, { HelloService, ParamToSlack } from '../service/hello-service';
 
 /** ********************************************************************************************************************
  *  MAIN IMPLEMENTATION.
@@ -209,7 +209,7 @@ class HelloAPIController extends GeneralWEBController {
             : noop;
 
         // TODO disable to chain
-        const { channel, body } = buildForm({ subject, data, context }) as ParamForSlack;
+        const { channel, body } = buildForm({ subject, data, context }) as ParamToSlack;
         return this.postHelloSlack(channel, {}, body, $ctx);
     };
 

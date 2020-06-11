@@ -8,7 +8,7 @@
  */
 import $engine, { _log, _inf, _err, $U, APIService } from 'lemon-core';
 import { SlackAttachment } from 'lemon-core';
-const NS = $U.NS('HLL', 'blue'); // NAMESPACE TO BE PRINTED.
+const NS = $U.NS('HLLS', 'green'); // NAMESPACE TO BE PRINTED.
 
 //! import dependency
 import url from 'url';
@@ -21,14 +21,10 @@ import { CallbackSlackData, CallbackPayload } from '../common/types';
  ** ********************************************************************************************************************/
 import { AWSKMSService, AWSS3Service, AWSSNSService } from 'lemon-core';
 
-export interface RecordChainData {
+export interface RecordData {
     subject: string;
     data: any;
     context: any;
-}
-
-export interface RecordChainWork {
-    (param: RecordChainData): Promise<any>;
 }
 
 export interface BindParamOfSlack {
@@ -40,7 +36,7 @@ export interface BindParamOfSlack {
     username?: string;
 }
 
-export interface ParamForSlack {
+export interface ParamToSlack {
     channel?: string;
     body?: {
         attachments?: {
@@ -61,12 +57,12 @@ export interface HelloProxyService {
     loadSlackChannel(name: string, defName?: string): Promise<string>;
     saveMessageToS3(message: any): any;
     RequestSubscriptionConfirmation(param: { snsMessageType: string; subscribeURL: string }): Promise<string>;
-    buildSlackNotification(param: any, body: any): Promise<ParamForSlack>;
-    buildAlarmForm(body: RecordChainData): Promise<ParamForSlack>;
-    buildDeliveryFailure(body: RecordChainData): Promise<ParamForSlack>;
-    buildErrorForm(body: RecordChainData): Promise<ParamForSlack>;
-    buildCallbackForm(body: RecordChainData): Promise<ParamForSlack>;
-    buildCommonSlackForm(body: RecordChainData): Promise<ParamForSlack>;
+    buildSlackNotification(param: any, body: any): Promise<ParamToSlack>;
+    buildAlarmForm(body: RecordData): Promise<ParamToSlack>;
+    buildDeliveryFailure(body: RecordData): Promise<ParamToSlack>;
+    buildErrorForm(body: RecordData): Promise<ParamToSlack>;
+    buildCallbackForm(body: RecordData): Promise<ParamToSlack>;
+    buildCommonSlackForm(body: RecordData): Promise<ParamToSlack>;
 }
 
 export class HelloService implements HelloProxyService {
@@ -263,7 +259,7 @@ export class HelloService implements HelloProxyService {
         return message;
     };
 
-    public buildAlarmForm = async ({ subject, data, context }: RecordChainData): Promise<ParamForSlack> => {
+    public buildAlarmForm = async ({ subject, data, context }: RecordData): Promise<ParamToSlack> => {
         _log(`buildAlarmForm(${subject})...`);
         data = data || {};
         _log(`> data[${subject}] =`, $U.json(data));
@@ -304,7 +300,7 @@ export class HelloService implements HelloProxyService {
         return this.packageDefaultChannel({ pretext, title, text, fields });
     };
 
-    public buildDeliveryFailure = async ({ subject, data, context }: RecordChainData): Promise<ParamForSlack> => {
+    public buildDeliveryFailure = async ({ subject, data, context }: RecordData): Promise<ParamToSlack> => {
         _log(`buildDeliveryFailure(${subject})...`);
         data = data || {};
         _log(`> data[${subject}] =`, $U.json(data));
@@ -367,7 +363,7 @@ export class HelloService implements HelloProxyService {
         return this.packageDefaultChannel(result);
     };
 
-    public buildErrorForm = async ({ subject, data, context }: RecordChainData): Promise<ParamForSlack> => {
+    public buildErrorForm = async ({ subject, data, context }: RecordData): Promise<ParamToSlack> => {
         _log(`buildErrorForm(${subject})...`);
         data = data || {};
         _log('> data=', data);
@@ -380,7 +376,7 @@ export class HelloService implements HelloProxyService {
         return this.packageWithChannel(channel)(message, 'error-report', this.asText(data), []);
     };
 
-    public buildCallbackForm = async ({ subject, data, context }: RecordChainData): Promise<ParamForSlack> => {
+    public buildCallbackForm = async ({ subject, data, context }: RecordData): Promise<ParamToSlack> => {
         _log(`buildCallbackForm(${subject})...`);
         const $body: CallbackPayload = data || {};
         _log(`> data[${subject}] =`, $U.json($body));
@@ -396,7 +392,7 @@ export class HelloService implements HelloProxyService {
         return this.packageWithChannel(`${channel || ''}`)('', title, this.asText($body), [], '#B71BFF');
     };
 
-    public buildCommonSlackForm = async ({ subject, data, context }: RecordChainData): Promise<ParamForSlack> => {
+    public buildCommonSlackForm = async ({ subject, data, context }: RecordData): Promise<ParamToSlack> => {
         _log(`process_slack(${subject})...`);
         data = data || {};
         _log(`> data[${subject}] =`, $U.json(data));
@@ -457,7 +453,7 @@ export class HelloService implements HelloProxyService {
             fields || [],
             color || '',
             username || '',
-        ) as ParamForSlack;
+        ) as ParamToSlack;
     };
 }
 

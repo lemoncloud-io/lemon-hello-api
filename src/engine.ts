@@ -17,7 +17,6 @@
 import { $engine } from 'lemon-core';
 
 // Loading API Service of NextDecoder
-// import hello from './api/hello-api'; //NOTE - it should be `NextDecoder`.
 import hello from './api/hello-controller'; //NOTE - it should be `NextDecoder`.
 
 //! import the default core services.
