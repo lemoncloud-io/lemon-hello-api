@@ -420,15 +420,19 @@ class HelloAPIController extends GeneralWEBController {
     /**
      * Test what execute queue via protocol
      *
+     * $ http ':8888/hello/0/execute-queue'
+     * $ http ':8888/hello/test11/execute-queue'
+     * $ http ':8888/hello/carrot.check.majuck/execute-queue'
+     *
      */
-    public getHelloExcuteQueue: NextHandler = async (ID, $param, $body, $ctx) => {
-        _log(NS, `getHelloExecuteQueue(${ID})...`);
+    public getHelloExecuteQueue: NextHandler = async (ID, $param, $body, $ctx) => {
         const destination = $U.env('LEMON_QUEUE', 'empty');
+        _log(NS, `getHelloExecuteQueue(${ID}, ${destination})...`);
         const myProtocol: ProtocolModule = new ProtocolModule();
         myProtocol.service.asTransformer('web');
         const protocolParam: ProtocolParam = myProtocol.service.fromURL(
             $ctx,
-            `api://${destination}/hello/${ID}`,
+            `api://${destination}/batch/${ID}`,
             $param,
             $body,
         );
