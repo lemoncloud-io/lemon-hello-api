@@ -97,6 +97,9 @@ export class HelloService implements HelloProxyService {
      * @param {*} message       Object or String.
      */
     public postMessage = async (hookUrl: string, message: any) => {
+        _log(NS, `> postMessage = hookUrl[${hookUrl}]`);
+        _log(NS, `> messgae = `, $U.json(message));
+
         const body = (typeof message == 'string' ? message : JSON.stringify(message)) || '';
         const options: any = url.parse(hookUrl);
         options.method = 'POST';
@@ -406,10 +409,10 @@ export class HelloService implements HelloProxyService {
     };
 
     public buildCommonSlackForm = async ({ subject, data, context }: RecordData): Promise<ParamToSlack> => {
-        _log(`process_slack(${subject})...`);
+        _log(NS, `buildCommonSlackForm(${subject})...`);
         const $data = data || {};
         subject = subject || '';
-        _log(`> data[${subject}] =`, $U.json($data));
+        _log(NS, `> row data[${subject}] =`, $U.json($data));
 
         //! extract data.
         const channel = subject.indexOf('/') > 0 ? subject.split('/', 2)[1] : $data.channel || '';
@@ -429,7 +432,8 @@ export class HelloService implements HelloProxyService {
         if (context && body && body.attachments) body.attachments.push(att);
 
         //NOTE - DO NOT CHANGE ARGUMENT ORDER.
-
+        _log(NS, `> channel[${channel}]`);
+        _log(NS, `> build data[${subject}] =`, $U.json($data));
         return { channel: channel, body };
     };
 
