@@ -150,7 +150,7 @@ class HelloAPIController extends GeneralWEBController {
 
         //! load target webhook via environ.
 
-        // TODO chain code 풀기.
+        // TODO chain code 풀
         return this.service
             .loadSlackChannel(id, 0 ? '' : 'public')
             .then(webhook => {
@@ -185,7 +185,7 @@ class HelloAPIController extends GeneralWEBController {
      * $ cat data/error-2.json | http ':8888/hello/!/event?subject=error/alarm'
      * $ cat data/error-2.json | http ':8888/hello/!/event?subject=callback/alarm'
      */
-    public postHelloEvent: NextHandler = (id, $param, $body, $ctx) => {
+    public postHelloEvent: NextHandler = async (id, $param, $body, $ctx) => {
         _inf(NS, `postHelloEvent(${id})....`);
         $param = $param || {};
         const subject = `${$param.subject || ''}`;
@@ -208,8 +208,7 @@ class HelloAPIController extends GeneralWEBController {
             ? this.service.buildCommonSlackForm
             : noop;
 
-        // TODO disable to chain
-        const { channel, body } = buildForm({ subject, data, context }) as ParamToSlack;
+        const { channel, body } = (await buildForm({ subject, data, context })) as ParamToSlack;
         return this.postHelloSlack(channel, {}, body, $ctx);
     };
 
