@@ -422,7 +422,6 @@ class HelloAPIController extends GeneralWEBController {
      *
      * $ http ':8888/hello/0/execute-queue'
      * $ http ':8888/hello/test11/execute-queue'
-     * $ http ':8888/hello/carrot.check.majuck/execute-queue'
      *
      */
     public getHelloExecuteQueue: NextHandler = async (ID, $param, $body, $ctx) => {
@@ -432,9 +431,9 @@ class HelloAPIController extends GeneralWEBController {
         myProtocol.service.asTransformer('web');
         const protocolParam: ProtocolParam = myProtocol.service.fromURL(
             $ctx,
-            `api://${destination}/batch/${ID}`,
-            $param,
-            $body,
+            `api://${destination}/hello/${ID}`,
+            $param || {},
+            $body || {},
         );
         return myProtocol.service.execute(protocolParam);
     };
