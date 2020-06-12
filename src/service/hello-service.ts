@@ -11,9 +11,9 @@ import { SlackAttachment } from 'lemon-core';
 const NS = $U.NS('HLLS', 'green'); // NAMESPACE TO BE PRINTED.
 
 //! import dependency
-import url from 'url';
 import https from 'https';
 import AWS from 'aws-sdk';
+import url from 'url';
 import { CallbackSlackData, CallbackPayload } from '../common/types';
 
 /** ********************************************************************************************************************
@@ -524,9 +524,6 @@ export class DummyHelloService extends HelloService {
         _log(NS, `getSubscriptionConfirmation()...`);
         // Send HTTP GET to subscribe URL in request for subscription confirmation
         if (param.snsMessageType == 'SubscriptionConfirmation' && param.subscribeURL) {
-            const uri = new URL(param.subscribeURL);
-            const path = `${uri.pathname || ''}`;
-            const search = `${uri.search || ''}`;
             const res = { subscribe: true };
             _log(NS, `> subscribe =`, $U.json(res));
             return 'OK';
