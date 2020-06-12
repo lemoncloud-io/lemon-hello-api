@@ -44,6 +44,8 @@
         "remove.lemon": "sls remove --profile lemon --stage prod",
         "!test": "------- run self-test with jest -----",
         "test": "LS=1 jest --config=jest.config.json",
+        "test:dev": "LS=1 jest --config=jest.config.json --watchAll",
+        "test:watch": "LS=1 jest --config=jest.config.json --watchAll",
         "test.lemon": "ENV=lemon STAGE=local npm test",
         "!release": "---- release with standard -----",
         "release": "standard-version",
@@ -55,7 +57,7 @@
     "dependencies": {
         "aws-sdk": "^2.640.0",
         "https": "^1.0.0",
-        "lemon-core": "^2.1.14",
+        "lemon-core": "^2.2.1",
         "source-map-support": "^0.5.16",
         "url": "^0.11.0"
     },

@@ -30,6 +30,7 @@ import { CallbackSlackData, CallbackPayload } from '../common/types';
  *  Core Service Instances
  ** ********************************************************************************************************************/
 import { AWSKMSService, AWSS3Service, AWSSNSService } from 'lemon-core';
+
 const $kms = new AWSKMSService();
 const $sns = new AWSSNSService();
 const $s3s = new AWSS3Service();
@@ -113,7 +114,9 @@ const NODES = [
  * @param {*} message       Object or String.
  */
 export const postMessage = (hookUrl: string, message: any) => {
+    _log(NS, `postMessage()...`);
     const body = typeof message === 'string' ? message : JSON.stringify(message);
+    _log(NS, `message >> ${body}`);
     const options: any = url.parse(hookUrl);
     options.method = 'POST';
     options.headers = {

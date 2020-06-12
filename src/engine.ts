@@ -17,7 +17,7 @@
 import { $engine } from 'lemon-core';
 
 // Loading API Service of NextDecoder
-import hello from './api/hello-api'; //NOTE - it should be `NextDecoder`.
+import hello from './api/hello-controller'; //NOTE - it should be `NextDecoder`.
 
 //! import the default core services.
 import $core from 'lemon-core';
@@ -28,7 +28,8 @@ const $sqs = $lambda.sqs;
 const $sns = $lambda.sns;
 
 //! register sub handlers, and listeners.
-$web.setHandler('hello', hello);
+// $web.setHandler('hello', hello);
+$web.addController(hello);
 
 //! export with used cores services.
 export { $lambda, $web, $sqs, $sns };
