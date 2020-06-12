@@ -18,6 +18,10 @@ import $core, {
     AWSSNSService,
     AWSS3Service,
     doReportError,
+    ProtocolService,
+    $engine,
+    ProtocolModule,
+    ProtocolParam,
 } from 'lemon-core';
 const NS = $U.NS('HELO', 'yellow'); // NAMESPACE TO BE PRINTED.
 
@@ -411,6 +415,24 @@ class HelloAPIController extends GeneralWEBController {
             delete this.NODES[id]; // set null in order to keep id.
             return node;
         });
+    };
+
+    /**
+     * Test what execute queue via protocol
+     *
+     */
+    public getHelloExcuteQueue: NextHandler = async (ID, $param, $body, $ctx) => {
+        _log(NS, `getHelloExecuteQueue(${ID})...`);
+        const destination = $U.env('LEMON_QUEUE', 'empty');
+        const myProtocol: ProtocolModule = new ProtocolModule();
+        myProtocol.service.asTransformer('web');
+        const protocolParam: ProtocolParam = myProtocol.service.fromURL(
+            $ctx,
+            `api://${destination}/hello/${ID}`,
+            $param,
+            $body,
+        );
+        return myProtocol.service.execute(protocolParam);
     };
 }
 

@@ -393,3 +393,14 @@ describe('QueueService /w DummyHelloService', () => {
         done();
     });
 });
+
+describe('communication with horse, queue, session service', () => {
+    const PROFILE = loadProfile(process); // override process.env.
+    it('should pass postMessage()', async done => {
+        const { service } = instance('dummy');
+        expect2(service.hello()).toEqual('hello-mocks-service');
+        /* eslint-disable prettier/prettier */
+        /* eslint-enable prettier/prettier */
+        done();
+    });
+});
