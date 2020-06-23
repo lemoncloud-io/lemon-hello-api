@@ -3,15 +3,13 @@
  * - public service api
  *
  *
- * @author  Tyler <tyler@lemoncloud.io>
- * @date    2020-06-10 refactor with api
+ * @author      Tyler <tyler@lemoncloud.io>
+ * @date        2020-06-10 refactor with api
+ * @date        2020-06-23 optimized with lemon-core#2.2.1
  *
- * @copyright (C) 2019 LemonCloud Co Ltd. - All Rights Reserved.
+ * @copyright (C) 2020 LemonCloud Co Ltd. - All Rights Reserved.
  */
-import $core, { $U, _log, _inf, _err, CallbackParam } from 'lemon-core';
-const NS = $U.NS('HELO', 'yellow'); // NAMESPACE TO BE PRINTED.
-
-//! import core services.
+import { $U, _log, _inf, _err } from 'lemon-core';
 import $engine, {
     loadJsonSync,
     AWSKMSService,
@@ -19,11 +17,12 @@ import $engine, {
     AWSS3Service,
     doReportError,
     ProtocolService,
-    ProtocolParam,
+    CallbackParam,
     NextHandler,
     GeneralWEBController,
 } from 'lemon-core';
 import $service, { HelloService, ParamToSlack } from '../service/hello-service';
+const NS = $U.NS('hello', 'yellow'); // NAMESPACE TO BE PRINTED.
 
 /** ********************************************************************************************************************
  *  MAIN IMPLEMENTATION.
@@ -54,8 +53,8 @@ class HelloAPIController extends GeneralWEBController {
         this.$s3s = $s3s || new AWSS3Service();
 
         //! attach sns listener
-        $core.cores.lambda.sns.addListener(this.postHelloEvent);
-        $core.cores.lambda.notification.addListener(this.postHelloNotification);
+        $engine.cores.lambda.sns.addListener(this.postHelloEvent);
+        $engine.cores.lambda.notification.addListener(this.postHelloNotification);
     }
 
     /**
@@ -294,7 +293,7 @@ class HelloAPIController extends GeneralWEBController {
                 return Promise.reject(new Error('.Records[0].Sns.Subject is required!'));
 
             //! call handler.
-            return $core.cores.lambda.sns.handle(event, null);
+            return $engine.cores.lambda.sns.handle(event, null);
         };
 
         //! decode by ID

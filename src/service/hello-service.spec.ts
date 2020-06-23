@@ -1,9 +1,11 @@
 /**
- * `hello-service.spec.js`
+ * `hello-service.spec.ts`
  * - common service for `hello-service`
  *
  *
  * @author      Tyler <tyler@lemoncloud.io>
+ * @date        2020-06-10 refactor with api
+ * @date        2020-06-23 optimized with lemon-core#2.2.1
  *
  * @copyright (C) 2020 LemonCloud Co Ltd. - All Rights Reserved.
  */
@@ -85,17 +87,17 @@ describe('QueueService /w DummyHelloService', () => {
             },
             channel: 'public',
         };
-        
+
         expect2(await service.buildSlackNotification({})).toEqual(result);
 
         result.body.attachments[0].pretext = '`#notification` from `login:undefined`';
         result.body.attachments[0].text = '{\"service\":\"login\"}';
         expect2(await service.buildSlackNotification({service:'login'})).toEqual(result);
-        
+
         result.body.attachments[0].pretext = '`#notification` from `login:test`';
         result.body.attachments[0].text = '{\"service\":\"login\",\"stage\":\"test\"}';
         expect2(await service.buildSlackNotification({service:'login', stage:'test'})).toEqual(result);
-        
+
         result.body.attachments[0].pretext = '`#notification` from `login:test`';
         result.body.attachments[0].text = '{\"service\":\"login\",\"stage\":\"test\",\"event\":\"login\"}';
         result.body.attachments[0].title = '[login] event received.';
@@ -165,44 +167,44 @@ describe('QueueService /w DummyHelloService', () => {
         expect2(await service.buildAlarmForm({data:{AlarmName:'hello error', AlarmDescription:'error test msg'}})).toEqual(result);
 
         result.body.attachments[0].fields = [
-            {short: false, title: "AlarmName", value: "hello error"}, 
-            {short: true, title: "AlarmDescription", value: "error test msg"}, 
+            {short: false, title: "AlarmName", value: "hello error"},
+            {short: true, title: "AlarmDescription", value: "error test msg"},
             {short: true, title: 'AWSAccountId', value:'123-123'}
         ];
         expect2(await service.buildAlarmForm({data:{AlarmName:'hello error', AlarmDescription:'error test msg', AWSAccountId:'123-123'}})).toEqual(result);
 
         result.body.attachments[0].fields = [
-            {short: false, title: "AlarmName", value: "hello error"}, 
-            {short: true, title: "AlarmDescription", value: "error test msg"}, 
+            {short: false, title: "AlarmName", value: "hello error"},
+            {short: true, title: "AlarmDescription", value: "error test msg"},
             {short: true, title: 'AWSAccountId', value:'123-123'},
             {short: true, title: 'NewStateValue', value:'draft'}
         ];
         expect2(await service.buildAlarmForm({data:{AlarmName:'hello error', AlarmDescription:'error test msg', AWSAccountId:'123-123', NewStateValue:'draft'}})).toEqual(result);
 
         result.body.attachments[0].fields = [
-            {short: false, title: "AlarmName", value: "hello error"}, 
-            {short: true, title: "AlarmDescription", value: "error test msg"}, 
+            {short: false, title: "AlarmName", value: "hello error"},
+            {short: true, title: "AlarmDescription", value: "error test msg"},
             {short: true, title: 'AWSAccountId', value:'123-123'},
             {short: true, title: 'NewStateValue', value:'draft'},
             {short: false, title: 'NewStateReason', value:'404'}
         ];
         expect2(await service.buildAlarmForm({data:{AlarmName:'hello error', AlarmDescription:'error test msg', AWSAccountId:'123-123', NewStateValue:'draft', NewStateReason:'404'}})).toEqual(result);
-        
+
         const now = Math.floor(new Date().getTime() / 1000);
         result.body.attachments[0].fields = [
-            {short: false, title: "AlarmName", value: "hello error"}, 
-            {short: true, title: "AlarmDescription", value: "error test msg"}, 
+            {short: false, title: "AlarmName", value: "hello error"},
+            {short: true, title: "AlarmDescription", value: "error test msg"},
             {short: true, title: 'AWSAccountId', value:'123-123'},
             {short: true, title: 'NewStateValue', value:'draft'},
             {short: false, title: 'NewStateReason', value:'404'},
             {short: true, title: 'StateChangeTime', value: now }
         ];
         expect2(await service.buildAlarmForm({data:{AlarmName:'hello error', AlarmDescription:'error test msg', AWSAccountId:'123-123', NewStateValue:'draft', NewStateReason:'404', StateChangeTime:now}})).toEqual(result);
-      
+
 
         result.body.attachments[0].fields = [
-            {short: false, title: "AlarmName", value: "hello error"}, 
-            {short: true, title: "AlarmDescription", value: "error test msg"}, 
+            {short: false, title: "AlarmName", value: "hello error"},
+            {short: true, title: "AlarmDescription", value: "error test msg"},
             {short: true, title: 'AWSAccountId', value:'123-123'},
             {short: true, title: 'NewStateValue', value:'draft'},
             {short: false, title: 'NewStateReason', value:'404'},
@@ -210,10 +212,10 @@ describe('QueueService /w DummyHelloService', () => {
             {short: true, title: 'Region', value: 'asia-2' }
         ];
         expect2(await service.buildAlarmForm({data:{AlarmName:'hello error', AlarmDescription:'error test msg', AWSAccountId:'123-123', NewStateValue:'draft', NewStateReason:'404', StateChangeTime:now, Region:'asia-2'}})).toEqual(result);
-      
+
         result.body.attachments[0].fields = [
-            {short: false, title: "AlarmName", value: "hello error"}, 
-            {short: true, title: "AlarmDescription", value: "error test msg"}, 
+            {short: false, title: "AlarmName", value: "hello error"},
+            {short: true, title: "AlarmDescription", value: "error test msg"},
             {short: true, title: 'AWSAccountId', value:'123-123'},
             {short: true, title: 'NewStateValue', value:'draft'},
             {short: false, title: 'NewStateReason', value:'404'},
@@ -223,7 +225,7 @@ describe('QueueService /w DummyHelloService', () => {
             {short: false, title: 'Trigger', value: 'off' },
         ];
         expect2(await service.buildAlarmForm({data:{AlarmName:'hello error', AlarmDescription:'error test msg', AWSAccountId:'123-123', NewStateValue:'draft', NewStateReason:'404', StateChangeTime:now, Region:'asia-2', OldStateValue:'pending', Trigger:'off'}})).toEqual(result);
-      
+
         /* eslint-enable prettier/prettier */
         done();
     });
@@ -260,7 +262,7 @@ describe('QueueService /w DummyHelloService', () => {
 
         result.body.attachments[0].title = 'failed event';
         expect2(await service.buildDeliveryFailure({data:{EventType:'event', FailureMessage:'failed event'}})).toEqual(result);
-        
+
         result.body.attachments[0].text = 'For more details, run below. \n```aws sns get-endpoint-attributes --endpoint-arn \"arn:aaaa\"```';
         // TODO list의 순서를 맞춰주기 위해서 이렇게 할당한다.
         result.body.attachments[0].fields = [
@@ -282,7 +284,7 @@ describe('QueueService /w DummyHelloService', () => {
         expect2(await service.buildDeliveryFailure({data:{EventType:'event', FailureMessage:'failed event', EndpointArn:'arn:aaaa', FailureType:'exception', DeliveryAttempts:'done'}})).toEqual(result);
         expect2(await service.buildDeliveryFailure({data:{EventType:'event', FailureMessage:'failed event', EndpointArn:'arn:aaaa', FailureType:'exception', DeliveryAttempts:'done', Service:'hello'}})).toEqual(result);
         expect2(await service.buildDeliveryFailure({data:{EventType:'event', FailureMessage:'failed event', EndpointArn:'arn:aaaa', FailureType:'exception', DeliveryAttempts:'done', Service:'hello', Time:now}})).toEqual(result);
-        
+
         result.body.attachments[0].fields = [
             { short: true, title: 'FailureType', value:'exception'},
             { short: true, title: 'MessageId', value:'123-123-123'},
@@ -292,7 +294,7 @@ describe('QueueService /w DummyHelloService', () => {
             { short: false, title: 'Token', value: '1234-1234-1234-1234' },
         ]
         expect2(await service.buildDeliveryFailure({data:{EventType:'event', FailureMessage:'failed event', EndpointArn:'arn:aaaa', FailureType:'exception', DeliveryAttempts:'done', Service:'hello', Time:now, MessageId:'123-123-123'}})).toEqual(result);
-        
+
         result.body.attachments[0].fields = [
             { short: true, title: 'FailureType', value:'exception'},
             { short: true, title: 'MessageId', value:'123-123-123'},
@@ -302,7 +304,7 @@ describe('QueueService /w DummyHelloService', () => {
             { short: true, title: 'CustomUserData', value: now },
             { short: false, title: 'Token', value: '1234-1234-1234-1234' },
         ]
-        expect2(await service.buildDeliveryFailure({data:{EventType:'event', FailureMessage:'failed event', EndpointArn:'arn:aaaa', FailureType:'exception', DeliveryAttempts:'done', Service:'hello', Time:now, MessageId:'123-123-123', Resource:'hello.json'}})).toEqual(result);        
+        expect2(await service.buildDeliveryFailure({data:{EventType:'event', FailureMessage:'failed event', EndpointArn:'arn:aaaa', FailureType:'exception', DeliveryAttempts:'done', Service:'hello', Time:now, MessageId:'123-123-123', Resource:'hello.json'}})).toEqual(result);
         /* eslint-enable prettier/prettier */
         done();
     });
@@ -365,11 +367,11 @@ describe('QueueService /w DummyHelloService', () => {
 
         result.body.attachments[0].text = '{\"channel\":\"public\"}';
         expect2(await service.buildCallbackForm({data:{channel:'public'}})).toEqual(result);
-        
+
         result.body.attachments[0].text = '{\"channel\":\"public\",\"service\":\"hello-service\"}';
         result.body.attachments[0].title = '#callback hello-service/';
         expect2(await service.buildCallbackForm({data:{channel:'public', service:'hello-service'}})).toEqual(result);
-    
+
         result.body.attachments[0].text = '{\"title\":\"callback message\",\"channel\":\"public\",\"service\":\"hello-service\"}';
         expect2(await service.buildCallbackForm({data:{title:'callback message', channel:'public', service:'hello-service'}})).toEqual(result);
 

@@ -1,26 +1,27 @@
 /**
- * `hello-service.js`
+ * `hello-service.ts`
  * - common service for `hello`
  *
  *
  * @author      Tyler <tyler@lemoncloud.io>
+ * @date        2020-06-10 refactor with api
+ * @date        2020-06-23 optimized with lemon-core#2.2.1
+ *
  * @copyright (C) 2020 LemonCloud Co Ltd. - All Rights Reserved.
  */
-import $engine, { _log, _inf, _err, $U, APIService } from 'lemon-core';
-import { SlackAttachment } from 'lemon-core';
-const NS = $U.NS('HLLS', 'green'); // NAMESPACE TO BE PRINTED.
+import { _log, _inf, _err, $U } from 'lemon-core';
+import { APIService, SlackAttachment, AWSKMSService, AWSS3Service, AWSSNSService } from 'lemon-core';
 
 //! import dependency
 import https from 'https';
 import AWS from 'aws-sdk';
 import url from 'url';
 import { CallbackSlackData, CallbackPayload } from '../common/types';
+const NS = $U.NS('HLLS', 'blue'); // NAMESPACE TO BE PRINTED.
 
 /** ********************************************************************************************************************
  *  Core Service Instances
  ** ********************************************************************************************************************/
-import { AWSKMSService, AWSS3Service, AWSSNSService } from 'lemon-core';
-
 export interface RecordData {
     subject?: string;
     data?: any;

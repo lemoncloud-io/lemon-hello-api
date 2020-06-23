@@ -3,11 +3,26 @@
  * - data structor for `callback` notification.
  */
 export interface CallbackData {
-    cmd?: string; // command name
-    param?: any; // parameters
-    body?: any; // main data body
-    result?: any; // result-set
-    error?: any; // error if exception.
+    /**
+     * command name
+     */
+    cmd?: string;
+    /**
+     * parameters
+     */
+    param?: any;
+    /**
+     * main data body
+     */
+    body?: any;
+    /**
+     * result-set
+     */
+    result?: any;
+    /**
+     * error if exception.
+     */
+    error?: any;
 }
 
 /**
@@ -15,8 +30,14 @@ export interface CallbackData {
  * - data structor for `callback` notification.
  */
 export interface CallbackSlackData extends CallbackData {
-    channel?: string; // (optional) slack channel to post.
-    title?: string; // (optional) slack title message if applicable.
+    /**
+     * (optional) slack channel to post.
+     */
+    channel?: string;
+    /**
+     * (optional) slack title message if applicable.
+     */
+    title?: string;
 }
 
 /**
@@ -24,6 +45,12 @@ export interface CallbackSlackData extends CallbackData {
  * - payload vis SNS/SQS record.
  */
 export interface CallbackPayload {
-    service?: string; // service name
-    data?: CallbackSlackData; // target data.
+    /**
+     * service name
+     */
+    service?: string;
+    /**
+     * target data.
+     */
+    data?: CallbackSlackData;
 }
