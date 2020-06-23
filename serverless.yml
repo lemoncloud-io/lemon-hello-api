@@ -104,25 +104,26 @@ provider:
     # IAM/STS - For VPC, Use static ARN Name for 'lemon-hello-api'.
     - Effect: "Allow"
       Action:
-        - "iam:GetUser"
-        - "sts:GetCallerIdentity"
+        - iam:GetUser
+        - sts:GetCallerIdentity
       Resource: "*"
     # SQS
     - Effect: "Allow"
       Action:
-        - "sqs:DeleteMessage"
-        - "sqs:ReceiveMessage"
+        - sqs:SendMessage
+        - sqs:DeleteMessage
+        - sqs:ReceiveMessage
       Resource: "arn:aws:sqs:${opt:region, self:provider.region}:*:${self:custom.queueName.${self:custom.CORE.stage}}"
     # SNS
     - Effect: "Allow"
       Action:
-        - "sns:Publish"
+        - sns:Publish
       Resource: ${self:custom.topicArn}
     # S3
     - Effect: "Allow"
       Action:
-        - "s3:GetObject"
-        - "s3:PutObject"
+        - s3:GetObject
+        - s3:PutObject
       Resource: "arn:aws:s3:::${self:custom.bucketName}/*"
     # KMS
     - Effect: Allow
@@ -133,7 +134,7 @@ provider:
     # [WSS] send message vis web-socket.
     - Effect: Allow
       Action:
-        - "execute-api:ManageConnections"
+        - execute-api:ManageConnections
       Resource:
         - "arn:aws:execute-api:*:*:**/@connections/*"
 

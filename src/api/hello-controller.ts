@@ -8,25 +8,21 @@
  *
  * @copyright (C) 2019 LemonCloud Co Ltd. - All Rights Reserved.
  */
-import $core, {
-    $U,
-    _log,
-    _inf,
-    _err,
+import $core, { $U, _log, _inf, _err, CallbackParam } from 'lemon-core';
+const NS = $U.NS('HELO', 'yellow'); // NAMESPACE TO BE PRINTED.
+
+//! import core services.
+import $engine, {
     loadJsonSync,
     AWSKMSService,
     AWSSNSService,
     AWSS3Service,
     doReportError,
     ProtocolService,
-    $engine,
-    ProtocolModule,
     ProtocolParam,
+    NextHandler,
+    GeneralWEBController,
 } from 'lemon-core';
-const NS = $U.NS('HELO', 'yellow'); // NAMESPACE TO BE PRINTED.
-
-//! import core services.
-import { NextHandler, GeneralWEBController } from 'lemon-core';
 import $service, { HelloService, ParamToSlack } from '../service/hello-service';
 
 /** ********************************************************************************************************************
@@ -400,6 +396,38 @@ class HelloAPIController extends GeneralWEBController {
     };
 
     /**
+     * Test what execute queue via protocol
+     *
+     * ```sh
+     * $ http ':8888/hello/test11/test-execute'
+     */
+    public getHelloTestExecute: NextHandler = async (id, param, body, $ctx) => {
+        const serviceName = $U.env('LEMON_QUEUE', 'lemon-hello-api');
+        _log(NS, `getHelloExecuteQueue(${id}, ${serviceName})...`);
+        const $proto: ProtocolService = $engine.cores.protocol.service;
+        const $param = $proto.fromURL($ctx, `api://${serviceName}/hello/${id}`, param, body);
+        return $proto.execute($param);
+    };
+
+    /**
+     * execute API via protocol's SNS, then get result via callback.
+     *
+     * ```sh
+     * $ http ':8888/hello/test11/test-enqueue'
+     */
+    public getHelloTestEnqueue: NextHandler = async (id, param, body, $ctx) => {
+        const serviceName = $U.env('LEMON_QUEUE', 'lemon-hello-api');
+        _log(NS, `getHelloTestEnqueue(${id}, ${serviceName})...`);
+        const $proto: ProtocolService = $engine.cores.protocol.service;
+        //! execute the target api via SQS
+        const $param = $proto.fromURL($ctx, `api://${serviceName}/hello/${id}`, param, body);
+        //! post result to slack channel
+        const $callback: CallbackParam = { type: 'hello', id: 'public', cmd: 'slack' };
+        //! start `protocol` w/ enqueue.
+        return $proto.enqueue($param, $callback);
+    };
+
+    /**
      * Delete Node (or mark deleted)
      *
      * ```sh
@@ -415,27 +443,6 @@ class HelloAPIController extends GeneralWEBController {
             delete this.NODES[id]; // set null in order to keep id.
             return node;
         });
-    };
-
-    /**
-     * Test what execute queue via protocol
-     *
-     * $ http ':8888/hello/0/execute-queue'
-     * $ http ':8888/hello/test11/execute-queue'
-     *
-     */
-    public getHelloExecuteQueue: NextHandler = async (ID, $param, $body, $ctx) => {
-        const destination = $U.env('LEMON_QUEUE', 'empty');
-        _log(NS, `getHelloExecuteQueue(${ID}, ${destination})...`);
-        const myProtocol: ProtocolModule = new ProtocolModule();
-        myProtocol.service.asTransformer('web');
-        const protocolParam: ProtocolParam = myProtocol.service.fromURL(
-            $ctx,
-            `api://${destination}/hello/${ID}`,
-            $param || {},
-            $body || {},
-        );
-        return myProtocol.service.execute(protocolParam);
     };
 }
 
