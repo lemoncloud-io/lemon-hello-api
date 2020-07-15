@@ -88,6 +88,7 @@ class HelloAPIController extends GeneralWEBController {
     public getHello: NextHandler = async (id, param, body, context) => {
         _log(NS, `getHello(${id})...`);
         _log(NS, `> context =`, $U.json(context));
+        if (id == '99') throw new Error(`404 NOT FOUND - id:${id}`);
         return { id, hello: this.hello(), context };
     };
 
