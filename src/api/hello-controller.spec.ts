@@ -12,10 +12,27 @@
 import { expect2, loadJsonSync, $U } from 'lemon-core';
 import { app } from '../express';
 import request from 'supertest';
+import * as $service from '../service/hello-service.spec';
+import { HelloAPIController } from './hello-controller';
+
+// create service instance
+export const instance = (type: 'dummy' = 'dummy') => {
+    const { service, current } = $service.instance(type);
+    const controller = new HelloAPIController(service);
+    return { controller, service, current };
+};
 
 //! main test body.
 describe('hello-controller', () => {
     const $pack = loadJsonSync('package.json');
+
+    // basic test
+    it('check type and identity of controller', async done => {
+        const { controller } = instance();
+        expect2(controller.type()).toEqual(`hello`);
+        expect2(controller.hello()).toEqual(`hello-api-controller:${controller.type()}`);
+        done();
+    });
 
     it('should pass express route: GET /', async done => {
         const res = await request(app).get('/');

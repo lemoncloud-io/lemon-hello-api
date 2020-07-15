@@ -31,7 +31,7 @@ const NS = $U.NS('hello', 'yellow'); // NAMESPACE TO BE PRINTED.
  * class: `HelloAPIController`
  * - handle hello api-service.
  */
-class HelloAPIController extends GeneralWEBController {
+export class HelloAPIController extends GeneralWEBController {
     private NODES: { name: string }[];
     protected service: HelloService;
     protected $kms: AWSKMSService;

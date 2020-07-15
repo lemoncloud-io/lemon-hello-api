@@ -15,8 +15,9 @@ import { HelloService, DummyHelloService } from './hello-service';
 
 //! create service instance.
 export const instance = (type = 'dummy') => {
+    const current = new Date().getTime();
     const service: DummyHelloService = type == 'dummy' ? new DummyHelloService() : new HelloService();
-    return { service };
+    return { service, current };
 };
 
 //! main test body.
