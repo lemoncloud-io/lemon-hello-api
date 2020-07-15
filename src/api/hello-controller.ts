@@ -88,8 +88,24 @@ class HelloAPIController extends GeneralWEBController {
     public getHello: NextHandler = async (id, param, body, context) => {
         _log(NS, `getHello(${id})...`);
         _log(NS, `> context =`, $U.json(context));
-        if (id == '99') throw new Error(`404 NOT FOUND - id:${id}`);
-        return { id, hello: this.hello(), context };
+        //WARN! - DO NOT CHANGE BELOW DUE TO `lemon-core` TESTING.
+        const i = $U.N(id, 0);
+        const val = this.NODES[i];
+        if (!val) throw new Error(`404 NOT FOUND - id:${id}`);
+        return val;
+    };
+
+    /**
+     * get hello hello
+     *
+     * ```sh
+     * $ http ':8888/hello/0/hello'
+     */
+    public getHelloHello: NextHandler = async (id, param, body, context) => {
+        _log(NS, `getHelloHello(${id})...`);
+        _log(NS, `> context =`, $U.json(context));
+        //! tricky way to pass test.
+        return { id, hello: this.hello(), context: { ...context, ...param } };
     };
 
     /**
