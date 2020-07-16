@@ -57,9 +57,9 @@
         "plato": "plato -r -d complexity dist"
     },
     "dependencies": {
-        "aws-sdk": "^2.713.0",
+        "aws-sdk": "^2.714.0",
         "https": "^1.0.0",
-        "lemon-core": "^2.2.3",
+        "lemon-core": "^2.2.5",
         "source-map-support": "^0.5.19",
         "url": "^0.11.0"
     },
