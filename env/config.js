@@ -1,23 +1,21 @@
 /**
  * Basic Configuration.
- * - 기본 환경 설정으로, 각 AWS Profile 별로 적용할 serverless custom 환경 설정.
- * - 각 profile별로 주요 변수(특히 환결 설정 파일)를 설정함.
+ * - Before using thie, make credentials for your AWS Profile.
+ * - customize the basic custom config for `serverless.yml`
  *
  * 참고: https://velog.io/@doondoony/Serverless-Framework-serverless.yml-%EC%84%A4%EC%A0%95-%EC%A0%95%EB%B3%B4-%EC%88%A8%EA%B8%B0%EA%B8%B0-2hjmsx7nal
  *
  *
- * @param {*} serverless        see `node_modules/serverless/lib/Serverless.js`
+ * @author      Steve Jung <steve@lemoncloud.io>
+ * @date        2019-07-19 initial version
+ * @date        2020-07-15 cleanup messages
  *
- * @author  Steve <steve@lemoncloud.io>
- * @date    2019-07-19 initial version
- *
- * @copyright (C) lemoncloud.io 2019 - All Rights Reserved.
+ * @copyright (C) lemoncloud.io 2020 - All Rights Reserved.
  */
 const CONF = (serverless) => {
-    // console.log('serverless=', serverless);
     serverless.cli.consoleLog('Loading config settings...');
     return {
-        "lemon": {
+        lemon: {
             name: "lemon-app",
             runtime: 'nodejs10.x',                              // Node is powered by the V8 JavaScript Engine (used in Chromium)
             region: "ap-northeast-2",
@@ -28,7 +26,7 @@ const CONF = (serverless) => {
             kmsKey: '*',                                        // KMS key-id
             bucket: 'lemon-hello-www',                          // Name of S3 public bucket.
         },
-        "ssocio": {
+        ssocio: {
             name: "ssocio-app",
             runtime: 'nodejs10.x',                              // Node is powered by the V8 JavaScript Engine (used in Chromium)
             region: "ap-northeast-2",
@@ -39,7 +37,7 @@ const CONF = (serverless) => {
             kmsKey: '*',                                        // KMS key-id
             bucket: 'ssocio-hello-wwww',                        // Name of S3 public bucket.
         },
-        "kong": {
+        kong: {
             name: "kong-app",
             runtime: 'nodejs10.x',                              // Node is powered by the V8 JavaScript Engine (used in Chromium)
             region: "ap-northeast-2",
@@ -50,7 +48,7 @@ const CONF = (serverless) => {
             kmsKey: '*',                                        // KMS key-id
             bucket: 'kong-hello-www',                           // Name of S3 public bucket.
         },
-        "jober": {
+        jober: {
             name: "jober-app",
             runtime: 'nodejs10.x',                              // Node is powered by the V8 JavaScript Engine (used in Chromium)
             region: "ap-northeast-2",
@@ -61,7 +59,7 @@ const CONF = (serverless) => {
             kmsKey: '*',                                        // KMS key-id
             bucket: 'jober-hello-wwww',                         // Name of S3 public bucket.
         },
-        "comics": {
+        comics: {
             name: "comics-app",
             runtime: 'nodejs10.x',                              // Node is powered by the V8 JavaScript Engine (used in Chromium)
             region: "ap-northeast-2",
@@ -72,7 +70,7 @@ const CONF = (serverless) => {
             kmsKey: '*',                                        // KMS key-id
             bucket: 'comics-hello-wwww',                        // Name of S3 public bucket.
         },
-        "none": {
+        none: {
             name: "none-app",
             runtime: 'nodejs10.x',                              // Node is powered by the V8 JavaScript Engine (used in Chromium)
             region: "ap-northeast-2",

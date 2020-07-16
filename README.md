@@ -5,30 +5,39 @@
 
 # lemon-hello-api
 
-Basic Serverless Hello API with `Lambda` + `API Gateway` + `Web Socket` + `SNS` + `SQS` + `KMS`
+Simple Serverless MicroService API with `Lambda` + `API Gateway` + `Web Socket` + `SNS` + `SQS` + `KMS`
 
-- Hello Nodejs DevOps Project with `babel` + `eslint` + `jest` + `supertest` + `codecov` + `travis`
+- Sample DevOps with `babel` + `eslint` + `jest` + `supertest` + `codecov` + `travis`
 
-- Integrate with `Slack` + `CloudWatch Alarm`
-
-
-## 설명 (Description)
-
-- `Nodejs` 기반 오픈소스 표준 개발 환경 구성안.
-- AWS CloudWatch 의 내용을 `lemon-hello-sns`으로 수신 함 -> 이후 슬랙으로 전달
-- 슬랙 webhook를 이용하여, 해당 슬랙 채널에 메세지를 보냄
+- Sample Integrated with `Slack` + `CloudWatch Alarm`
 
 
-## 사용법 (Usage)
+## Description
 
-- Nodejs 에서 모듈로 이용 (intall package with `npm`)
+- Standard devops by lemon based on `Nodejs` + `Typescript`
+- Support sending message to `Slack` from AWS CloudWatch. (see `lemon-hello-sns` AWS SNS after deploying)
+- Save slack message to S3 bucket as json object
+
+
+## Usage
+
+- **Case 1** fork & run by run `npm install`
 
     ```bash
-    # npm 으로 패키지 설치.
-    $ npm install lemon-hello-api --save
+    # STEP.1 install packages..
+    $ npm install
+    # STEP.2 customize profile in env/<profile>.yml
+    # STEP.3 add profile infor to env/config.js
+    # STEP.4 deploy into your AWS account.
+    $ npm run deploy
     ```
 
-- **Case 1** 에러 발생시 `SNS`로 정보 보내기. (Report error information via `SNS`)
+- **Case 2** Use as module, and report error via `SNS`.
+
+    ```bash
+    # install as dependencies
+    $ npm install lemon-hello-api --save
+    ```
 
     ```js
     const payload = {...};
@@ -42,71 +51,67 @@ Basic Serverless Hello API with `Lambda` + `API Gateway` + `Web Socket` + `SNS` 
     }
     ```
 
-- 슬랙으로 에러 정보 표시. ()
+- **Example** Screenshot of `slack` when receiving message.
 
     ![SlackError](assets/sns.report-error.png)
 
 
+## Installation
 
-## 설치하기 (Installation)
+**[Overrall]**
 
-**[전체 순서]**
-
-1. `env/lemon.yml`와 `env/config.js` 파일 복제하여 별도 구성 (customize config files)
-1. 환경 변수의 `SLACK_PUBLIC` 값을 변경. (change `SLACK_PUBLIC` address by slack webhook)
-1. KMS 로 슬랙 채널 WebHook 암호화 시키기. (encrypt slack webhook url with `KMS`, and update `SLACK_PUBLIC`)
-1. `npm run deploy` 으로 AWS 클라우드에 올리기 (deploy to AWS cloud `npm run deploy`)
-1. 그리곤, 즐기자~~ (enjoy~)
+1. Copy and customise the main config files: `env/lemon.yml`, `env/config.js`
+1. Change `SLACK_PUBLIC` address by slack webhook.
+1. Encrypt `slack` webhook url with `KMS`, and update `SLACK_PUBLIC`
+1. Deploy to AWS cloud `$ npm run deploy`
+1. Enjoy~
 
 
-### STEP.1 KMS로 설정 내용 암호화 하기
+### STEP.1 How to encrypt string by KMS
 
-- KMS 마스터 키ID 생성하기 (최초 생성) (Create master kms-id for 1st time)
+- Create master kms-id for 1st time (at first time).
 
     ```bash
-    # 최초의 사용자 키 생성히기.. (create initial master-key in KMS)
+    # create initial master-key in KMS (example)
     $ aws kms create-key --profile <profile> --description 'hello master key'
     {
         "KeyMetadata": {
-            "KeyId": "0039d20d-.....-387b887b4783",
+            "KeyId": "0039d20d-112233445566-387b887b4783",
         }
     }
-    # Alias 생성하기 ('0039d20d-.....-387b887b4783'은 앞에서 생성된 KeyId 항목으로 변경) (create alias)
-    $ aws kms create-alias --profile <profile> --alias-name alias/lemon-hello-api --target-key-id 0039d20d-.....-387b887b4783
+    # create Alias
+    $ aws kms create-alias --profile <profile> --alias-name alias/lemon-hello-api --target-key-id 0039d20d-112233445566-387b887b4783
     ```
 
-- (참고) 암호화 테스트 하기. (Test encrypt)
+- Test encryptioin with KMS
 
     ```sh
-    # 'hello lemon' 를 <kms-key-id>로 암호화하기...
+    # run encrypt
     $ aws kms encrypt --profile <profile> --key-id alias/lemon-hello-api --plaintext "hello lemon" --query CiphertextBlob --output text
     ```
 
-### STEP.2 AWS 클라우드에 배포 (Deploy to AWS Cloud)
+### STEP.2 Deploy to AWS Cloud
 
-- AWS Lambda 에 배포
+- Make AWS Lambda, and API Endpoint with `serverless`
 
     ```bash
-    # npm 명령어 실행. (profile <lemon>)
+    # run npm command (if profile is `lemon`, or make your own script)
     $ npm run deploy.lemon
     ```
 
-## 개발 (Development)
+## Development
 
-- 로컬에서 API 서버로 실행 (runs for local development)
+- Run for local development.
 
     ```bash
-    # express API 서버 올리기 (profile <lemon>)
+    # run express service in local (if profile is `lemon`, or make your own script)
     $ npm run express.lemon
 
-    # httpie 로 요청하기 
-    $ http ':8888/hello/'
-
-    # KMS 작동 여부 확인하기. (test encrypt via api)
+    # test encrypt via api
     $ http ':8888/hello/0/test-encrypt'    
     ```
 
-## Travis 연동
+## Support Auto-Build with Travis
 
 - Get NPM Token via [tokens](https://www.npmjs.com/settings/stevelemon/tokens)
 
@@ -118,15 +123,14 @@ $ brew install travis
 $ travis encrypt <NPM Token> --add deploy.api_key
 ```
 
-## 기여하기 (Contribution)
+## How to Contribute
 
-누구나 어느내용이든 참여가능하며, 수정 요청시 PR 로 요청 주세요. (request via PR)
+- request via `PR`, or use `Issue`.
 
 
-## 라이센스 (License)
+## LICENSE
 
 [MIT](http://opensource.org/licenses/MIT)
-
 
 
 ----------------
