@@ -80,6 +80,7 @@
         "jest": "^24.9.0",
         "lint-staged": "^8.1.6",
         "nodemon": "^1.19.4",
+        "plato": "^1.7.0",
         "prettier": "^1.19.1",
         "serverless-aws-documentation": "^0.8.0",
         "serverless-offline": "^3.33.0",
