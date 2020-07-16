@@ -66,6 +66,20 @@ custom:
     local: lemon-hello-www-dev
     dev: lemon-hello-www-dev
     prod: ${self:custom.CONF.${self:custom.CORE.profile}.bucket, 'lemon-hello-www'}
+  #------------------------------------------------
+  # CORS Default (use like `cors: ${self:custom.cors, true}`)
+  #------------------------------------------------
+  cors:
+    origin: "*"
+    headers:
+      - Content-Type
+      - X-Amz-Date
+      - Authorization
+      - X-Api-Key
+      - X-Amz-Security-Token
+      - X-Amz-User-Agent
+      - X-Lemon-Language
+    allowCredentials: true
 
 #------------------------------------------------
 # Provider
@@ -202,55 +216,55 @@ functions:
       - http:
           path: /hello
           method: get
-          cors: true
+          cors: ${self:custom.cors, true}
           # authorizer: aws_iam
           documentation:
             summary: "list items"
       - http:
           path: /hello/{id}
           method: get
-          cors: true
+          cors: ${self:custom.cors, true}
           # authorizer: aws_iam
           documentation:
             summary: "read single item"
       - http:
           path: /hello/{id}/{cmd}
           method: get
-          cors: true
+          cors: ${self:custom.cors, true}
           # authorizer: aws_iam
           documentation:
             summary: "action for item."
       - http:
           path: /hello/{id}
           method: put
-          cors: true
+          cors: ${self:custom.cors, true}
           authorizer: aws_iam
           documentation:
             summary: "update item."
       - http:
           path: /hello/subscribe
           method: post
-          cors: true
+          cors: ${self:custom.cors, true}
           documentation:
             summary: "special purposed public APIs"
       - http:
           path: /hello/{id}
           method: post
-          cors: true
+          cors: ${self:custom.cors, true}
           authorizer: aws_iam
           documentation:
             summary: "create(or update) item by id"
       - http:
           path: /hello/{id}/{cmd}
           method: post
-          cors: true
+          cors: ${self:custom.cors, true}
           authorizer: aws_iam
           documentation:
             summary: "action for item with payload"
       - http:
           path: /hello/{id}
           method: delete
-          cors: true
+          cors: ${self:custom.cors, true}
           authorizer: aws_iam
           documentation:
             summary: "delete item"
