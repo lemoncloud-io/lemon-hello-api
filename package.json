@@ -1,6 +1,6 @@
 {
     "name": "lemon-hello-api",
-    "version": "2.1.4",
+    "version": "2.2.1",
     "description": "Simple Serverless MicroService API with `Lambda` + `API Gateway` + `Web Socket` + `SNS` + `SQS` + `KMS`",
     "main": "dist/index.js",
     "types": "dist/index.d.ts",
@@ -57,22 +57,22 @@
         "plato": "plato -r -d complexity dist"
     },
     "dependencies": {
-        "aws-sdk": "^2.714.0",
+        "aws-sdk": "^2.747.0",
         "https": "^1.0.0",
-        "lemon-core": "^2.2.5",
+        "lemon-core": "^2.2.7",
         "source-map-support": "^0.5.19",
         "url": "^0.11.0"
     },
     "devDependencies": {
         "@cruglobal/serverless-merge-config": "^1.1.0",
-        "@types/cors": "^2.8.6",
+        "@types/cors": "^2.8.7",
         "@types/dotenv": "^6.1.1",
         "@types/jest": "^24.9.1",
         "@types/supertest": "^2.0.10",
         "@typescript-eslint/eslint-plugin": "^1.7.0",
         "@typescript-eslint/parser": "^1.7.0",
-        "codecov": "^3.7.0",
-        "concurrently": "^5.2.0",
+        "codecov": "^3.7.2",
+        "concurrently": "^5.3.0",
         "eslint": "^5.16.0",
         "eslint-config-prettier": "^6.11.0",
         "eslint-plugin-prettier": "^3.1.4",
@@ -93,7 +93,7 @@
         "tsconfig-paths": "3.8.0",
         "tslint": "5.16.0",
         "typedoc": "^0.15.8",
-        "typescript": "^3.9.6"
+        "typescript": "^3.9.7"
     },
     "private": false,
     "author": "Steve Jung <steve@lemoncloud.io> (https://lemoncloud.io)",
