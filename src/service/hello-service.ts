@@ -19,15 +19,18 @@ import url from 'url';
 import { CallbackSlackData, CallbackPayload } from '../common/types';
 const NS = $U.NS('HLLS', 'blue'); // NAMESPACE TO BE PRINTED.
 
-/** ********************************************************************************************************************
- *  Core Service Instances
- ** ********************************************************************************************************************/
+/**
+ * record-data
+ */
 export interface RecordData {
     subject?: string;
     data?: any;
     context?: any;
 }
 
+/**
+ * notification-param
+ */
 export interface NotificationParam {
     service?: string;
     stage?: string;
@@ -36,6 +39,9 @@ export interface NotificationParam {
     data?: { accountId?: string; provider?: string };
 }
 
+/**
+ * bind-param-of-slack
+ */
 export interface BindParamOfSlack {
     pretext?: string;
     title?: string;
@@ -45,6 +51,9 @@ export interface BindParamOfSlack {
     username?: string;
 }
 
+/**
+ * param-to-slack
+ */
 export interface ParamToSlack {
     channel?: string;
     body?: {
@@ -60,6 +69,9 @@ export interface ParamToSlack {
     };
 }
 
+/**
+ * hello-proxy-service
+ */
 export interface HelloProxyService {
     hello(): string;
     postMessage(hookUrl: string, message: any): Promise<any>;
@@ -74,6 +86,10 @@ export interface HelloProxyService {
     buildCommonSlackForm(body: RecordData): Promise<ParamToSlack>;
 }
 
+/**
+ * class: `HelloService`
+ * - catch `report-error` via SNS, then save into S3 and post to slack.
+ */
 export class HelloService implements HelloProxyService {
     protected $channels: any = {};
     protected $kms: AWSKMSService;
@@ -475,6 +491,10 @@ export class HelloService implements HelloProxyService {
     };
 }
 
+/**
+ * class: `DummyHelloService`
+ * - provide dummy-service for unit-test.
+ */
 export class DummyHelloService extends HelloService {
     public constructor() {
         super();
@@ -675,11 +695,5 @@ export class DummyHelloService extends HelloService {
     };
 }
 
-//! prepare main instance.
-export class HelloServiceMain extends HelloService {
-    public constructor() {
-        super();
-    }
-}
-
-export default new HelloServiceMain();
+//! export default
+export default new HelloService();

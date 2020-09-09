@@ -24,9 +24,6 @@ import $engine, {
 import $service, { HelloService, ParamToSlack } from '../service/hello-service';
 const NS = $U.NS('hello', 'yellow'); // NAMESPACE TO BE PRINTED.
 
-/** ********************************************************************************************************************
- *  MAIN IMPLEMENTATION.
- ** ********************************************************************************************************************/
 /**
  * class: `HelloAPIController`
  * - handle hello api-service.
@@ -45,7 +42,8 @@ export class HelloAPIController extends GeneralWEBController {
         super('hello');
 
         //! shared memory.
-        // WARN! - `serverless offline`는 상태를 유지하지 않으므로, NODES값들이 실행때마다 리셋이될 수 있음.
+        //WARN! - `serverless offline`는 상태를 유지하지 않으므로, NODES값들이 실행때마다 리셋이될 수 있음.
+        //NOTE - DO NOT CHANGE THE VALUE DUE TO API-TEST FROM OTHERS!
         this.NODES = [{ name: 'lemon' }, { name: 'cloud' }];
         this.service = service ? service : $service;
         this.$kms = $kms || new AWSKMSService();
@@ -92,7 +90,7 @@ export class HelloAPIController extends GeneralWEBController {
         const i = $U.N(id, 0);
         const val = this.NODES[i];
         if (!val) throw new Error(`404 NOT FOUND - id:${id}`);
-        return val;
+        return { ...val };
     };
 
     /**
@@ -114,15 +112,13 @@ export class HelloAPIController extends GeneralWEBController {
      * ```sh
      * $ echo '{"size":1}' | http PUT ':8888/hello/1'
      */
-    public putHello: NextHandler = async (ID, $param, $body, $ctx) => {
-        _log(NS, `do_put_hello(${ID})....`);
-        $param = $param || {};
+    public putHello: NextHandler = async (id, $param, $body, $ctx) => {
+        _log(NS, `do_put_hello(${id})....`);
+        const i = $U.N(id, 0);
 
-        return this.getHello(ID, null, null, $ctx).then(node => {
-            const id = node._id || node.id || ID;
-            Object.assign(this.NODES[id], $body || {});
-            return Object.assign(node, $body || {});
-        });
+        const node = await this.getHello(id, null, null, $ctx);
+        this.NODES[i] = { ...node, ...$body };
+        return this.NODES[i];
     };
 
     /**
@@ -131,16 +127,14 @@ export class HelloAPIController extends GeneralWEBController {
      * ```sh
      * $ echo '{"name":"lemoncloud"}' | http POST ':8888/hello/0'
      */
-    public postHello: NextHandler = async (ID, $param, $body, $ctx) => {
-        _log(NS, `postHello(${ID})....`);
-        if (ID == 'echo') return { id: '!', cmd: 'echo', param: $param, body: $body, context: $ctx };
-        //! do some thing.
-        $param = $param || {};
-        if (!$body || !$body.name) return Promise.reject(new Error('.name is required!'));
-        return Promise.resolve($body).then(node => {
-            this.NODES.push(node);
-            return this.NODES.length - 1; // returns ID.
-        });
+    public postHello: NextHandler = async (id, $param, $body, $ctx) => {
+        _log(NS, `postHello(${id})....`);
+        const i = $U.N(id, 0);
+        if (id == 'echo') return { id: '!', cmd: 'echo', param: $param, body: $body, context: $ctx };
+        if (i) throw new Error(`@id[${id}] (number) is invalid!`);
+        if (!$body || !$body.name) throw new Error('.name (string) is required!');
+        this.NODES.push({ ...$body });
+        return this.NODES.length - 1; // returns the last-index.
     };
 
     /**
@@ -165,26 +159,23 @@ export class HelloAPIController extends GeneralWEBController {
         $param = $param || {};
 
         //! load target webhook via environ.
+        const webhook = await this.service.loadSlackChannel(id, 0 ? '' : 'public');
+        if (!webhook) throw new Error(`@id[${id}] (channel-id) is invalid!`);
+        _log(NS, '> webhook :=', webhook);
 
-        // TODO chain code 풀
-        return this.service
-            .loadSlackChannel(id, 0 ? '' : 'public')
-            .then(webhook => {
-                _log(NS, '> webhook :=', webhook);
-                //! prepare slack message via body.
-                const message = typeof $body === 'string' ? { text: $body } : $body;
-                const noop = (_: any) => _;
-                //NOTE! filter message only if sending to slack-hook.
-                const fileter = webhook.startsWith('https://hooks.slack.com') ? this.service.saveMessageToS3 : noop;
-                return Promise.resolve(message)
-                    .then(fileter)
-                    .then(message => this.service.postMessage(webhook, message));
-            })
-            .catch(e => {
-                //! ignore error, or it will make recursive error-report.
-                _err(NS, `! slack[${id}].err =`, e);
-                return '';
-            });
+        //! prepare slack message via body.
+        const message = typeof $body === 'string' ? { text: $body } : $body;
+        const noop = (_: any) => _;
+
+        //NOTE! filter message only if sending to slack-hook.
+        const fileter = webhook.startsWith('https://hooks.slack.com') ? this.service.saveMessageToS3 : noop;
+        const res = await this.service.postMessage(webhook, fileter(message)).catch(e => {
+            _err(NS, `! slack[${id}].err =`, e);
+            return '';
+        });
+        _log(NS, `> res =`, res);
+        //! returns.
+        return res;
     };
 
     /**

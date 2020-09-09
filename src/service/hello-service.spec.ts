@@ -10,7 +10,7 @@
  * @copyright (C) 2020 LemonCloud Co Ltd. - All Rights Reserved.
  */
 import { loadProfile } from 'lemon-core/dist/environ';
-import { GETERR, expect2, _it, loadJsonSync } from 'lemon-core';
+import { GETERR, expect2, loadJsonSync } from 'lemon-core';
 import { HelloService, DummyHelloService } from './hello-service';
 
 //! create service instance.
