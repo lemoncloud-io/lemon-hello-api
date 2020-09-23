@@ -115,6 +115,7 @@ export class HelloService implements HelloProxyService {
      */
     public postMessage = async (hookUrl: string, message: any) => {
         _log(NS, `> postMessage = hookUrl[${hookUrl}]`);
+        message = typeof message == 'object' && message instanceof Promise ? await message : message;
         _log(NS, `> messgae = `, $U.json(message));
 
         const body = (typeof message == 'string' ? message : JSON.stringify(message)) || '';
@@ -206,15 +207,15 @@ export class HelloService implements HelloProxyService {
         const attachments: SlackAttachment[] = (message && message.attachments) || [];
 
         //! if put to s3, then filter attachments
-        if (SLACK_PUT_S3 && attachments && attachments.length) {
+        if (SLACK_PUT_S3 && attachments && attachments.length > 0) {
             const attachment = attachments[0] || {};
             const pretext = attachment.pretext || '';
             const title = attachment.title || '';
             const color = attachment.color || 'green';
             const thumb_url = attachment.thumb_url ? attachment.thumb_url : undefined;
             _log(NS, `> title[${pretext}] =`, title);
-            const data = Object.assign({}, message); // copy.
-            data.attachments = data.attachments.map((_: any) => {
+            const json = JSON.stringify(message);
+            message.attachments = attachments.map((_: any) => {
                 //! convert internal data.
                 _ = Object.assign({}, _); // copy.
                 const text = `${_.text || ''}`;
@@ -228,16 +229,12 @@ export class HelloService implements HelloProxyService {
                 return _;
             });
             const TAGS = [':slack:', ':cubimal_chick:', ':rotating_light:'];
-            const MOONS = ':new_moon:,:waxing_crescent_moon:,:first_quarter_moon:,:moon:,:full_moon:,:waning_gibbous_moon:,:last_quarter_moon:,:waning_crescent_moon:'.split(
-                ',',
-            );
-            const CLOCKS = ':clock12:,:clock1230:,:clock1:,:clock130:,:clock2:,:clock230:,:clock3:,:clock330:,:clock4:,:clock430:,:clock5:,:clock530:,:clock6:,:clock630:,:clock7:,:clock730:,:clock8:,:clock830:,:clock9:,:clock930:,:clock10:,:clock1030:,:clock11:,:clock1130:'.split(
-                ',',
-            );
+            // eslint-disable-next-line prettier/prettier
+            const MOONS = ':new_moon:,:waxing_crescent_moon:,:first_quarter_moon:,:moon:,:full_moon:,:waning_gibbous_moon:,:last_quarter_moon:,:waning_crescent_moon:'.split(',');
+            // const CLOCKS = ':clock12:,:clock1230:,:clock1:,:clock130:,:clock2:,:clock230:,:clock3:,:clock330:,:clock4:,:clock430:,:clock5:,:clock530:,:clock6:,:clock630:,:clock7:,:clock730:,:clock8:,:clock830:,:clock9:,:clock930:,:clock10:,:clock1030:,:clock11:,:clock1130:'.split(',');
             const now = new Date();
             const hour = now.getHours();
             const tag = 0 ? TAGS[2] : MOONS[Math.floor((MOONS.length * hour) / 24)];
-            const json = JSON.stringify(data);
             return this.$s3s
                 .putObject(json)
                 .then(res => {
@@ -247,18 +244,16 @@ export class HelloService implements HelloProxyService {
                     const _pretext = title == 'error-report' ? title : pretext;
                     const text = title == 'error-report' ? pretext : title;
                     const tag0 = `${text}`.startsWith('#error') ? ':rotating_light:' : '';
-                    message = {
-                        attachments: [
-                            {
-                                pretext: _pretext,
-                                text: `<${link}|${tag0 || tag || '*'}> ${text}`,
-                                color,
-                                mrkdwn: true,
-                                mrkdwn_in: ['pretext', 'text'],
-                                thumb_url,
-                            },
-                        ],
-                    };
+                    message.attachments = [
+                        {
+                            pretext: _pretext,
+                            text: `<${link}|${tag0 || tag || '*'}> ${text}`,
+                            color,
+                            mrkdwn: true,
+                            mrkdwn_in: ['pretext', 'text'],
+                            thumb_url,
+                        },
+                    ];
                     return message;
                 })
                 .catch(e => {

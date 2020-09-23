@@ -9,7 +9,7 @@
  *
  * @copyright (C) 2020 LemonCloud Co Ltd. - All Rights Reserved.
  */
-import { $U, _log, _inf, _err } from 'lemon-core';
+import { $U, _log, _inf, _err, GETERR$ } from 'lemon-core';
 import $engine, {
     loadJsonSync,
     AWSKMSService,
@@ -171,7 +171,7 @@ export class HelloAPIController extends GeneralWEBController {
         const fileter = webhook.startsWith('https://hooks.slack.com') ? this.service.saveMessageToS3 : noop;
         const res = await this.service.postMessage(webhook, fileter(message)).catch(e => {
             _err(NS, `! slack[${id}].err =`, e);
-            return '';
+            return GETERR$(e);
         });
         _log(NS, `> res =`, res);
         //! returns.
@@ -235,10 +235,10 @@ export class HelloAPIController extends GeneralWEBController {
         $body = $body || {};
 
         const subCheck = await this.service.getSubscriptionConfirmation($param);
-        _inf(NS, `subCheck [${subCheck}]`);
+        _inf(NS, `> subCheck [${subCheck}]`);
         if (subCheck == 'PASS') {
             const { channel, body } = await this.service.buildSlackNotification($body);
-            _inf(NS, `build channel [${channel}]`);
+            _inf(NS, `> build channel [${channel}]=`, body);
             return this.postHelloSlack(channel, {}, body, $ctx);
         }
         return subCheck;
