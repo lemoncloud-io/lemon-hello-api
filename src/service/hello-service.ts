@@ -214,8 +214,8 @@ export class HelloService implements HelloProxyService {
             const color = attachment.color || 'green';
             const thumb_url = attachment.thumb_url ? attachment.thumb_url : undefined;
             _log(NS, `> title[${pretext}] =`, title);
-            const json = JSON.stringify(message);
-            message.attachments = attachments.map((_: any) => {
+            const saves = { ...message };
+            saves.attachments = attachments.map((_: any) => {
                 //! convert internal data.
                 _ = Object.assign({}, _); // copy.
                 const text = `${_.text || ''}`;
@@ -235,6 +235,7 @@ export class HelloService implements HelloProxyService {
             const now = new Date();
             const hour = now.getHours();
             const tag = 0 ? TAGS[2] : MOONS[Math.floor((MOONS.length * hour) / 24)];
+            const json = JSON.stringify(saves);
             return this.$s3s
                 .putObject(json)
                 .then(res => {
