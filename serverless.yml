@@ -212,6 +212,14 @@ functions:
 #           route: echo             # sample route by routeKey. echo request.
         # - stream: ${self:custom.CONF.${self:custom.CORE.profile}.stream}
       # -------------------------------------------------------
+      # REST API : /
+      - http:
+          path: /
+          method: get
+          cors: true
+          documentation:
+            summary: "show service name and version"
+      # -------------------------------------------------------
       # REST API : /hello
       - http:
           path: /hello
