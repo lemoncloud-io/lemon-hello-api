@@ -7,6 +7,7 @@ default_env: &default_env
   LC: 1                   # line-coloring
   TS: 1                   # time-stamp in line
   NAME: 'ssocio'          # profile name.
+  BACKBONE_API:  ''       # NO USE BACKBONE
   SLACK_PUT_S3: 1         # flag to auto save into s3 bucket if slack message.
   SLACK_PUBLIC: 'AQICAHixEHf7isdNQBbkxpofjAClbUEdI/Y6QQovlgFxV0cfRAF+FHEoDRV35GnfKVRptzG1AAAAkTCBjgYJKoZIhvcNAQcGoIGAMH4CAQAweQYJKoZIhvcNAQcBMB4GCWCGSAFlAwQBLjARBAx5BZAik3j59qOhBZcCARCATA6T1tI/R1nXo44Qfy7itfLJxsnFfaIGpLyBCGGvGO4E9SlOC7aG9mHWYvkl7v5HyGc019HbfKdpiigFo4R/26gyaiMWICuxp+SRbf4='
   SLACK_TODAQ: 'AQICAHgp9ZRAQnf5UOs4z/EXAvnGreOTsWKbX2bWQXxHYUcxOQGx7ZA2pzvIxkmpxVipV3FiAAAAsDCBrQYJKoZIhvcNAQcGoIGfMIGcAgEAMIGWBgkqhkiG9w0BBwEwHgYJYIZIAWUDBAEuMBEEDKqMfgezNy5U2UgAwQIBEIBpveqJFRZEidcN3RhRX3PR0YJY6jQZhTNzUMEdXKmd+mo1F20WsSBa0TPZlK1+jff/Es2iJkUj4Jho+53nEM9hHDILhO0qeDWfXOa/ymfQtp79KtP7l7ZHsev2TjjbhEluIjQhV4GIk6H9'
