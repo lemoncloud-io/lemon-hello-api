@@ -126,9 +126,12 @@ export class HelloAPIController extends GeneralWEBController {
      *
      * ```sh
      * $ echo '{"name":"lemoncloud"}' | http POST ':8888/hello/0'
+     * $ http POST :8888/hello/0 name=hello
+     * $ http --form POST :8888/hello/0 name=hello
      */
     public postHello: NextHandler = async (id, $param, $body, $ctx) => {
         _log(NS, `postHello(${id})....`);
+        _log(NS, `> $body=`, $body);
         const i = $U.N(id, 0);
         if (id == 'echo') return { id: '!', cmd: 'echo', param: $param, body: $body, context: $ctx };
         if (i) throw new Error(`@id[${id}] (number) is invalid!`);
@@ -242,19 +245,6 @@ export class HelloAPIController extends GeneralWEBController {
             return this.postHelloSlack(channel, {}, body, $ctx);
         }
         return subCheck;
-    };
-
-    /**
-     * Read the channel url.
-     *
-     * ```sh
-     * $ http ':8888/hello/public/test-channel'
-     */
-    public getHelloTestChannel: NextHandler = async (id, $param, $body, $ctx) => {
-        _log(NS, `getHelloTestChannel(${id})....`);
-        return this.service.loadSlackChannel(id).then((channel: string) => {
-            return { id, channel };
-        });
     };
 
     /**
@@ -375,18 +365,19 @@ export class HelloAPIController extends GeneralWEBController {
         throw new Error('hello lemon');
     };
 
-    /**
-     * Test Env
-     *
-     * ```sh
-     * $ http ':8888/hello/0/test-env'
-     */
-    public getHelloTestEnv: NextHandler = async (ID, $param, $body, $ctx) => {
-        _log(NS, `getHelloTestEnv(${ID})....`);
-        const report = $U.N($param.report, $param.report === '' ? 1 : 0);
-        const env = process.env;
-        return { env };
-    };
+    //WARN! - BE WARE TO REPORT ENV @200929.
+    // /**
+    //  * Test Env
+    //  *
+    //  * ```sh
+    //  * $ http ':8888/hello/0/test-env'
+    //  */
+    // public getHelloTestEnv: NextHandler = async (ID, $param, $body, $ctx) => {
+    //     _log(NS, `getHelloTestEnv(${ID})....`);
+    //     const report = $U.N($param.report, $param.report === '' ? 1 : 0);
+    //     const env = process.env;
+    //     return { env };
+    // };
 
     /**
      * Test S3 PutObject.
@@ -412,7 +403,7 @@ export class HelloAPIController extends GeneralWEBController {
         const serviceName = $U.env('LEMON_QUEUE', 'lemon-hello-api');
         _log(NS, `getHelloExecuteQueue(${id}, ${serviceName})...`);
         const $proto: ProtocolService = $engine.cores.protocol.service;
-        const $param = $proto.fromURL($ctx, `api://${serviceName}/hello/${id}`, param, body);
+        const $param = $proto.fromURL($ctx, `api://${serviceName}/hello/${id}`, param, null);
         return $proto.execute($param);
     };
 
@@ -427,7 +418,7 @@ export class HelloAPIController extends GeneralWEBController {
         _log(NS, `getHelloTestEnqueue(${id}, ${serviceName})...`);
         const $proto: ProtocolService = $engine.cores.protocol.service;
         //! execute the target api via SQS
-        const $param = $proto.fromURL($ctx, `api://${serviceName}/hello/${id}`, param, body);
+        const $param = $proto.fromURL($ctx, `api://${serviceName}/hello/${id}`, param, null);
         //! post result to slack channel
         const $callback: CallbackParam = { type: 'hello', id: 'public', cmd: 'slack' };
         //! start `protocol` w/ enqueue.
