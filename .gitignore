@@ -5,6 +5,7 @@ package-lock.json
 .serverless
 .serverless/
 dist/
+sample/
 
 # Logs
 logs

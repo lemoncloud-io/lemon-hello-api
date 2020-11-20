@@ -394,11 +394,13 @@ export class HelloService implements HelloProxyService {
         _log(`buildErrorForm(${subject})...`);
         data = data || {};
         subject = subject || '';
-        _log('> data=', data);
 
         //! get error reason.
-        const channel = subject.indexOf('/') ? subject.split('/', 2)[1] : data && data.channel;
+        const channel = subject.indexOf('/')
+            ? subject.split('/', 2)[1]
+            : (data.data && data.data.channel) || data.channel;
         const message = data.message || data.error;
+        _log(`>> data[${channel || ''}] =`, $U.json(data));
 
         //NOTE - DO NOT CHANGE ARGUMENT ORDER.
         return this.packageWithChannel(channel)(message, 'error-report', this.asText(data), []);
