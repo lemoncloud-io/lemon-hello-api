@@ -248,6 +248,19 @@ export class HelloAPIController extends GeneralWEBController {
     };
 
     /**
+     * Encrypt Text Message.
+     *
+     * ```sh
+     * $ echo '{"text":"hello"}' | http POST ':8888/hello/0/encrypt'
+     */
+    public postHelloEncrypt: NextHandler = async (ID, $param, $body, $ctx) => {
+        _log(NS, `getHelloTestEncrypt(${ID})....`);
+        const text = `${$body?.text || ''}`;
+        const encrypted = await this.$kms.encrypt(text);
+        return { encrypted, message: text };
+    };
+
+    /**
      * Read the detailed object.
      *
      * ```sh
