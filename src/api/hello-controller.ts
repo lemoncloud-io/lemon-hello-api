@@ -21,7 +21,7 @@ import $engine, {
     NextHandler,
     GeneralWEBController,
 } from 'lemon-core';
-import $service, { HelloService, ParamToSlack } from '../service/hello-service';
+import $service, { HelloService, ParamToSlack, RecordData } from '../service/hello-service';
 const NS = $U.NS('hello', 'yellow'); // NAMESPACE TO BE PRINTED.
 
 /**
@@ -158,7 +158,7 @@ export class HelloAPIController extends GeneralWEBController {
      */
     public postHelloSlack: NextHandler = async (id, $param, $body, $ctx) => {
         _log(NS, `postHelloSlack(${id})....`);
-        _log(NS, '> body =', $body);
+        _log(NS, '> body =', $U.json($body));
         $param = $param || {};
 
         //! load target webhook via environ.
@@ -194,18 +194,21 @@ export class HelloAPIController extends GeneralWEBController {
      * $ cat data/error-2.json | http ':8888/hello/!/event?subject=error'
      * $ cat data/error-2.json | http ':8888/hello/!/event?subject=error/alarm'
      * $ cat data/error-2.json | http ':8888/hello/!/event?subject=callback/alarm'
+     * # dummy.
+     * $ echo '{}' | http :8888/hello/0/event
      */
     public postHelloEvent: NextHandler = async (id, $param, $body, $ctx) => {
         _inf(NS, `postHelloEvent(${id})....`);
         $param = $param || {};
-        const subject = `${$param.subject || ''}`;
+        const subject = `${$param.subject || ''}`.trim();
         const data = $body;
         const context = $ctx;
-        const noop = (_: any) => _;
+        const noop = async (d: RecordData): Promise<ParamToSlack> =>
+            this.service.packageDefaultChannel({ text: $U.json(d), pretext: subject || 'unknown' });
 
         //! decode next-chain.
-        const buildForm = false
-            ? null
+        const buildForm: (d: RecordData) => Promise<ParamToSlack> = !subject
+            ? noop
             : subject.startsWith('ALARM:')
             ? this.service.buildAlarmForm
             : subject.startsWith('DeliveryFailure')
@@ -218,7 +221,8 @@ export class HelloAPIController extends GeneralWEBController {
             ? this.service.buildCommonSlackForm
             : noop;
 
-        const { channel, body } = (await buildForm({ subject, data, context })) as ParamToSlack;
+        //! transform to slack-body..
+        const { channel, body } = await buildForm({ subject, data, context });
         return this.postHelloSlack(channel, {}, body, $ctx);
     };
 
