@@ -135,7 +135,7 @@ export class HelloService implements HelloProxyService {
                     const statusCode = res.statusCode || 200;
                     const statusMessage = res.statusMessage || '';
                     const result = { body, statusCode, statusMessage };
-                    _log(NS, `> post(${hookUrl}) =`, result);
+                    _log(NS, `> post(${hookUrl}) =`, $U.json(result));
                     if (statusCode < 400) {
                         resolve(result);
                     } else {
@@ -151,8 +151,8 @@ export class HelloService implements HelloProxyService {
 
     //! store channel map in cache
     public loadSlackChannel = async (name: string, defName?: string): Promise<string> => {
-        const ENV_NAME = `SLACK_${name}`.toUpperCase();
-        const ENV_DEFAULT = defName ? `SLACK_${defName}`.toUpperCase() : '';
+        const ENV_NAME = `SLACK_${name || 'public'}`.toUpperCase();
+        const ENV_DEFAULT = defName ? `SLACK_${defName || 'default'}`.toUpperCase() : '';
         const $env = process.env || {};
         // NOTE channel cache를 이렇게 사용해도 되나?
         const webhook_name = `${this.$channels[ENV_NAME] || $env[ENV_NAME] || ''}`.trim();
@@ -461,7 +461,7 @@ export class HelloService implements HelloProxyService {
         fields: string[] = [],
         color: string = '',
         username: string = '',
-    ) => {
+    ): ParamToSlack => {
         _log(NS, `packageWithChannel(${channel})...`);
         color = color || '#FFB71B';
         username = username || 'hello-alarm';
@@ -486,7 +486,7 @@ export class HelloService implements HelloProxyService {
             fields || [],
             color || '',
             username || '',
-        ) as ParamToSlack;
+        );
     };
 }
 

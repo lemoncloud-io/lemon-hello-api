@@ -148,15 +148,6 @@ provider:
         - kms:Decrypt
         - kms:Encrypt
       Resource: "arn:aws:kms:${self:provider.region}:*:key/${self:custom.CONF.${self:custom.CORE.profile}.kmsKey, ''}"   #TODO - improve resource setting.
-    # [WSS] send message vis web-socket.
-    - Effect: Allow
-      Action:
-        - execute-api:ManageConnections
-      Resource:
-        - "arn:aws:execute-api:*:*:**/@connections/*"
-
-  # [WSS] custom routes are selected by the value of the action property in the body
-  websocketApiRouteSelectionExpression: $request.body.action
 
   # -------------------------------------------------------
   # you can define service wide environment variables here
@@ -173,11 +164,21 @@ provider:
 # Functions
 #------------------------------------------------
 functions:
-  #WARN - must use `lambda` as name for `lemon-protocol`.
-  lambda:
+  #INFO - use seperated function for so many dynamo-stream.
+  backend:
     handler: handler.lambda     # use core `lambda-handler`.
     timeout: 300                # max timeout. (= 5 min)
     events:
+      # # -------------------------------------------------------
+      # # Shared DynamoStream Service.
+      # - stream:
+      #     type: dynamodb
+      #     batchSize: 1
+      #     startingPosition: LATEST
+      #     arn:
+      #       Fn::GetAtt:
+      #         - MyTable
+      #         - StreamArn
       # -------------------------------------------------------
       # Shared SNS Service.
       - sns: 'arn:aws:sns:${self:provider.region}:#{AWS::AccountId}:${self:custom.topicName.${self:custom.CORE.stage}}'
@@ -189,28 +190,11 @@ functions:
               - MyQueue
               - Arn
           batchSize: 1              # the maximum number of SQS messages that AWS will send to your Lambda function on a single trigger. (default: 10)
-#TODO - refactoring WSS
-#   # -------------------------------------------------------
-#   # Common WSS (WebSocket Server).
-#   # - see: https://serverless.com/framework/docs/providers/aws/events/websocket/
-#   WSS:
-#     handler: handler.WSS
-#     events:
-#       - websocket:
-#           route: $connect
-#       - websocket:
-#           route: $disconnect
-#       - websocket:
-#           route: $default
-#           # authorizer: auth
-#           # authorizer:
-#           #   name: auth
-#           #   identitySource:
-#           #     - 'route.request.header.Auth'
-#           #     - 'route.request.querystring.Auth'
-#       - websocket:
-#           route: echo             # sample route by routeKey. echo request.
-        # - stream: ${self:custom.CONF.${self:custom.CORE.profile}.stream}
+  #WARN - must use `lambda` as name for `lemon-protocol`.
+  lambda:
+    handler: handler.lambda     # use core `lambda-handler`.
+    timeout: 300                # max timeout. (= 5 min)
+    events:
       # -------------------------------------------------------
       # REST API : /
       - http:

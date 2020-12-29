@@ -158,7 +158,8 @@ export class HelloAPIController extends GeneralWEBController {
      */
     public postHelloSlack: NextHandler = async (id, $param, $body, $ctx) => {
         _log(NS, `postHelloSlack(${id})....`);
-        _log(NS, '> body =', $U.json($body));
+        id = `${id || ''}`;
+        _log(NS, `> body[${id}] =`, $U.json($body));
         $param = $param || {};
 
         //! load target webhook via environ.
@@ -173,7 +174,7 @@ export class HelloAPIController extends GeneralWEBController {
         //NOTE! filter message only if sending to slack-hook.
         const fileter = webhook.startsWith('https://hooks.slack.com') ? this.service.saveMessageToS3 : noop;
         const res = await this.service.postMessage(webhook, fileter(message)).catch(e => {
-            _err(NS, `! slack[${id}].err =`, e);
+            _err(NS, `! slack[${id}].err =`, e instanceof Error ? e : $U.json(e));
             return GETERR$(e);
         });
         _log(NS, `> res =`, res);
@@ -201,8 +202,7 @@ export class HelloAPIController extends GeneralWEBController {
         _inf(NS, `postHelloEvent(${id})....`);
         $param = $param || {};
         const subject = `${$param.subject || ''}`.trim();
-        const data = $body;
-        const context = $ctx;
+        $body && _log(NS, `> body[${id}]=`, typeof $body, $U.json($body));
         const noop = async (d: RecordData): Promise<ParamToSlack> =>
             this.service.packageDefaultChannel({ text: $U.json(d), pretext: subject || 'unknown' });
 
@@ -222,7 +222,8 @@ export class HelloAPIController extends GeneralWEBController {
             : noop;
 
         //! transform to slack-body..
-        const { channel, body } = await buildForm({ subject, data, context });
+        const { channel, body } = await buildForm({ subject, data: $body, context: $ctx });
+        _log(NS, `> body[<${typeof channel}>${channel}] =`, $U.json(body));
         return this.postHelloSlack(channel, {}, body, $ctx);
     };
 
