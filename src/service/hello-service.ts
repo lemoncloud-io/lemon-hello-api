@@ -233,7 +233,7 @@ export class HelloService implements HelloProxyService {
             const MOONS = ':new_moon:,:waxing_crescent_moon:,:first_quarter_moon:,:moon:,:full_moon:,:waning_gibbous_moon:,:last_quarter_moon:,:waning_crescent_moon:'.split(',');
             // const CLOCKS = ':clock12:,:clock1230:,:clock1:,:clock130:,:clock2:,:clock230:,:clock3:,:clock330:,:clock4:,:clock430:,:clock5:,:clock530:,:clock6:,:clock630:,:clock7:,:clock730:,:clock8:,:clock830:,:clock9:,:clock930:,:clock10:,:clock1030:,:clock11:,:clock1130:'.split(',');
             const now = new Date();
-            let hour = now.getHours() + 2;
+            let hour = now.getHours() + now.getMinutes() / 60.0 + 1.0;
             hour = hour >= 24 ? hour - 24 : hour;
             const tag = MOONS[Math.floor((MOONS.length * hour) / 24)];
             const json = JSON.stringify(saves);

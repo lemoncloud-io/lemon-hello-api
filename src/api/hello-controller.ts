@@ -204,7 +204,11 @@ export class HelloAPIController extends GeneralWEBController {
         const subject = `${$param.subject || ''}`.trim();
         $body && _log(NS, `> body[${id}]=`, typeof $body, $U.json($body));
         const noop = async (d: RecordData): Promise<ParamToSlack> =>
-            this.service.packageDefaultChannel({ text: $U.json(d), pretext: subject || 'unknown' });
+            this.service.packageDefaultChannel({
+                text: $U.json(d),
+                pretext: `post-event`,
+                title: subject || `Unknown event/${id}`,
+            });
 
         //! decode next-chain.
         const buildForm: (d: RecordData) => Promise<ParamToSlack> = !subject
