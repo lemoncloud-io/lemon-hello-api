@@ -116,13 +116,13 @@ export class HelloService implements HelloProxyService {
     public postMessage = async (hookUrl: string, message: any) => {
         _log(NS, `> postMessage = hookUrl[${hookUrl}]`);
         message = typeof message == 'object' && message instanceof Promise ? await message : message;
-        _log(NS, `> messgae = `, $U.json(message));
+        _log(NS, `> message = `, $U.json(message));
 
         const body = (typeof message == 'string' ? message : JSON.stringify(message)) || '';
         const options: any = url.parse(hookUrl);
         options.method = 'POST';
         options.headers = {
-            'Content-Type': 'application/json',
+            'Content-Type': 'application/json; charset=utf-8',
             'Content-Length': Buffer.byteLength(body),
         };
         return new Promise((resolve, reject) => {
@@ -215,28 +215,28 @@ export class HelloService implements HelloProxyService {
             const thumb_url = attachment.thumb_url ? attachment.thumb_url : undefined;
             _log(NS, `> title[${pretext}] =`, title);
             const saves = { ...message };
-            saves.attachments = attachments.map((_: any) => {
+            saves.attachments = attachments.map((N: any) => {
                 //! convert internal data.
-                _ = Object.assign({}, _); // copy.
-                const text = `${_.text || ''}`;
+                N = { ...N }; // copy.
+                const text = typeof N.text === 'string' ? N.text : `${N.text || ''}`;
                 try {
-                    if (text.startsWith('{') && text.endsWith('}')) _.text = JSON.parse(_.text);
-                    if (_.text && _.text['stack-trace'] && typeof _.text['stack-trace'] == 'string')
-                        _.text['stack-trace'] = _.text['stack-trace'].split('\n');
+                    if (text.startsWith('{') && text.endsWith('}')) N.text = JSON.parse(N.text);
+                    if (N.text && N.text['stack-trace'] && typeof N.text['stack-trace'] == 'string')
+                        N.text['stack-trace'] = N.text['stack-trace'].split('\n');
                 } catch (e) {
                     _err(NS, '> WARN! ignored =', e);
                 }
-                return _;
+                return N;
             });
-            // const TAGS = [':slack:', ':cubimal_chick:', ':rotating_light:'];
+            //! choose the icon.
             // eslint-disable-next-line prettier/prettier
             const MOONS = ':new_moon:,:waxing_crescent_moon:,:first_quarter_moon:,:moon:,:full_moon:,:waning_gibbous_moon:,:last_quarter_moon:,:waning_crescent_moon:'.split(',');
-            // const CLOCKS = ':clock12:,:clock1230:,:clock1:,:clock130:,:clock2:,:clock230:,:clock3:,:clock330:,:clock4:,:clock430:,:clock5:,:clock530:,:clock6:,:clock630:,:clock7:,:clock730:,:clock8:,:clock830:,:clock9:,:clock930:,:clock10:,:clock1030:,:clock11:,:clock1130:'.split(',');
             const now = new Date();
             let hour = now.getHours() + now.getMinutes() / 60.0 + 1.0;
             hour = hour >= 24 ? hour - 24 : hour;
             const tag = MOONS[Math.floor((MOONS.length * hour) / 24)];
-            const json = JSON.stringify(saves);
+            const json = $U.json(saves);
+            // _log(NS, `> json =`, json);
             return this.$s3s
                 .putObject(json)
                 .then(res => {

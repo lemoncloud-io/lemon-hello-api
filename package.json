@@ -57,7 +57,7 @@
         "plato": "plato -r -d complexity dist"
     },
     "dependencies": {
-        "lemon-core": "^2.2.15",
+        "lemon-core": "^2.2.16",
         "source-map-support": "^0.5.12"
     },
     "devDependencies": {
