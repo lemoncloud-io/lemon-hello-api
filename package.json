@@ -35,6 +35,8 @@
         "!info": "------- print sls infor by profile -----",
         "info": "sls info --stage prod",
         "info.lemon": "sls info --profile lemon --stage prod",
+        "info.ssocio": "sls info --profile ssocio --stage prod",
+        "info.comics": "sls info --profile comics --stage prod",
         "!pack": "------- build gulp and prepare to release -----",
         "pack.lemon": "npm run build && sls package --profile lemon --stage prod",
         "!logs": "------- print logs of serverless by profile -----",
