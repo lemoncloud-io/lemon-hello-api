@@ -203,6 +203,12 @@ functions:
           cors: true
           documentation:
             summary: "show service name and version"
+      - http:
+          path: /
+          method: post
+          cors: true
+          documentation:
+            summary: "subscription for SNS HTTPS"
       # -------------------------------------------------------
       # REST API : /hello
       - http:
