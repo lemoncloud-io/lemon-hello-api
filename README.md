@@ -79,7 +79,7 @@ Simple Serverless MicroService API with `Lambda` + `API Gateway` + `Web Socket` 
             "KeyId": "0039d20d-112233445566-387b887b4783",
         }
     }
-    # create Alias
+    # create Alias as `lemon-hello-api`
     $ aws kms create-alias --profile <profile> --alias-name alias/lemon-hello-api --target-key-id 0039d20d-112233445566-387b887b4783
     ```
 
