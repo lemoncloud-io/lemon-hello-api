@@ -1,6 +1,6 @@
 {
     "name": "lemon-hello-api",
-    "version": "2.2.1",
+    "version": "2.2.2",
     "description": "Simple Serverless MicroService API with `Lambda` + `API Gateway` + `Web Socket` + `SNS` + `SQS` + `KMS`",
     "main": "dist/index.js",
     "types": "dist/index.d.ts",

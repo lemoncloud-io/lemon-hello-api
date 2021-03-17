@@ -203,6 +203,7 @@ export class HelloAPIController extends GeneralWEBController {
     public postHelloEvent: NextHandler = async (id, $param, $body, $ctx) => {
         _inf(NS, `postHelloEvent(${id})....`);
         $param = $param || {};
+        const direct = $U.N($param.direct, $param.direct === '' ? 1 : 0);
         const subject = `${$param.subject || ''}`.trim();
         $body && _log(NS, `> body[${id}]=`, typeof $body, $U.json($body));
         const noop = async (d: RecordData): Promise<ParamToSlack> =>
@@ -230,7 +231,7 @@ export class HelloAPIController extends GeneralWEBController {
         //! transform to slack-body..
         const { channel, body } = await buildForm({ subject, data: $body, context: $ctx });
         _log(NS, `> body[<${typeof channel}>${channel}] =`, $U.json(body));
-        return this.postHelloSlack(channel, {}, body, $ctx);
+        return this.postHelloSlack(channel, { direct }, body, $ctx);
     };
 
     /**
