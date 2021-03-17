@@ -10,7 +10,7 @@
  * @copyright (C) 2020 LemonCloud Co Ltd. - All Rights Reserved.
  */
 import { _log, _inf, _err, $U } from 'lemon-core';
-import { APIService, SlackAttachment, AWSKMSService, AWSS3Service, AWSSNSService } from 'lemon-core';
+import { APIService, SlackAttachment, AWSKMSService, AWSS3Service, AWSSNSService, SlackPostBody } from 'lemon-core';
 
 //! import dependency
 import https from 'https';
@@ -22,10 +22,10 @@ const NS = $U.NS('HLLS', 'blue'); // NAMESPACE TO BE PRINTED.
 /**
  * record-data
  */
-export interface RecordData {
+export interface RecordData<T = any, U = any> {
     subject?: string;
-    data?: any;
-    context?: any;
+    data?: T;
+    context?: U;
 }
 
 /**
@@ -56,16 +56,23 @@ export interface BindParamOfSlack {
  */
 export interface ParamToSlack {
     channel?: string;
-    body?: {
-        attachments?: {
-            username?: string;
-            color?: string;
-            pretext?: string;
-            title?: string;
-            text?: string;
-            ts?: number;
-            fields?: string[];
-        }[];
+    body?: SlackPostBody;
+}
+
+/**
+ * payload of `doReportSlack`
+ */
+export interface PayloadOfReportSlack {
+    channel: string;
+    service: string;
+    param: {};
+    body: SlackPostBody;
+    context: {
+        stage: string;
+        apiId: string;
+        resourcePath: string;
+        identity: string;
+        domainPrefix: string;
     };
 }
 
@@ -426,16 +433,16 @@ export class HelloService implements HelloProxyService {
 
     public buildCommonSlackForm = async ({ subject, data, context }: RecordData): Promise<ParamToSlack> => {
         _log(NS, `buildCommonSlackForm(${subject})...`);
-        const $data = data || {};
+        const $data: PayloadOfReportSlack = data || {};
         subject = subject || '';
         _log(NS, `> row data[${subject}] =`, $U.json($data));
 
         //! extract data.
         const channel = subject.indexOf('/') > 0 ? subject.split('/', 2)[1] : $data.channel || '';
         const service = $data.service || '';
-        const body: any = $data.body;
+        const body = $data.body;
 
-        //! add additional attachment about caller contex.t
+        //! add additional attachment about caller context
         const att: SlackAttachment = {
             pretext: service,
             fields: [
@@ -458,7 +465,7 @@ export class HelloService implements HelloProxyService {
         pretext: string = '',
         title: string = '',
         text: string = '',
-        fields: string[] = [],
+        fields: (string | { title: string; value: string })[] = [],
         color: string = '',
         username: string = '',
     ): ParamToSlack => {
@@ -469,7 +476,10 @@ export class HelloService implements HelloProxyService {
 
         //! build attachment.
         const ts = Math.floor(new Date().getTime() / 1000);
-        const attachment = { username, color, pretext, title, text, ts, fields };
+        const fields2 = fields.map((F, i) =>
+            typeof F === 'string' ? { title: `${F || ''}`.split('/')[0] || `${i + 1}`, value: F } : { ...(F as any) },
+        );
+        const attachment = { username, color, pretext, title, text, ts, fields: fields2 };
 
         //! build body for slack, and call
         const body = { attachments: [attachment] };
