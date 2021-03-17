@@ -150,6 +150,7 @@ export class HelloAPIController extends GeneralWEBController {
      *
      * # use sample
      * $ cat data/error-hello.json | http ':8888/hello/public/slack'
+     * $ cat data/error-hello.json | http ':8888/hello/public/slack?direct' # direct to slack hook w/o filter.
      * ```
      * @param {*} id                slack-channel id (see environment)
      * @param {*} $param            (optional)
@@ -161,6 +162,7 @@ export class HelloAPIController extends GeneralWEBController {
         id = `${id || ''}`;
         _log(NS, `> body[${id}] =`, $U.json($body));
         $param = $param || {};
+        const direct = $U.N($param.direct, $param.direct === '' ? 1 : 0);
 
         //! load target webhook via environ.
         const webhook = await this.service.loadSlackChannel(id, 0 ? '' : 'public');
@@ -172,7 +174,7 @@ export class HelloAPIController extends GeneralWEBController {
         const noop = (_: any) => _;
 
         //NOTE! filter message only if sending to slack-hook.
-        const fileter = webhook.startsWith('https://hooks.slack.com') ? this.service.saveMessageToS3 : noop;
+        const fileter = !direct && webhook.startsWith('https://hooks.slack.com') ? this.service.saveMessageToS3 : noop;
         const res = await this.service.postMessage(webhook, fileter(message)).catch(e => {
             _err(NS, `! slack[${id}].err =`, e instanceof Error ? e : $U.json(e));
             return GETERR$(e);
