@@ -60,7 +60,8 @@ export interface ParamToSlack {
 }
 
 /**
- * payload of `doReportSlack`
+ * payload of message from SNS.
+ * see `doReportSlack()` in `lemon-core`.
  */
 export interface PayloadOfReportSlack {
     channel: string;
@@ -77,27 +78,10 @@ export interface PayloadOfReportSlack {
 }
 
 /**
- * hello-proxy-service
- */
-export interface HelloProxyService {
-    hello(): string;
-    postMessage(hookUrl: string, message: any): Promise<any>;
-    getSubscriptionConfirmation(param: { snsMessageType: string; subscribeURL: string }): Promise<string>;
-    loadSlackChannel(name: string, defName?: string): Promise<string>;
-    saveMessageToS3(message: any): any;
-    buildSlackNotification(body: any): Promise<ParamToSlack>;
-    buildAlarmForm(body: RecordData): Promise<ParamToSlack>;
-    buildDeliveryFailure(body: RecordData): Promise<ParamToSlack>;
-    buildErrorForm(body: RecordData): Promise<ParamToSlack>;
-    buildCallbackForm(body: RecordData): Promise<ParamToSlack>;
-    buildCommonSlackForm(body: RecordData): Promise<ParamToSlack>;
-}
-
-/**
  * class: `HelloService`
  * - catch `report-error` via SNS, then save into S3 and post to slack.
  */
-export class HelloService implements HelloProxyService {
+export class HelloService {
     protected $channels: any = {};
     protected $kms: AWSKMSService;
     protected $sns: AWSSNSService;
@@ -401,7 +385,7 @@ export class HelloService implements HelloProxyService {
     public buildErrorForm = async ({ subject, data, context }: RecordData): Promise<ParamToSlack> => {
         _log(`buildErrorForm(${subject})...`);
         data = data || {};
-        subject = subject || '';
+        subject = `${subject || ''}`;
 
         //! get error reason.
         const channel = subject.indexOf('/')
@@ -410,13 +394,12 @@ export class HelloService implements HelloProxyService {
         const message = data.message || data.error;
         _log(`>> data[${channel || ''}] =`, $U.json(data));
 
-        //NOTE - DO NOT CHANGE ARGUMENT ORDER.
         return this.packageWithChannel(channel)(message, 'error-report', this.asText(data), []);
     };
 
-    public buildCallbackForm = async ({ subject, data, context }: RecordData): Promise<ParamToSlack> => {
+    public buildCallbackForm = ({ subject, data, context }: RecordData): ParamToSlack => {
         _log(`buildCallbackForm(${subject})...`);
-        subject = subject || '';
+        subject = `${subject || ''}`;
         const $body: CallbackPayload = data || {};
         _log(`> data[${subject}] =`, $U.json($body));
 
@@ -427,37 +410,38 @@ export class HelloService implements HelloProxyService {
         const cmd = ($data && $data.cmd) || '';
         const title = ($data && $data.title) || (!service ? `callback-report` : `#callback ${service}/${cmd}`);
 
-        //NOTE - DO NOT CHANGE ARGUMENT ORDER.
         return this.packageWithChannel(`${channel || ''}`)('', title, this.asText($body), [], '#B71BFF');
     };
 
-    public buildCommonSlackForm = async ({ subject, data, context }: RecordData): Promise<ParamToSlack> => {
+    /**
+     * transform to slack-body from SNS Payload.
+     */
+    public buildCommonSlackForm = ({ subject, data, context }: RecordData<PayloadOfReportSlack>): ParamToSlack => {
         _log(NS, `buildCommonSlackForm(${subject})...`);
-        const $data: PayloadOfReportSlack = data || {};
-        subject = subject || '';
-        _log(NS, `> row data[${subject}] =`, $U.json($data));
+        const $data: PayloadOfReportSlack = { ...data };
+        subject = `${subject || ''}`;
+        _log(NS, `> raw-data[${subject}] =`, $U.json($data));
 
         //! extract data.
         const channel = subject.indexOf('/') > 0 ? subject.split('/', 2)[1] : $data.channel || '';
-        const service = $data.service || '';
+        const service = `${$data.service || ''}`;
         const body = $data.body;
 
         //! add additional attachment about caller context
-        const att: SlackAttachment = {
-            pretext: service,
-            fields: [
-                {
-                    title: 'context',
-                    value: (context && JSON.stringify(context)) || '',
-                },
-            ],
-        };
-        if (context && body && body.attachments) body.attachments.push(att);
+        if (!channel.startsWith('!') && context && body?.attachments && Array.isArray(body?.attachments)) {
+            body.attachments.push({
+                pretext: service,
+                fields: [
+                    {
+                        title: 'context',
+                        value: context ? $U.json(context) : '',
+                    },
+                ],
+            });
+        }
 
-        //NOTE - DO NOT CHANGE ARGUMENT ORDER.
-        _log(NS, `> channel[${channel}]`);
-        _log(NS, `> build data[${subject}] =`, $U.json($data));
-        return { channel: channel, body };
+        //! returns.
+        return { channel, body };
     };
 
     //! post to slack channel(default is public).

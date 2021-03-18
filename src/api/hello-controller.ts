@@ -152,21 +152,26 @@ export class HelloAPIController extends GeneralWEBController {
      * $ cat data/error-hello.json | http ':8888/hello/public/slack'
      * $ cat data/error-hello.json | http ':8888/hello/public/slack?direct' # direct to slack hook w/o filter.
      * ```
-     * @param {*} id                slack-channel id (see environment)
+     * @param {*} channel           slack-channel id (see environment)
      * @param {*} $param            (optional)
      * @param {*} $body             {error?:'', message:'', data:{...}}
      * @param {*} $ctx              context
      */
-    public postHelloSlack: NextHandler = async (id, $param, $body, $ctx) => {
-        _log(NS, `postHelloSlack(${id})....`);
-        id = `${id || ''}`;
-        _log(NS, `> body[${id}] =`, $U.json($body));
+    public postHelloSlack: NextHandler = async (channel: any, $param: any, $body: any, $ctx: any) => {
+        _log(NS, `postHelloSlack(${channel})....`);
         $param = $param || {};
-        const direct = $U.N($param.direct, $param.direct === '' ? 1 : 0);
+        channel = `${channel || ''}`;
+        _log(NS, `> body[${channel}] =`, $U.json($body));
+
+        //! determine to post directly.
+        const hasForce = channel.startsWith('!');
+        channel = channel.startsWith('!') ? channel.substring(1) : channel;
+        const direct = $U.N($param.direct, $param.direct === '' ? 1 : hasForce ? 1 : 0);
+        _log(NS, '> direct :=', direct);
 
         //! load target webhook via environ.
-        const webhook = await this.service.loadSlackChannel(id, 0 ? '' : 'public');
-        if (!webhook) throw new Error(`@id[${id}] (channel-id) is invalid!`);
+        const webhook = await this.service.loadSlackChannel(channel, 0 ? '' : 'public');
+        if (!webhook) throw new Error(`@id[${channel}] (channel-id) is invalid!`);
         _log(NS, '> webhook :=', webhook);
 
         //! prepare slack message via body.
@@ -174,9 +179,9 @@ export class HelloAPIController extends GeneralWEBController {
         const noop = (_: any) => _;
 
         //NOTE! filter message only if sending to slack-hook.
-        const fileter = !direct && webhook.startsWith('https://hooks.slack.com') ? this.service.saveMessageToS3 : noop;
-        const res = await this.service.postMessage(webhook, fileter(message)).catch(e => {
-            _err(NS, `! slack[${id}].err =`, e instanceof Error ? e : $U.json(e));
+        const filter = !direct && webhook.startsWith('https://hooks.slack.com') ? this.service.saveMessageToS3 : noop;
+        const res = await this.service.postMessage(webhook, filter(message)).catch(e => {
+            _err(NS, `! slack[${channel}].err =`, e instanceof Error ? e : $U.json(e));
             return GETERR$(e);
         });
         _log(NS, `> res =`, res);
@@ -197,16 +202,18 @@ export class HelloAPIController extends GeneralWEBController {
      * $ cat data/error-2.json | http ':8888/hello/!/event?subject=error'
      * $ cat data/error-2.json | http ':8888/hello/!/event?subject=error/alarm'
      * $ cat data/error-2.json | http ':8888/hello/!/event?subject=callback/alarm'
+     *
+     * # slack message via sns
+     * $ cat data/sns-slack.json | http ':8888/hello/!/event?subject=slack'
+     *
      * # dummy.
      * $ echo '{}' | http :8888/hello/0/event
      */
     public postHelloEvent: NextHandler = async (id, $param, $body, $ctx) => {
         _inf(NS, `postHelloEvent(${id})....`);
-        $param = $param || {};
-        const direct = $U.N($param.direct, $param.direct === '' ? 1 : 0);
-        const subject = `${$param.subject || ''}`.trim();
+        const subject = `${$param?.subject || ''}`.trim();
         $body && _log(NS, `> body[${id}]=`, typeof $body, $U.json($body));
-        const noop = async (d: RecordData): Promise<ParamToSlack> =>
+        const noop = (d: RecordData): ParamToSlack =>
             this.service.packageDefaultChannel({
                 text: $U.json(d),
                 pretext: `post-event`,
@@ -214,7 +221,7 @@ export class HelloAPIController extends GeneralWEBController {
             });
 
         //! decode next-chain.
-        const buildForm: (d: RecordData) => Promise<ParamToSlack> = !subject
+        const transform: (d: RecordData) => Promise<ParamToSlack> | ParamToSlack = !subject
             ? noop
             : subject.startsWith('ALARM:')
             ? this.service.buildAlarmForm
@@ -229,9 +236,9 @@ export class HelloAPIController extends GeneralWEBController {
             : noop;
 
         //! transform to slack-body..
-        const { channel, body } = await buildForm({ subject, data: $body, context: $ctx });
+        const { channel, body } = await Promise.resolve(transform({ subject, data: $body, context: $ctx }));
         _log(NS, `> body[<${typeof channel}>${channel}] =`, $U.json(body));
-        return this.postHelloSlack(channel, { direct }, body, $ctx);
+        return this.postHelloSlack(channel, { ...$param }, body, $ctx);
     };
 
     /**

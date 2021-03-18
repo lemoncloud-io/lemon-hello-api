@@ -364,20 +364,20 @@ describe('QueueService /w DummyHelloService', () => {
             },
             channel: '',
         };
-        expect2(await service.buildCallbackForm({data:{}})).toEqual(result);
+        expect2(service.buildCallbackForm({data:{}})).toEqual(result);
 
         result.body.attachments[0].text = '{\"channel\":\"public\"}';
-        expect2(await service.buildCallbackForm({data:{channel:'public'}})).toEqual(result);
+        expect2(service.buildCallbackForm({data:{channel:'public'}})).toEqual(result);
 
         result.body.attachments[0].text = '{\"channel\":\"public\",\"service\":\"hello-service\"}';
         result.body.attachments[0].title = '#callback hello-service/';
-        expect2(await service.buildCallbackForm({data:{channel:'public', service:'hello-service'}})).toEqual(result);
+        expect2(service.buildCallbackForm({data:{channel:'public', service:'hello-service'}})).toEqual(result);
 
         result.body.attachments[0].text = '{\"title\":\"callback message\",\"channel\":\"public\",\"service\":\"hello-service\"}';
-        expect2(await service.buildCallbackForm({data:{title:'callback message', channel:'public', service:'hello-service'}})).toEqual(result);
+        expect2(service.buildCallbackForm({data:{title:'callback message', channel:'public', service:'hello-service'}})).toEqual(result);
 
         result.body.attachments[0].text = '{\"channel\":\"public\",\"service\":\"hello-service\",\"cmd\":\"hello\"}';
-        expect2(await service.buildCallbackForm({data:{channel:'public', service:'hello-service', cmd:'hello'}})).toEqual(result);
+        expect2(service.buildCallbackForm({data:{channel:'public', service:'hello-service', cmd:'hello'}})).toEqual(result);
         /* eslint-enable prettier/prettier */
         done();
     });
@@ -385,13 +385,21 @@ describe('QueueService /w DummyHelloService', () => {
     it('should pass buildCommonSlackForm()', async done => {
         const { service } = instance('dummy');
         expect2(service.hello()).toEqual('hello-mocks-service');
+        const fx = (d: any) => service.buildCommonSlackForm(d);
+        expect2(() => fx({ data: {} })).toEqual({ body: undefined, channel: '' });
+        expect2(() => fx({ data: { channel: 'dddd' } })).toEqual({ body: undefined, channel: 'dddd' });
+        expect2(() => fx({ data: { channel: 'dddd', service: 'hello-service' } })).toEqual({
+            body: undefined,
+            channel: 'dddd',
+        });
+        const result = {
+            body: { attachments: [{ fields: [{ title: 'context', value: '{}' }], pretext: 'hello-service' }] },
+            channel: 'dddd',
+        };
+        expect2(
+            fx({ data: { channel: 'dddd', service: 'hello-service', body: { attachments: [] } }, context: {} }),
+        ).toEqual(result);
         /* eslint-disable prettier/prettier */
-        const now = Math.floor(new Date().getTime() / 1000);
-        expect2(await service.buildCommonSlackForm({data:{}})).toEqual({body: undefined, channel: ''});
-        expect2(await service.buildCommonSlackForm({data:{channel:'dddd'}})).toEqual({body: undefined, channel: 'dddd'});
-        expect2(await service.buildCommonSlackForm({data:{channel:'dddd', service:'hello-service'}})).toEqual({body: undefined, channel: "dddd"});
-        const result = { body: {attachments: [{fields: [{title: "context", value: "{}"}], pretext: "hello-service"}]}, channel: "dddd"};
-        expect2(await service.buildCommonSlackForm({data:{channel:'dddd', service:'hello-service', body:{attachments:[]}}, context:{}})).toEqual(result);
         /* eslint-enable prettier/prettier */
         done();
     });
