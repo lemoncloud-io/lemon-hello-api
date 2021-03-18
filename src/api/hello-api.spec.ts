@@ -13,7 +13,7 @@ import { expect2, loadJsonSync, $U } from 'lemon-core';
 import { app } from '../express';
 import request from 'supertest';
 import * as $service from '../service/hello-service.spec';
-import { HelloAPIController } from './hello-controller';
+import { HelloAPIController } from './hello-api';
 
 // create service instance
 export const instance = (type: 'dummy' = 'dummy') => {

@@ -3,7 +3,7 @@
  * - public service api
  *
  *
- * @author      Tyler <tyler@lemoncloud.io>
+ * @author      Steve Jung <steve@lemoncloud.io>
  * @date        2020-06-10 refactor with api
  * @date        2020-06-23 optimized with lemon-core#2.2.1
  *
