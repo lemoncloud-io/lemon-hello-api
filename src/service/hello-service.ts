@@ -262,17 +262,25 @@ export class HelloService {
         return message;
     };
 
+    /**
+     * transform to slack message.
+     * @param body see `notifyLoginEvent()` of `lemon-accounts-api/oauth-api`
+     */
     public buildSlackNotification = async (body: any) => {
         _log(NS, `buildSlackNotification()...`);
-        // Publish notification on Slack public channel
         body = body || {};
-        const pretext = `\`#notification\` from \`${body.service}:${body.stage}\``;
+        // Publish notification on Slack public channel
+        let pretext = '';
         let title = '';
-        if (body.event === 'login' && body.type === 'oauth') {
-            const accountId = (body.data && body.data.accountId) || '';
-            const provider = (body.data && body.data.provider) || '';
-            title = `[${body.event.toUpperCase()}] account \`${accountId}/${provider}\``;
+        if (body.type === 'oauth') {
+            const data = body.data || {};
+            const accountId = `${data.accountId || ''}`;
+            const provider = `${data.provider || ''}`;
+            const clientIp = `${data.context?.clientIp || ''}`;
+            const who = accountId.startsWith(provider) ? accountId : `${provider}/${accountId}`;
+            title = `#${body?.event || 'oauth'}(\`${body.stage}\`) of \`${who}\` via \`${clientIp}\``;
         } else {
+            pretext = `\`#notification\` from \`${body.service}:${body.stage}\``;
             title = `[${body.event || ''}] event received.`;
         }
         return this.packageWithChannel('public')(pretext, title, this.asText(body), []);
