@@ -276,7 +276,7 @@ export class HelloService {
             const data = body.data || {};
             const accountId = `${data.accountId || ''}`;
             const provider = `${data.provider || ''}`;
-            const clientIp = `${data.context?.clientIp || ''}`;
+            const clientIp = `${data.context?.clientIp || body.context?.clientIp || ''}`;
             const who = accountId.startsWith(provider) ? accountId : `${provider}/${accountId}`;
             title = `#${body?.event || 'oauth'}(\`${body.stage}\`) of \`${who}\` via \`${clientIp}\``;
         } else {
