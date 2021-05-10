@@ -1,0 +1,33 @@
+#-----------------------------------
+# Lemon Basic Environment Variables.
+#-----------------------------------
+# default
+default_env: &default_env
+  LS: 0                   # log silence.
+  LC: 1                   # line-coloring
+  TS: 1                   # time-stamp in line
+  NAME: 'colover'         # profile name.
+  BACKBONE_API:  ''       # NO USE BACKBONE
+  SLACK_PUT_S3: 0         # flag to auto save into s3 bucket if slack message.
+  SLACK_PUBLIC: 'AQICAHiPBSQJJBm6GYmzoarYHMhQe8Usgfge7ugXevmEy4GodwFHxeSO8/yo+S8j0SXKssxZAAAAtDCBsQYJKoZIhvcNAQcGoIGjMIGgAgEAMIGaBgkqhkiG9w0BBwEwHgYJYIZIAWUDBAEuMBEEDPEXgqQpTcKSDau8PgIBEIBtIRkW78ITO0zblMTBPRMG/z+jA6oRerNRGW5GFKwbrstmjIESsDY1D6SUtdv+VD5A5xDuWmODmMSo/JjBHzD7Dq8PYqZS1FxsRy6U0BjKstkPrklmZAE/IuMsNQF61SUIAORH9X3uJh+RKdLU0Q=='
+
+#-----------------------------------
+# local development configuration.
+local:
+  <<: *default_env
+  STAGE: 'local'
+
+#-----------------------------------
+# development server
+dev:
+  <<: *default_env
+  STAGE: 'develop'
+
+#-----------------------------------
+# production with AWS deploy
+prod:
+  <<: *default_env
+  STAGE: 'production'
+  TS: 0
+  SLACK_PUT_S3: 1         # flag to auto save into s3 bucket if slack message.
+
