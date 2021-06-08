@@ -280,7 +280,13 @@ export class HelloService {
             const provider = `${data.provider || ''}`;
             const clientIp = `${data.context?.clientIp || $ctx?.clientIp || ''}`;
             const who =
-                $acc?.name || (provider && accountId.startsWith(provider) ? accountId : `${provider}/${accountId}`);
+                provider && $acc?.name
+                    ? `${provider}/${$acc?.name}`
+                    : $acc?.name
+                    ? `${$acc?.name}`
+                    : provider && accountId.startsWith(provider)
+                    ? accountId
+                    : `${provider}/${accountId}`;
             title = `#${body?.event || 'oauth'}(\`${body.stage}\`) of \`${who}\` via \`${clientIp}\``;
             if (body && typeof body == 'object') body._source = __filename;
         } else {
