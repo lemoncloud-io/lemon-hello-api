@@ -274,15 +274,20 @@ export class HelloService {
         let title = '';
         if (body.type === 'oauth') {
             const data = body.data || {};
+            const $ctx = body.context || {};
+            const $acc = body.Account || {};
             const accountId = `${data.accountId || ''}`;
             const provider = `${data.provider || ''}`;
-            const clientIp = `${data.context?.clientIp || body.context?.clientIp || ''}`;
-            const who = accountId.startsWith(provider) ? accountId : `${provider}/${accountId}`;
+            const clientIp = `${data.context?.clientIp || $ctx?.clientIp || ''}`;
+            const who =
+                $acc?.name || (provider && accountId.startsWith(provider) ? accountId : `${provider}/${accountId}`);
             title = `#${body?.event || 'oauth'}(\`${body.stage}\`) of \`${who}\` via \`${clientIp}\``;
+            if (body && typeof body == 'object') body._source = __filename;
         } else {
             pretext = `\`#notification\` from \`${body.service}:${body.stage}\``;
             title = `[${body.event || ''}] event received.`;
         }
+
         return this.packageWithChannel('public')(pretext, title, this.asText(body), []);
     };
 
