@@ -64,7 +64,7 @@
         "plato": "plato -r -d complexity dist"
     },
     "dependencies": {
-        "lemon-core": "^2.2.16",
+        "lemon-core": "^2.2.20",
         "source-map-support": "^0.5.12"
     },
     "devDependencies": {
@@ -103,7 +103,7 @@
         "dist/**/*"
     ],
     "engines": {
-        "node": ">=10.8.0"
+        "node": ">=12.22.7"
     },
     "keywords": [
         "lemoncloud",

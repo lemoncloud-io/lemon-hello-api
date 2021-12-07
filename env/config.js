@@ -17,7 +17,7 @@ const CONF = (serverless) => {
     return {
         lemon: {
             name: "lemon-app",
-            runtime: 'nodejs10.x',                              // Node is powered by the V8 JavaScript Engine (used in Chromium)
+            runtime: 'nodejs12.x',                              // Node is powered by the V8 JavaScript Engine (used in Chromium)
             region: "ap-northeast-2",
             env: "lemon.yml",                                   // environment file
             stream: undefined,                                  // Table Stream ARN
@@ -28,7 +28,7 @@ const CONF = (serverless) => {
         },
         ssocio: {
             name: "ssocio-app",
-            runtime: 'nodejs10.x',                              // Node is powered by the V8 JavaScript Engine (used in Chromium)
+            runtime: 'nodejs12.x',                              // Node is powered by the V8 JavaScript Engine (used in Chromium)
             region: "ap-northeast-2",
             env: "ssocio.yml",                                  // environment file
             stream: undefined,                                  // Table Stream ARN
@@ -39,7 +39,7 @@ const CONF = (serverless) => {
         },
         kong: {
             name: "kong-app",
-            runtime: 'nodejs10.x',                              // Node is powered by the V8 JavaScript Engine (used in Chromium)
+            runtime: 'nodejs12.x',                              // Node is powered by the V8 JavaScript Engine (used in Chromium)
             region: "ap-northeast-2",
             env: "kong.yml",                                    // environment file
             stream: undefined,                                  // Table Stream ARN
@@ -50,7 +50,7 @@ const CONF = (serverless) => {
         },
         jober: {
             name: "jober-app",
-            runtime: 'nodejs10.x',                              // Node is powered by the V8 JavaScript Engine (used in Chromium)
+            runtime: 'nodejs12.x',                              // Node is powered by the V8 JavaScript Engine (used in Chromium)
             region: "ap-northeast-2",
             env: "jober.yml",                                   // environment file
             stream: undefined,                                  // Table Stream ARN
@@ -61,7 +61,7 @@ const CONF = (serverless) => {
         },
         comics: {
             name: "comics-app",
-            runtime: 'nodejs10.x',                              // Node is powered by the V8 JavaScript Engine (used in Chromium)
+            runtime: 'nodejs12.x',                              // Node is powered by the V8 JavaScript Engine (used in Chromium)
             region: "ap-northeast-2",
             env: "comics.yml",                                  // environment file
             stream: undefined,                                  // Table Stream ARN
@@ -72,7 +72,7 @@ const CONF = (serverless) => {
         },
         adam: {
             name: "adam-app",
-            runtime: 'nodejs10.x',                              // Node is powered by the V8 JavaScript Engine (used in Chromium)
+            runtime: 'nodejs12.x',                              // Node is powered by the V8 JavaScript Engine (used in Chromium)
             region: "ap-northeast-2",
             env: "adam.yml",                                    // environment file
             stream: undefined,                                  // Table Stream ARN
@@ -83,7 +83,7 @@ const CONF = (serverless) => {
         },
         colover: {
             name: "colover-app",
-            runtime: 'nodejs10.x',                              // Node is powered by the V8 JavaScript Engine (used in Chromium)
+            runtime: 'nodejs12.x',                              // Node is powered by the V8 JavaScript Engine (used in Chromium)
             region: "ap-northeast-2",
             env: "colover.yml",                                 // environment file
             stream: undefined,                                  // Table Stream ARN
@@ -94,7 +94,7 @@ const CONF = (serverless) => {
         },
         none: {
             name: "none-app",
-            runtime: 'nodejs10.x',                              // Node is powered by the V8 JavaScript Engine (used in Chromium)
+            runtime: 'nodejs12.x',                              // Node is powered by the V8 JavaScript Engine (used in Chromium)
             region: "ap-northeast-2",
             env: "none.yml",                                    // environment file
             stream: undefined,                                  // Table Stream ARN
