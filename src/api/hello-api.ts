@@ -211,7 +211,17 @@ export class HelloAPIController extends GeneralWEBController {
      */
     public postHelloEvent: NextHandler = async (id, $param, $body, $ctx) => {
         _inf(NS, `postHelloEvent(${id})....`);
-        const subject = `${$param?.subject || ''}`.trim();
+        //! extract the 1st key name of object.
+        const _1st = (o: any) => {
+            if (o && typeof o == 'object') {
+                const keys = Object.keys(o);
+                return keys.length > 0 ? keys[0] : '';
+            } else if (o && typeof o == 'string') {
+                return `${o}`.trim();
+            }
+            return '';
+        };
+        const subject = `${$param?.subject || _1st($body) || ''}`.trim();
         $body && _log(NS, `> body[${id}]=`, typeof $body, $U.json($body));
         const noop = (d: RecordData): ParamToSlack =>
             this.service.packageDefaultChannel({
@@ -259,7 +269,7 @@ export class HelloAPIController extends GeneralWEBController {
         const subCheck = await this.service.getSubscriptionConfirmation($param);
         _inf(NS, `> subCheck [${subCheck}]`);
         if (subCheck == 'PASS') {
-            const { channel, body } = await this.service.buildSlackNotification($body);
+            const { channel, body } = this.service.buildSlackNotification($body);
             _inf(NS, `> build channel [${channel}]=`, body);
             return this.postHelloSlack(channel, {}, body, $ctx);
         }

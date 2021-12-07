@@ -266,12 +266,13 @@ export class HelloService {
      * transform to slack message.
      * @param body see `notifyLoginEvent()` of `lemon-accounts-api/oauth-api`
      */
-    public buildSlackNotification = async (body: any) => {
+    public buildSlackNotification = (body: any, color?: string) => {
         _log(NS, `buildSlackNotification()...`);
         body = body || {};
         // Publish notification on Slack public channel
         let pretext = '';
         let title = '';
+        color = `${color || '#12B5E9'}`;
         if (body.type === 'oauth') {
             const data = body.data || {};
             const $ctx = body.context || {};
@@ -288,13 +289,24 @@ export class HelloService {
                     ? accountId
                     : `${provider}/${accountId}`;
             title = `#${body?.event || 'oauth'}(\`${body.stage}\`) of \`${who}\` via \`${clientIp}\``;
+            color = `${body?.color || '#FFC300'}`; // yellow style.
             if (body && typeof body == 'object') body._source = __filename;
+        } else if (body?.mail && body?.notificationType) {
+            const subject = `mail/${body?.notificationType}`;
+            const type = body?.bounce?.bounceType || '';
+            const sub = (body?.bounce?.bouncedRecipients && body?.bounce?.bouncedRecipients[0]?.emailAddress) || '';
+            pretext = `\`#notification\` at lemon-hello-api`;
+            title = `[${subject}] event received as \`${type}/${sub}\`.`;
+        } else if (body?.subject !== undefined && body?.data !== undefined) {
+            const subject = body?.subject || Object.keys(body?.data)[0] || '';
+            pretext = `\`#notification\` at lemon-hello-api`;
+            title = `[${subject}] event received.`;
         } else {
             pretext = `\`#notification\` at lemon-hello-api`;
             title = `[${body.event || ''}] event received from \`${body.service}/${body.stage}\`.`;
         }
 
-        return this.packageWithChannel('public')(pretext, title, this.asText(body), [], '#12B5E9');
+        return this.packageWithChannel('public')(pretext, title, this.asText(body), [], color);
     };
 
     public buildAlarmForm = async ({ subject, data, context }: RecordData): Promise<ParamToSlack> => {

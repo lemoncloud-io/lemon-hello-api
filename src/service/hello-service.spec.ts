@@ -72,15 +72,16 @@ describe('QueueService /w DummyHelloService', () => {
         const { service } = instance('dummy');
         expect2(service.hello()).toEqual('hello-mocks-service');
         /* eslint-disable prettier/prettier */
+        const color = '#FFB71B';
         const result = {
             body: {
                 attachments: [
                     {
-                        color: '#FFB71B',
+                        color,
                         fields: [] as any,
-                        pretext: '`#notification` from `undefined:undefined`',
+                        pretext: '`#notification` at lemon-hello-api',
                         text: '',
-                        title: '[] event received.',
+                        title: '[] event received from `undefined/undefined`.',
                         ts: Math.floor(new Date().getTime() / 1000),
                         username: 'hello-alarm',
                     },
@@ -89,31 +90,92 @@ describe('QueueService /w DummyHelloService', () => {
             channel: 'public',
         };
 
-        expect2(await service.buildSlackNotification({})).toEqual(result);
+        const fx = (body: any, color?: string) => {
+            const ret = service.buildSlackNotification(body, color);
+            ret.body.attachments[0].text = result.body.attachments[0].text; //WARN! DO NOT TEST `text`
+            return ret;
+        }
 
-        result.body.attachments[0].pretext = '`#notification` from `login:undefined`';
+        expect2(() => fx({}, color)).toEqual(result);
+
+        result.body.attachments[0].title = '[] event received from `login/undefined`.';
         result.body.attachments[0].text = '{\"service\":\"login\"}';
-        expect2(await service.buildSlackNotification({service:'login'})).toEqual(result);
+        expect2(() => fx({service:'login'}, color)).toEqual(result);
 
-        result.body.attachments[0].pretext = '`#notification` from `login:test`';
+        result.body.attachments[0].title = '[] event received from `login/test`.';
         result.body.attachments[0].text = '{\"service\":\"login\",\"stage\":\"test\"}';
-        expect2(await service.buildSlackNotification({service:'login', stage:'test'})).toEqual(result);
+        expect2(() => fx({service:'login', stage:'test'}, color)).toEqual(result);
 
-        result.body.attachments[0].pretext = '`#notification` from `login:test`';
         result.body.attachments[0].text = '{\"service\":\"login\",\"stage\":\"test\",\"event\":\"login\"}';
-        result.body.attachments[0].title = '[login] event received.';
-        expect2(await service.buildSlackNotification({service:'login', stage:'test', event:'login'})).toEqual(result);
+        result.body.attachments[0].title = '[login] event received from `login/test`.';
+        expect2(() => fx({service:'login', stage:'test', event:'login'}, color)).toEqual(result);
 
-        result.body.attachments[0].pretext = '`#notification` from `login:test`';
-        result.body.attachments[0].text = '{\"service\":\"login\",\"stage\":\"test\",\"event\":\"login\",\"type\":\"oauth\"}';
-        result.body.attachments[0].title = '[LOGIN] account `/`';
-        expect2(await service.buildSlackNotification({service:'login', stage:'test', event:'login', type:'oauth'})).toEqual(result);
+        result.body.attachments[0].pretext = '';
+        result.body.attachments[0].title = '#login(`test`) of `/` via ``';
+        result.body.attachments[0].color = '#FFC300';
+        expect2(() => fx({service:'login', stage:'test', event:'login', type:'oauth'}, color)).toEqual(result);
 
-        result.body.attachments[0].pretext = '`#notification` from `login:test`';
-        result.body.attachments[0].text = '{\"service\":\"login\",\"stage\":\"test\",\"event\":\"login\",\"type\":\"oauth\",\"data\":{\"accountId\":\"lemon1234\",\"provider\":\"lemoncloud\"}}';
-        result.body.attachments[0].title = '[LOGIN] account `lemon1234/lemoncloud`';
-        expect2(await service.buildSlackNotification({service:'login', stage:'test', event:'login', type:'oauth', data:{accountId: 'lemon1234', provider:'lemoncloud'}})).toEqual(result);
+        result.body.attachments[0].pretext = '';
+        result.body.attachments[0].title = '#login(`test`) of `lemoncloud/lemon1234` via ``';
+        result.body.attachments[0].color = '#FFC300';
+        expect2(() => fx({service:'login', stage:'test', event:'login', type:'oauth', data:{accountId: 'lemon1234', provider:'lemoncloud'}}, color)).toEqual(result);
         /* eslint-enable prettier/prettier */
+
+        //! test of mail boundced
+        const sesBounced = {
+            notificationType: 'Bounce',
+            bounce: {
+                feedbackId: '0100017d93b65feb-5b27348d-2fe2-47f2-9a36-f8d25e8f679e-000000',
+                bounceType: 'Transient',
+                bounceSubType: 'General',
+                bouncedRecipients: [
+                    {
+                        emailAddress: 'xxxxxxxx@naver.comn',
+                        action: 'failed',
+                        status: '5.4.4',
+                        diagnosticCode: 'smtp; 550 5.4.4 Invalid domain',
+                    },
+                ],
+                timestamp: '2021-12-07T07:05:42.000Z',
+                reportingMTA: 'dns; amazonses.com',
+            },
+            mail: {
+                timestamp: '2021-12-07T07:05:41.668Z',
+                source: '=?utf-8?B?7Iug7ZKN7Jyg7Ya1?= <noreply@lemoncloud.io>',
+                sourceArn: 'arn:aws:ses:us-east-1:11111:22222',
+                sourceIp: '1.1.1.1',
+                sendingAccountId: '11111',
+                messageId: '0100017d93b65c24-712d86fd-1916-42d3-8b7c-2b1854107e66-000000',
+                headersTruncated: false,
+                headers: [
+                    {
+                        name: 'From',
+                        value: 'noreply <noreply@lemoncloud.io>',
+                    },
+                    {
+                        name: 'To',
+                        value: 'xxxxxxxx@naver.comn',
+                    },
+                ],
+            },
+        };
+        result.body.attachments[0].pretext = '`#notification` at lemon-hello-api';
+        result.body.attachments[0].title = '[mail/Bounce] event received as `Transient/xxxxxxxx@naver.comn`.';
+        result.body.attachments[0].color = '#FFB71B';
+        expect2(() => fx(sesBounced, color)).toEqual(result);
+
+        //! from redis
+        const redisEvent = {
+            subject: '',
+            data: {
+                'ElastiCache:SnapshotComplete': 'carrot-redis-t3m-0001-001',
+            },
+            context: null as any,
+        };
+        result.body.attachments[0].pretext = '`#notification` at lemon-hello-api';
+        result.body.attachments[0].title = '[ElastiCache:SnapshotComplete] event received.';
+        result.body.attachments[0].color = '#FFB71B';
+        expect2(() => fx(redisEvent, color)).toEqual(result);
 
         done();
     });
