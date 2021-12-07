@@ -291,7 +291,7 @@ export class HelloService {
             if (body && typeof body == 'object') body._source = __filename;
         } else {
             pretext = `\`#notification\` from \`${body.service}:${body.stage}\``;
-            title = `[${body.event || ''}] event received.`;
+            title = `[${body.event || ''}] event received at \`lemon-hello-api\`.`;
         }
 
         return this.packageWithChannel('public')(pretext, title, this.asText(body), []);
