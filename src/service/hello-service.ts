@@ -290,11 +290,11 @@ export class HelloService {
             title = `#${body?.event || 'oauth'}(\`${body.stage}\`) of \`${who}\` via \`${clientIp}\``;
             if (body && typeof body == 'object') body._source = __filename;
         } else {
-            pretext = `\`#notification\` from \`${body.service}:${body.stage}\``;
-            title = `[${body.event || ''}] event received at \`lemon-hello-api\`.`;
+            pretext = `\`#notification\` at lemon-hello-api`;
+            title = `[${body.event || ''}] event received from \`${body.service}/${body.stage}\`.`;
         }
 
-        return this.packageWithChannel('public')(pretext, title, this.asText(body), []);
+        return this.packageWithChannel('public')(pretext, title, this.asText(body), [], '#12B5E9');
     };
 
     public buildAlarmForm = async ({ subject, data, context }: RecordData): Promise<ParamToSlack> => {
