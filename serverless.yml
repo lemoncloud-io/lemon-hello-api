@@ -11,6 +11,7 @@ plugins:
   - serverless-offline
   - serverless-aws-documentation
   - serverless-pseudo-parameters
+  - serverless-prune-plugin
   - '@cruglobal/serverless-merge-config'
 
 #------------------------------------------------
