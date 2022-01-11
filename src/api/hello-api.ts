@@ -107,6 +107,16 @@ export class HelloAPIController extends GeneralWEBController {
     };
 
     /**
+     * get hello event
+     * - redirect to POST.
+     *
+     * ```sh
+     * $ http ':8888/hello/0/event?region=northeast'
+     */
+    public getHelloEvent: NextHandler = async (id, param, body, context) =>
+        this.postHelloEvent(id, { subject: 'hello-event' }, { ...param }, context);
+
+    /**
      * Only Update with incremental support
      *
      * ```sh
