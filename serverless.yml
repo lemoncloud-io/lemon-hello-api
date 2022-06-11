@@ -193,7 +193,7 @@ functions:
   #WARN - must use `lambda` as name for `lemon-protocol`.
   lambda:
     handler: handler.lambda     # use core `lambda-handler`.
-    timeout: 300                # max timeout. (= 5 min)
+    timeout: 30                 # max timeout for API gateway (= 30s)
     events:
       # -------------------------------------------------------
       # REST API : /
@@ -260,7 +260,6 @@ package:
     - dist/**
     - data/**
   excludeDevDependencies: true
-
 
 #==============================================================
 # Resources
