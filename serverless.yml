@@ -200,15 +200,11 @@ functions:
       - http:
           path: /
           method: get
-          cors: true
-          documentation:
-            summary: "show service name and version"
+          cors: ${self:custom.cors, true}
       - http:
           path: /
           method: post
-          cors: true
-          documentation:
-            summary: "subscription for SNS HTTPS"
+          cors: ${self:custom.cors, true}
       # -------------------------------------------------------
       # REST API : /hello
       - http:
@@ -216,56 +212,40 @@ functions:
           method: get
           cors: ${self:custom.cors, true}
           # authorizer: aws_iam
-          documentation:
-            summary: "list items"
       - http:
           path: /hello/{id}
           method: get
           cors: ${self:custom.cors, true}
           # authorizer: aws_iam
-          documentation:
-            summary: "read single item"
       - http:
           path: /hello/{id}/{cmd}
           method: get
           cors: ${self:custom.cors, true}
           # authorizer: aws_iam
-          documentation:
-            summary: "action for item."
       - http:
           path: /hello/{id}
           method: put
           cors: ${self:custom.cors, true}
           authorizer: aws_iam
-          documentation:
-            summary: "update item."
       - http:
           path: /hello/subscribe
           method: post
           cors: ${self:custom.cors, true}
-          documentation:
-            summary: "special purposed public APIs"
       - http:
           path: /hello/{id}
           method: post
           cors: ${self:custom.cors, true}
           authorizer: aws_iam
-          documentation:
-            summary: "create(or update) item by id"
       - http:
           path: /hello/{id}/{cmd}
           method: post
           cors: ${self:custom.cors, true}
           authorizer: aws_iam
-          documentation:
-            summary: "action for item with payload"
       - http:
           path: /hello/{id}
           method: delete
           cors: ${self:custom.cors, true}
           authorizer: aws_iam
-          documentation:
-            summary: "delete item"
 
 #--------------------------------------------------------------
 # ! INCLUDE ONLY DISTRIBUTIONS !
