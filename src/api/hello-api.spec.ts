@@ -9,7 +9,8 @@
  *
  * @copyright (C) 2020 LemonCloud Co Ltd. - All Rights Reserved.
  */
-import { expect2, loadJsonSync, $U } from 'lemon-core';
+// eslint-disable-next-line @typescript-eslint/no-unused-vars
+import { expect2, loadJsonSync, $U, _it } from 'lemon-core';
 import { app } from '../express';
 import request from 'supertest';
 import * as $service from '../service/hello-service.spec';
@@ -36,7 +37,7 @@ describe('hello-controller', () => {
 
     it('should pass express route: GET /', async done => {
         const res = await request(app).get('/');
-        expect2(res).toMatchObject({
+        expect2(() => ({ ...res, text: res.text.split('\n')[0] })).toMatchObject({
             status: 200,
             text: `${$pack.name}/${$pack.version}`,
         });

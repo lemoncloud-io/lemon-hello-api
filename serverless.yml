@@ -5,12 +5,11 @@ service: lemon-hello-api
 
 # You can pin your service to only deploy with a specific Serverless version
 # Check out our docs for more details
-# frameworkVersion: "=X.X.X"
+frameworkVersion: "3"
 
 plugins:
   - serverless-offline
   - serverless-aws-documentation
-  - serverless-pseudo-parameters
   - serverless-prune-plugin
   - '@cruglobal/serverless-merge-config'
 
@@ -20,11 +19,11 @@ plugins:
 #------------------------------------------------
 custom:
   CORE:                                         # Core Configuration.
-    profile: ${opt:profile, 'none'}             # run option `--profile`
+    profile: ${param:profile, 'none'}           # run option `--profile`
     region: ${opt:region, 'ap-northeast-2'}     # run option `--region` `-r`
     stage: ${opt:stage, 'dev'}                  # run option `--stage` `-s`
-    env: ${opt:env, './env/none.yml'}           # run option `--env`
-  CONF: ${file(./env/config.js):CONF}           # `config.js` 에서 CONF() 함수 호출하여 가져옴.
+    env: ${param:env, './env/none.yml'}         # run option `--env`
+  CONF: ${file(./env/config.js):CONF}           # merge config from `config.js` by profile.
   #------------------------------------------------
   # serverless-offline
   #------------------------------------------------
@@ -87,14 +86,13 @@ custom:
 #------------------------------------------------
 provider:
   name: aws
-  profile: ${opt:profile, 'none'}
+  profile: ${param:profile, 'none'}
   stage: ${opt:stage, 'dev'}
 
   # Lambda Runtime Environment
   memorySize: 256
   timeout: 30
-  cfLogs: true
-  runtime: ${self:custom.CONF.${self:custom.CORE.profile}.runtime, 'nodejs6.10'}
+  runtime: ${self:custom.CONF.${self:custom.CORE.profile}.runtime, 'nodejs12.x'}
   region: ${self:custom.CONF.${self:custom.CORE.profile}.region, self:custom.CORE.region}      # profile의 region를 먼저 사용하고, 없으면 실행 옵션값.
 
   # VPC Configuration for Lambda.
@@ -148,18 +146,19 @@ provider:
       Action:
         - kms:Decrypt
         - kms:Encrypt
+        - kms:Verify
       Resource: "arn:aws:kms:${self:provider.region}:*:key/${self:custom.CONF.${self:custom.CORE.profile}.kmsKey, ''}"   #TODO - improve resource setting.
 
   # -------------------------------------------------------
   # you can define service wide environment variables here
   # WARN! - 환경변수에는 object/null 으로 설정할 수 없음.
   environment:
-    REGION: '${self:provider.region}'
+    DEFAULT_REGION: '${self:provider.region}'
+    REPORT_ERROR_ARN: 'arn:aws:sns:${self:provider.region}:${aws:accountId}:lemon-hello-sns'
     MY_S3_BUCKET: '${self:custom.bucketName.${self:custom.CORE.stage}}'
-    MY_SQS_ENDPOINT: 'https://sqs.${self:provider.region}.amazonaws.com/#{AWS::AccountId}/${self:custom.queueName.${self:provider.stage}}' # see `sqs-service`
-    MY_SNS_ENDPOINT: 'arn:aws:sns:${self:provider.region}:#{AWS::AccountId}:${self:custom.topicName.${self:provider.stage}}'               # see `sns-service`
-    REPORT_ERROR_ARN: 'arn:aws:sns:${self:provider.region}:#{AWS::AccountId}:lemon-hello-sns'
-    $<<: ${file(./env/${self:custom.CONF.${self:custom.CORE.profile}.env}):${self:provider.stage}}
+    MY_SQS_ENDPOINT: 'https://sqs.${self:provider.region}.amazonaws.com/${aws:accountId}/${self:custom.queueName.${self:custom.CORE.stage}}' # see `sqs-service`
+    MY_SNS_ENDPOINT: 'arn:aws:sns:${self:provider.region}:${aws:accountId}:${self:custom.topicName.${self:custom.CORE.stage}}'               # see `sns-service`
+    $<<: ${file(./env/${self:custom.CONF.${self:custom.CORE.profile}.env}):${self:custom.CORE.stage}}
 
 #------------------------------------------------
 # Functions
@@ -182,7 +181,7 @@ functions:
       #         - StreamArn
       # -------------------------------------------------------
       # Shared SNS Service.
-      - sns: 'arn:aws:sns:${self:provider.region}:#{AWS::AccountId}:${self:custom.topicName.${self:custom.CORE.stage}}'
+      - sns: 'arn:aws:sns:${self:provider.region}:${aws:accountId}:${self:custom.topicName.${self:custom.CORE.stage}}'
       # -------------------------------------------------------
       # Shared SQS Service.
       - sqs:
@@ -194,22 +193,18 @@ functions:
   #WARN - must use `lambda` as name for `lemon-protocol`.
   lambda:
     handler: handler.lambda     # use core `lambda-handler`.
-    timeout: 300                # max timeout. (= 5 min)
+    timeout: 30                 # max timeout for API gateway (= 30s)
     events:
       # -------------------------------------------------------
       # REST API : /
       - http:
           path: /
           method: get
-          cors: true
-          documentation:
-            summary: "show service name and version"
+          cors: ${self:custom.cors, true}
       - http:
           path: /
           method: post
-          cors: true
-          documentation:
-            summary: "subscription for SNS HTTPS"
+          cors: ${self:custom.cors, true}
       # -------------------------------------------------------
       # REST API : /hello
       - http:
@@ -217,56 +212,40 @@ functions:
           method: get
           cors: ${self:custom.cors, true}
           # authorizer: aws_iam
-          documentation:
-            summary: "list items"
       - http:
           path: /hello/{id}
           method: get
           cors: ${self:custom.cors, true}
           # authorizer: aws_iam
-          documentation:
-            summary: "read single item"
       - http:
           path: /hello/{id}/{cmd}
           method: get
           cors: ${self:custom.cors, true}
           # authorizer: aws_iam
-          documentation:
-            summary: "action for item."
       - http:
           path: /hello/{id}
           method: put
           cors: ${self:custom.cors, true}
           authorizer: aws_iam
-          documentation:
-            summary: "update item."
       - http:
           path: /hello/subscribe
           method: post
           cors: ${self:custom.cors, true}
-          documentation:
-            summary: "special purposed public APIs"
       - http:
           path: /hello/{id}
           method: post
           cors: ${self:custom.cors, true}
           authorizer: aws_iam
-          documentation:
-            summary: "create(or update) item by id"
       - http:
           path: /hello/{id}/{cmd}
           method: post
           cors: ${self:custom.cors, true}
           authorizer: aws_iam
-          documentation:
-            summary: "action for item with payload"
       - http:
           path: /hello/{id}
           method: delete
           cors: ${self:custom.cors, true}
           authorizer: aws_iam
-          documentation:
-            summary: "delete item"
 
 #--------------------------------------------------------------
 # ! INCLUDE ONLY DISTRIBUTIONS !
@@ -282,15 +261,10 @@ package:
     - data/**
   excludeDevDependencies: true
 
-
-#------------------------------------------------
-# ## 리소스 생성.
-#   - 리소스를 deploy 시점에 생성할 수 있다
-#   - 주위! 테스트 목적으로 자동 생성하도록 함.
-#   - 운영시, 이 항목은 안쓰일듯.
-#------------------------------------------------
+#==============================================================
+# Resources
+#--------------------------------------------------------------
 resources:
-  # 리소스 지정.
   Resources:
     # -------------------------------
     # Dynamo
