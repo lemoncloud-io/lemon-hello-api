@@ -10,7 +10,15 @@
  * @copyright (C) 2020 LemonCloud Co Ltd. - All Rights Reserved.
  */
 import { _log, _inf, _err, $U } from 'lemon-core';
-import { APIService, SlackAttachment, AWSKMSService, AWSS3Service, AWSSNSService, SlackPostBody } from 'lemon-core';
+import {
+    APIService,
+    SlackAttachment,
+    AWSKMSService,
+    AWSS3Service,
+    AWSSNSService,
+    SlackPostBody,
+    $info,
+} from 'lemon-core';
 
 //! import dependency
 import https from 'https';
@@ -488,9 +496,10 @@ export class HelloService {
             username = '',
         ): ParamToSlack => {
             _log(NS, `packageWithChannel(${channel})...`);
-            color = color || '#FFB71B';
-            username = username || 'hello-alarm';
+            color = `${color || '#FFB71B'}`;
+            username = `${username || 'hello-alarm'}`;
             _log(NS, `> param[${channel}] =`, $U.json({ pretext, title, color, username }));
+            const { service, version, stage } = $info();
 
             //! build attachment.
             const ts = Math.floor(new Date().getTime() / 1000);
@@ -499,7 +508,8 @@ export class HelloService {
                     ? { title: `${F || ''}`.split('/')[0] || `${i + 1}`, value: F }
                     : { ...(F as any) },
             );
-            const attachment = { username, color, pretext, title, text, ts, fields: fields2 };
+            const footer = `${service}/${stage}#${version}`;
+            const attachment = { username, color, pretext, title, text, ts, fields: fields2, footer };
 
             //! build body for slack, and call
             const body = { attachments: [attachment] };
