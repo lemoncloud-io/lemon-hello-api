@@ -23,6 +23,7 @@ export const instance = (type = 'dummy') => {
 //! main test body.
 describe('QueueService /w DummyHelloService', () => {
     const PROFILE = loadProfile(process); // override process.env.
+    PROFILE && console.info(`! PROFILE =`, PROFILE);
 
     it('should pass postMessage()', async done => {
         const { service } = instance('dummy');
@@ -32,8 +33,7 @@ describe('QueueService /w DummyHelloService', () => {
             attachments: [
                 {
                     pretext: 'error-report',
-                    text:
-                        '<https://lemon-hello-www.s3.ap-northeast-2.amazonaws.com/be173267-406e-4c88-8bba-599f55fa2b77.json|:waning_gibbous_moon:> hello lemon',
+                    text: '<https://lemon-hello-www.s3.ap-northeast-2.amazonaws.com/be173267-406e-4c88-8bba-599f55fa2b77.json|:waning_gibbous_moon:> hello lemon',
                     color: '#FFB71B',
                     mrkdwn: true,
                     mrkdwn_in: ['pretext', 'text'],

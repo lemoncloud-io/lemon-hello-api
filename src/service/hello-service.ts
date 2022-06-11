@@ -66,6 +66,7 @@ export interface ParamToSlack {
 export interface PayloadOfReportSlack {
     channel: string;
     service: string;
+    // eslint-disable-next-line @typescript-eslint/ban-types
     param: {};
     body: SlackPostBody;
     context: {
@@ -476,30 +477,34 @@ export class HelloService {
     };
 
     //! post to slack channel(default is public).
-    public packageWithChannel = (channel: string) => (
-        pretext: string = '',
-        title: string = '',
-        text: string = '',
-        fields: (string | { title: string; value: string })[] = [],
-        color: string = '',
-        username: string = '',
-    ): ParamToSlack => {
-        _log(NS, `packageWithChannel(${channel})...`);
-        color = color || '#FFB71B';
-        username = username || 'hello-alarm';
-        _log(NS, `> param[${channel}] =`, $U.json({ pretext, title, color, username }));
+    public packageWithChannel =
+        (channel: string) =>
+        (
+            pretext = '',
+            title = '',
+            text = '',
+            fields: (string | { title: string; value: string })[] = [],
+            color = '',
+            username = '',
+        ): ParamToSlack => {
+            _log(NS, `packageWithChannel(${channel})...`);
+            color = color || '#FFB71B';
+            username = username || 'hello-alarm';
+            _log(NS, `> param[${channel}] =`, $U.json({ pretext, title, color, username }));
 
-        //! build attachment.
-        const ts = Math.floor(new Date().getTime() / 1000);
-        const fields2 = fields.map((F, i) =>
-            typeof F === 'string' ? { title: `${F || ''}`.split('/')[0] || `${i + 1}`, value: F } : { ...(F as any) },
-        );
-        const attachment = { username, color, pretext, title, text, ts, fields: fields2 };
+            //! build attachment.
+            const ts = Math.floor(new Date().getTime() / 1000);
+            const fields2 = fields.map((F, i) =>
+                typeof F === 'string'
+                    ? { title: `${F || ''}`.split('/')[0] || `${i + 1}`, value: F }
+                    : { ...(F as any) },
+            );
+            const attachment = { username, color, pretext, title, text, ts, fields: fields2 };
 
-        //! build body for slack, and call
-        const body = { attachments: [attachment] };
-        return { channel: `${channel || ''}`, body };
-    };
+            //! build body for slack, and call
+            const body = { attachments: [attachment] };
+            return { channel: `${channel || ''}`, body };
+        };
 
     //! post to slack default channel.
     public packageDefaultChannel = ({ pretext, title, text, fields, color, username }: BindParamOfSlack) => {
@@ -610,12 +615,14 @@ export class DummyHelloService extends HelloService {
                 return _;
             });
             const TAGS = [':slack:', ':cubimal_chick:', ':rotating_light:'];
-            const MOONS = ':new_moon:,:waxing_crescent_moon:,:first_quarter_moon:,:moon:,:full_moon:,:waning_gibbous_moon:,:last_quarter_moon:,:waning_crescent_moon:'.split(
-                ',',
-            );
-            const CLOCKS = ':clock12:,:clock1230:,:clock1:,:clock130:,:clock2:,:clock230:,:clock3:,:clock330:,:clock4:,:clock430:,:clock5:,:clock530:,:clock6:,:clock630:,:clock7:,:clock730:,:clock8:,:clock830:,:clock9:,:clock930:,:clock10:,:clock1030:,:clock11:,:clock1130:'.split(
-                ',',
-            );
+            const MOONS =
+                ':new_moon:,:waxing_crescent_moon:,:first_quarter_moon:,:moon:,:full_moon:,:waning_gibbous_moon:,:last_quarter_moon:,:waning_crescent_moon:'.split(
+                    ',',
+                );
+            const CLOCKS =
+                ':clock12:,:clock1230:,:clock1:,:clock130:,:clock2:,:clock230:,:clock3:,:clock330:,:clock4:,:clock430:,:clock5:,:clock530:,:clock6:,:clock630:,:clock7:,:clock730:,:clock8:,:clock830:,:clock9:,:clock930:,:clock10:,:clock1030:,:clock11:,:clock1130:'.split(
+                    ',',
+                );
             const now = new Date();
             const hour = now.getHours();
             const tag = 0 ? TAGS[2] : MOONS[Math.floor((MOONS.length * hour) / 24)];
