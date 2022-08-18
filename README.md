@@ -87,7 +87,7 @@ Simple Serverless MicroService API with `Lambda` + `API Gateway` + `Web Socket` 
 
     ```sh
     # run encrypt
-    $ aws kms encrypt --profile <profile> --key-id alias/lemon-hello-api --plaintext "hello lemon" --query CiphertextBlob --output text
+    $ aws kms encrypt --profile <profile> --key-id alias/lemon-hello-api --cli-binary-format raw-in-base64-out --plaintext "hello lemon" --query CiphertextBlob --output text
     ```
 
 ### STEP.2 Deploy to AWS Cloud
@@ -146,6 +146,7 @@ Version History
 
 | Version   | Description
 |--         |--
+| 2.3.2     | optimized with `lemon-core#3.1.2`, and `nodejs16` runtime.
 | 2.3.1     | optimized with `lemon-core#3.1.1`.
 | 2.2.3     | optimized `notification` message.
 | 2.2.2     | use `direct` to post slack hook directly.

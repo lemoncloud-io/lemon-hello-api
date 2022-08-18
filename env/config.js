@@ -12,6 +12,7 @@
  * @date        2019-07-19 initial version
  * @date        2019-12-19 optimized for `lemon-core#v2`
  * @date        2022-05-24 optimized for `lemon-core#3.1.1` w/ serverless 3.16
+ * @date        2022-08-17 optimized for `nodejs16`
  *
  * @copyright (C) lemoncloud.io 2019 - All Rights Reserved.
  */
@@ -21,32 +22,39 @@
     return {
         lemon: {
             name: 'lemon-app',
-            runtime: 'nodejs12.x',                              // Node is powered by the V8 JavaScript Engine (used in Chromium)
+            runtime: 'nodejs16.x',                              // Node is powered by the V8 JavaScript Engine (used in Chromium)
             region: 'ap-northeast-2',
             env: 'lemon.yml',                                   // environment file
-            stream: undefined,                                  // Table Stream ARN
             securityGroupIds: ['sg-08770106971509def'],         // securityGroup : `lemon-services-api`
             subnetIds: ['subnet-0a53bcd7f3d256ce4','subnet-0ee4d1ca5eb964fc5'],   // subnetIds in VPC
             kmsKey: '*',                                        // KMS key-id
             bucket: 'lemon-hello-www',                          // Name of S3 public bucket.
         },
+        colover: {
+            name: 'colover-app',
+            runtime: 'nodejs16.x',                              // Node is powered by the V8 JavaScript Engine (used in Chromium)
+            region: 'ap-northeast-2',
+            env: 'colover.yml',                                 // environment file
+            securityGroupIds: ['sg-0c88604df5c54cdf5'],         // securityGroupIds `services-api`
+            subnetIds: ['subnet-0175de29eed1a711d', 'subnet-06abf950037203c42'],  // subnetIds `private-2a/2b`
+            kmsKey: '*',                                        // KMS key-id
+            bucket: 'colover-hello-www',                        // Name of S3 public bucket.
+        },
         ssocio: {
             name: 'ssocio-app',
-            runtime: 'nodejs12.x',                              // Node is powered by the V8 JavaScript Engine (used in Chromium)
+            runtime: 'nodejs16.x',                              // Powered by the V8 JavaScript Engine (used in Chromium)
             region: 'ap-northeast-2',
             env: 'ssocio.yml',                                  // environment file
-            stream: undefined,                                  // Table Stream ARN
-            securityGroupIds: undefined,                        // securityGroupIds in VPC
-            subnetIds: undefined,                               // subnetIds in VPC
+            securityGroupIds: ['sg-0b0fb4d4bd885c7cd'],         // securityGroupIds `lemon-micro-private`
+            subnetIds: ['subnet-0fcfaad965a2dc997', 'subnet-03a5987eac7caa520'], // subnetIds `subnet-private-2a/2c`
             kmsKey: '*',                                        // KMS key-id
             bucket: 'ssocio-hello-wwww',                        // Name of S3 public bucket.
         },
         jober: {
             name: 'jober-app',
-            runtime: 'nodejs12.x',                              // Node is powered by the V8 JavaScript Engine (used in Chromium)
+            runtime: 'nodejs16.x',                              // Node is powered by the V8 JavaScript Engine (used in Chromium)
             region: 'ap-northeast-2',
             env: 'jober.yml',                                   // environment file
-            stream: undefined,                                  // Table Stream ARN
             securityGroupIds: undefined,                        // securityGroupIds in VPC
             subnetIds: undefined,                               // subnetIds in VPC
             kmsKey: '*',                                        // KMS key-id
@@ -54,10 +62,9 @@
         },
         comics: {
             name: 'comics-app',
-            runtime: 'nodejs12.x',                              // Node is powered by the V8 JavaScript Engine (used in Chromium)
+            runtime: 'nodejs16.x',                              // Node is powered by the V8 JavaScript Engine (used in Chromium)
             region: 'ap-northeast-2',
             env: 'comics.yml',                                  // environment file
-            stream: undefined,                                  // Table Stream ARN
             securityGroupIds: undefined,                        // securityGroupIds in VPC
             subnetIds: undefined,                               // subnetIds in VPC
             kmsKey: '*',                                        // KMS key-id
@@ -65,32 +72,19 @@
         },
         adam: {
             name: 'adam-app',
-            runtime: 'nodejs12.x',                              // Node is powered by the V8 JavaScript Engine (used in Chromium)
+            runtime: 'nodejs16.x',                              // Node is powered by the V8 JavaScript Engine (used in Chromium)
             region: 'ap-northeast-2',
             env: 'adam.yml',                                    // environment file
-            stream: undefined,                                  // Table Stream ARN
             securityGroupIds: undefined,                        // securityGroupIds in VPC
             subnetIds: undefined,                               // subnetIds in VPC
             kmsKey: '*',                                        // KMS key-id
             bucket: 'adam-hello-www',                           // Name of S3 public bucket.
         },
-        colover: {
-            name: 'colover-app',
-            runtime: 'nodejs12.x',                              // Node is powered by the V8 JavaScript Engine (used in Chromium)
-            region: 'ap-northeast-2',
-            env: 'colover.yml',                                 // environment file
-            stream: undefined,                                  // Table Stream ARN
-            securityGroupIds: undefined,                        // securityGroupIds in VPC
-            subnetIds: undefined,                               // subnetIds in VPC
-            kmsKey: '*',                                        // KMS key-id
-            bucket: 'colover-hello-www',                        // Name of S3 public bucket.
-        },
         none: {
             name: 'none-app',
-            runtime: 'nodejs12.x',                              // Node is powered by the V8 JavaScript Engine (used in Chromium)
+            runtime: 'nodejs16.x',                              // Node is powered by the V8 JavaScript Engine (used in Chromium)
             region: 'ap-northeast-2',
             env: 'none.yml',                                    // environment file
-            stream: undefined,                                  // Table Stream ARN
             securityGroupIds: undefined,                        // securityGroupIds in VPC
             subnetIds: undefined,                               // subnetIds in VPC
             kmsKey: undefined,                                  // KMS key-id

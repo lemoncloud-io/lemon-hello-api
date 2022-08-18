@@ -79,6 +79,7 @@ custom:
       - X-Amz-Security-Token
       - X-Amz-User-Agent
       - X-Lemon-Language
+      - X-Lemon-Identity
     allowCredentials: true
 
 #------------------------------------------------
@@ -193,7 +194,7 @@ functions:
   #WARN - must use `lambda` as name for `lemon-protocol`.
   lambda:
     handler: handler.lambda     # use core `lambda-handler`.
-    timeout: 30                 # max timeout for API gateway (= 30s)
+    timeout: 30                 # max timeout(30s) by API Gateway.
     events:
       # -------------------------------------------------------
       # REST API : /
@@ -201,6 +202,8 @@ functions:
           path: /
           method: get
           cors: ${self:custom.cors, true}
+          documentation:
+            summary: "show service name and version"
       - http:
           path: /
           method: post

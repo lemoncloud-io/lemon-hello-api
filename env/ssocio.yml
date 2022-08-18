@@ -29,5 +29,6 @@ dev:
 prod:
   <<: *default_env
   STAGE: 'production'
+  NS: SS
   TS: 0
 

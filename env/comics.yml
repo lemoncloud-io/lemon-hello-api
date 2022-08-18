@@ -31,6 +31,7 @@ dev:
 prod:
   <<: *default_env
   STAGE: 'production'
+  NS: SS
   TS: 0
   SLACK_PUT_S3: 1         # flag to auto save into s3 bucket if slack message.
 
