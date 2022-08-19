@@ -398,9 +398,10 @@ export class HelloAPIController extends GeneralWEBController {
         const message = 'hello lemon';
         const encrypted = await this.$kms.encrypt(message);
         const decrypted = await this.$kms.decrypt(encrypted);
-        const _ = { encrypted, decrypted, message };
-        const result = _.encrypted && _.message === _.decrypted;
-        return Object.assign(_, { result });
+        const data = { encrypted, decrypted, message };
+        const result = data.encrypted && data.message === data.decrypted;
+        _inf(NS, `> data =`, $U.json(data));
+        return { result };
     };
 
     /**

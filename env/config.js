@@ -45,10 +45,20 @@
             runtime: 'nodejs16.x',                              // Powered by the V8 JavaScript Engine (used in Chromium)
             region: 'ap-northeast-2',
             env: 'ssocio.yml',                                  // environment file
-            securityGroupIds: ['sg-0b0fb4d4bd885c7cd'],         // securityGroupIds `lemon-micro-private`
+            securityGroupIds: ['sg-0b0fb4d4bd885c7cd'],         // securityGroupIds `lemon-services`
             subnetIds: ['subnet-0fcfaad965a2dc997', 'subnet-03a5987eac7caa520'], // subnetIds `subnet-private-2a/2c`
             kmsKey: '*',                                        // KMS key-id
             bucket: 'ssocio-hello-wwww',                        // Name of S3 public bucket.
+        },
+        neuro: {
+            name: 'neuro-app',
+            runtime: 'nodejs16.x',                              // Powered by the V8 JavaScript Engine (used in Chromium)
+            region: 'ap-northeast-2',
+            env: 'neuro.yml',                                   // environment file
+            securityGroupIds: ['sg-0da963f5f12eba4e6'],         // securityGroupIds `lemon-services`
+            subnetIds: ['subnet-04d5ffaa589f60cd4', 'subnet-06698f4be777605e6'], // subnetIds `subnet-private-2a/2c`
+            kmsKey: '*',                                        // KMS key-id
+            bucket: 'neuro-hello-wwww',                         // Name of S3 public bucket.
         },
         jober: {
             name: 'jober-app',
