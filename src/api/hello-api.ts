@@ -157,6 +157,7 @@ export class HelloAPIController extends GeneralWEBController {
      * # post message to slack/general
      * $ echo '{"text":"hello"}' | http ':8888/hello/public/slack'
      * $ echo '{"text":"hello"}' | http ':8888/hello/alarm/slack'
+     * $ cat data/slack.json | http ':8888/hello/public/slack'
      *
      * # use sample
      * $ cat data/error-hello.json | http ':8888/hello/public/slack'
@@ -186,9 +187,10 @@ export class HelloAPIController extends GeneralWEBController {
 
         //! prepare slack message via body.
         const message = typeof $body === 'string' ? { text: $body } : $body;
-        const noop = (_: any) => _;
+        _log(NS, '> message :=', $U.json(message));
 
         //NOTE! filter message only if sending to slack-hook.
+        const noop = (_: any) => _;
         const filter = !direct && webhook.startsWith('https://hooks.slack.com') ? this.service.saveMessageToS3 : noop;
         const res = await this.service.postMessage(webhook, filter(message)).catch(e => {
             _err(NS, `! slack[${channel}].err =`, e instanceof Error ? e : $U.json(e));

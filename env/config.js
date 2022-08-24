@@ -35,7 +35,7 @@
             runtime: 'nodejs16.x',                              // Node is powered by the V8 JavaScript Engine (used in Chromium)
             region: 'ap-northeast-2',
             env: 'colover.yml',                                 // environment file
-            securityGroupIds: ['sg-0c88604df5c54cdf5'],         // securityGroupIds `services-api`
+            securityGroupIds: ['sg-0c88604df5c54cdf5'],         // securityGroupIds `lemon-services-api`
             subnetIds: ['subnet-0175de29eed1a711d', 'subnet-06abf950037203c42'],  // subnetIds `private-2a/2b`
             kmsKey: '*',                                        // KMS key-id
             bucket: 'colover-hello-www',                        // Name of S3 public bucket.

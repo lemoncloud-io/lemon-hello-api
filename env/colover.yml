@@ -9,7 +9,7 @@ default_env: &default_env
   NAME: 'colover'         # profile name.
   BACKBONE_API:  ''       # NO USE BACKBONE
   SLACK_PUT_S3: 0         # flag to auto save into s3 bucket if slack message.
-  SLACK_PUBLIC: 'AQICAHiPBSQJJBm6GYmzoarYHMhQe8Usgfge7ugXevmEy4GodwFHxeSO8/yo+S8j0SXKssxZAAAAtDCBsQYJKoZIhvcNAQcGoIGjMIGgAgEAMIGaBgkqhkiG9w0BBwEwHgYJYIZIAWUDBAEuMBEEDPEXgqQpTcKSDau8PgIBEIBtIRkW78ITO0zblMTBPRMG/z+jA6oRerNRGW5GFKwbrstmjIESsDY1D6SUtdv+VD5A5xDuWmODmMSo/JjBHzD7Dq8PYqZS1FxsRy6U0BjKstkPrklmZAE/IuMsNQF61SUIAORH9X3uJh+RKdLU0Q=='
+  SLACK_PUBLIC: 'AQICAHiPBSQJJBm6GYmzoarYHMhQe8Usgfge7ugXevmEy4GodwHNIn1KOIJtxZpyTZvU6s7uAAAAtDCBsQYJKoZIhvcNAQcGoIGjMIGgAgEAMIGaBgkqhkiG9w0BBwEwHgYJYIZIAWUDBAEuMBEEDLs+pEXIEZ/6Zuf38QIBEIBt9t/VelRKiZi4kWUt6SajwsBfydKjq/5i6/O6kBzEDnLIjNKTwAgvurzIYKod45WHyv1pLV+XfTb2wxJj3RuVe0dAt0U65NuQ4AQ0vhaqPRbwKrAljCoAUQW02I5Guw0I1kb6ZbA+kAnNNyWkxg=='
 
 #-----------------------------------
 # local development configuration.
