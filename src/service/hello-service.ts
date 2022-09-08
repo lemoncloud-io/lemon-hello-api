@@ -25,7 +25,7 @@ import {
     $info,
 } from 'lemon-core';
 import { CallbackSlackData, CallbackPayload } from '../common/types';
-import { $FIELD, Model, ModelType, TestModel } from './hello-model';
+import { $FIELD, ChannelModel, Model, ModelType, TargetModel, TestModel } from './hello-model';
 
 //! import dependency
 import https from 'https';
@@ -102,12 +102,20 @@ export class HelloService extends CoreService<Model, ModelType> {
     protected $sns: AWSSNSService;
     protected $s3s: AWSS3Service;
 
+    protected $test: MyTestManager;
+    protected $channel: MyChannelManager;
+    protected $target: MyTargetManager;
+
     public constructor($kms?: AWSKMSService, $sns?: AWSSNSService, $s3s?: AWSS3Service) {
         super();
         _log(NS, `HelloService(${this.tableName}, ${this.NS})...`);
         this.$kms = $kms || new AWSKMSService();
         this.$sns = $sns || new AWSSNSService();
         this.$s3s = $s3s || new AWSS3Service();
+
+        this.$test = new MyTestManager(this);
+        this.$channel = new MyChannelManager(this);
+        this.$target = new MyTargetManager(this);
     }
 
     /**
@@ -630,6 +638,26 @@ export class MyCoreManager<T extends Model, S extends CoreService<T, ModelType>>
 export class MyTestManager extends MyCoreManager<TestModel, HelloService> {
     public constructor(parent: HelloService) {
         super('test', parent, $FIELD.test, 'name');
+    }
+}
+
+/**
+ * class: `MyChannelManager`
+ * - manager for channel-model.
+ */
+export class MyChannelManager extends MyCoreManager<ChannelModel, HelloService> {
+    public constructor(parent: HelloService) {
+        super('channel', parent, $FIELD.channel);
+    }
+}
+
+/**
+ * class: `MyTargetManager`
+ * - manager for target-model.
+ */
+export class MyTargetManager extends MyCoreManager<TargetModel, HelloService> {
+    public constructor(parent: HelloService) {
+        super('target', parent, $FIELD.target);
     }
 }
 

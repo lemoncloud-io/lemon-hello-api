@@ -9,13 +9,14 @@
  */
 //NOTE - must use `lemon-model` to publish w/o `lemon-core`.
 import { CoreModel } from 'lemon-model';
+import { SlackPostBody } from 'lemon-core';
 import { keys } from 'ts-transformer-keys';
 
 /**
  * type: `ModelType`
  * - use this type to make pkey per data.
  */
-export type ModelType = 'test';
+export type ModelType = 'test' | 'channel' | 'target';
 
 /**
  * class: `Model`
@@ -55,6 +56,74 @@ export interface TestModel extends Model {
 }
 
 /**
+ * type: `RouteRule`
+ *
+ *
+ * @see SlackPostBody
+ */
+export interface RouteRule {
+    /** regular express to match */
+    pattern: string;
+
+    /**
+     * copy contents to target channel.
+     * - duplicate the attachments
+     * - ignored if it is in same channel
+     * ex) A -> A + B
+     */
+    copyTo?: string;
+
+    /**
+     * move channel to other one.
+     * - change the `.channel` in attachments.
+     * ex) A -> B
+     */
+    moveTo?: string;
+
+    /**
+     * forward the input message to other
+     * = id of `TargetModel`
+     */
+    forward?: string;
+}
+
+/**
+ * type: `ChannelModel`
+ * - describe the rule flow by slack channel.
+ */
+export interface ChannelModel extends Model {
+    /**
+     * = slack channel name
+     * (default would be `public`)
+     */
+    id?: string;
+
+    /** (optional) readable name of this channel */
+    name?: string;
+
+    /**
+     * route rules in sequence.
+     */
+    rules?: RouteRule[];
+
+    /**
+     * target address (URL)
+     */
+    endpoint?: string;
+}
+
+/**
+ * type: `TargetModel`
+ * - describe the target information.
+ */
+export interface TargetModel extends Model {
+    /**
+     * = slack channel name
+     */
+    id?: string;
+}
+
+/**
  * extract field names from models
  * - only fields start with lowercase, or all upper.
  */
@@ -72,4 +141,6 @@ export const filterFields = (fields: string[], base: string[] = []) =>
 //! extended fields set of sub-class.
 export const $FIELD = {
     test: filterFields(keys<TestModel>()),
+    channel: filterFields(keys<ChannelModel>()),
+    target: filterFields(keys<TargetModel>()),
 };
