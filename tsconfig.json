@@ -1,6 +1,6 @@
 {
     "compilerOptions": {
-        "allowJs": false,
+        "allowJs": true,
         "experimentalDecorators": true,
         "module": "commonjs",
         "resolveJsonModule": true,
@@ -21,11 +21,11 @@
         },
         "plugins": [
             {
-              "transform": "ts-transformer-keys/transformer"
+                "transform": "ts-transformer-keys/transformer"
             }
         ],
-        "incremental": false,
-        "declaration": true
+        "declaration": false,
+        "incremental": true
     },
     "include": [
         "src/**/*"
