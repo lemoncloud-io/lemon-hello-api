@@ -27,6 +27,12 @@ describe('QueueService /w DummyHelloService', () => {
     const PROFILE = loadProfile(process); // override process.env.
     PROFILE && console.info(`! PROFILE =`, PROFILE);
 
+    let footer: string;
+    beforeEach(async () => {
+        const $pack = loadJsonSync('package.json');
+        footer = `lemon-hello-api/local#${$pack.version}`;
+    });
+
     it('should pass postMessage()', async done => {
         const { service } = instance('dummy');
         expect2(() => service.hello()).toEqual('hello-mocks-service');
@@ -86,6 +92,7 @@ describe('QueueService /w DummyHelloService', () => {
                         title: '[] event received from `undefined/undefined`.',
                         ts: Math.floor(new Date().getTime() / 1000),
                         username: 'hello-alarm',
+                        footer,
                     },
                 ],
             },
@@ -219,6 +226,7 @@ describe('QueueService /w DummyHelloService', () => {
                         title: '',
                         ts: Math.floor(new Date().getTime() / 1000),
                         username: 'hello-alarm',
+                        footer,
                     },
                 ],
             },
@@ -315,6 +323,7 @@ describe('QueueService /w DummyHelloService', () => {
                         title: '',
                         ts: now,
                         username: 'hello-alarm',
+                        footer,
                     },
                 ],
             },
@@ -390,6 +399,7 @@ describe('QueueService /w DummyHelloService', () => {
                         title: 'error-report',
                         ts: now,
                         username: 'hello-alarm',
+                        footer,
                     },
                 ],
             },
@@ -423,6 +433,7 @@ describe('QueueService /w DummyHelloService', () => {
                         title: 'callback-report',
                         ts: now,
                         username: 'hello-alarm',
+                        footer,
                     },
                 ],
             },
