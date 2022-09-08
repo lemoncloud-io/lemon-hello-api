@@ -6,10 +6,13 @@
  * @author      Tyler <tyler@lemoncloud.io>
  * @date        2020-06-10 refactor with api
  * @date        2020-06-23 optimized with lemon-core#2.2.1
+ * @author      Steve Jung <steve@lemoncloud.io>
+ * @date        2022-09-08 supports database w/ manager
  *
  * @copyright (C) 2020 LemonCloud Co Ltd. - All Rights Reserved.
  */
-import { _log, _inf, _err, $U } from 'lemon-core';
+// eslint-disable-next-line @typescript-eslint/no-unused-vars
+import { $U, $T, _log, _inf, _err } from 'lemon-core';
 import {
     APIService,
     SlackAttachment,
@@ -17,14 +20,17 @@ import {
     AWSS3Service,
     AWSSNSService,
     SlackPostBody,
+    CoreManager,
+    CoreService,
     $info,
 } from 'lemon-core';
+import { CallbackSlackData, CallbackPayload } from '../common/types';
+import { $FIELD, Model, ModelType, TestModel } from './hello-model';
 
 //! import dependency
 import https from 'https';
 import AWS from 'aws-sdk';
 import url from 'url';
-import { CallbackSlackData, CallbackPayload } from '../common/types';
 const NS = $U.NS('HLLS', 'blue'); // NAMESPACE TO BE PRINTED.
 
 /**
@@ -90,13 +96,15 @@ export interface PayloadOfReportSlack {
  * class: `HelloService`
  * - catch `report-error` via SNS, then save into S3 and post to slack.
  */
-export class HelloService {
+export class HelloService extends CoreService<Model, ModelType> {
     protected $channels: any = {};
     protected $kms: AWSKMSService;
     protected $sns: AWSSNSService;
     protected $s3s: AWSS3Service;
 
     public constructor($kms?: AWSKMSService, $sns?: AWSSNSService, $s3s?: AWSS3Service) {
+        super();
+        _log(NS, `HelloService(${this.tableName}, ${this.NS})...`);
         this.$kms = $kms || new AWSKMSService();
         this.$sns = $sns || new AWSSNSService();
         this.$s3s = $s3s || new AWSS3Service();
@@ -528,6 +536,101 @@ export class HelloService {
             username || '',
         );
     };
+}
+
+/**
+ * class: `MyCoreManager`
+ * - shared core manager for all model.
+ * - handle 'name' like unique value in same type.
+ */
+// eslint-disable-next-line prettier/prettier
+export class MyCoreManager<T extends Model, S extends CoreService<T, ModelType>> extends CoreManager<T, ModelType, S> {
+    public readonly parent: S;
+    public constructor(type: ModelType, parent: S, fields: string[], uniqueField?: string) {
+        super(type, parent, fields, uniqueField);
+        this.parent = parent;
+    }
+
+    /** say hello */
+    public hello = () => `${this.storage.hello()}`;
+
+    // override `super.onBeforeSave()`
+    public onBeforeSave(model: T, origin: T): T {
+        //NOTE! - not possible to change name in here.
+        if (origin && origin.name) delete model.name;
+        return model;
+    }
+
+    /**
+     * get model by id
+     */
+    public async getModelById(id: string): Promise<T> {
+        return this.storage.read(id).catch(e => {
+            if (`${e.message}`.startsWith('404 NOT FOUND')) throw new Error(`404 NOT FOUND - ${this.type}:${id}`);
+            throw e;
+        });
+    }
+
+    /**
+     * validate name format
+     * - just check empty string.
+     * @param name unique name in same type group.
+     */
+    public validateName = (name: string): boolean => (this.$unique ? this.$unique.validate(name) : true);
+
+    /**
+     * convert to internal id by name
+     * @param name unique name in same type group.
+     */
+    public asIdByName = (name: string): string => (this.$unique ? this.$unique.asLookupId(name) : null);
+
+    /**
+     * lookup model by name
+     * - use `stereo` property to link with the origin.
+     *
+     * @param name unique name in same type group.
+     */
+    public findByName = async (name: string): Promise<T> => {
+        if (this.$unique) return this.$unique.findOrCreate(name);
+        throw new Error(`400 NOT SUPPORT - ${this.type}:#${name}`);
+    };
+
+    /**
+     * update name of model
+     * - save the origin id into `stereo` property.
+     *
+     * @param model target model
+     * @param name  new name of model.
+     */
+    public updateName = async (model: T, name: string): Promise<T> => {
+        if (!this.validateName(name)) throw new Error(`@name (${name || ''}) is not valid!`);
+        if (this.$unique) {
+            // STEP.1 try to update loockup 1st.
+            const $map = await this.$unique.updateLookup(model, name);
+            _log(NS, `> lookup[${model.id}].res =`, $U.json($map));
+
+            // STEP.3 update the name of origin.
+            const $upt: Model = { name };
+            const updated = await this.storage.update(model.id, $upt as T);
+            _log(NS, `> update[${model.id}].res =`, $U.json(updated));
+
+            // FINAL. returns the updated model
+            model.name = name;
+            model.updatedAt = updated.updatedAt || model.updatedAt;
+            return model;
+        }
+        throw new Error(`400 NOT SUPPORT - ${this.type}:#${name}`);
+    };
+}
+
+/**
+ * class: `MyTestManager`
+ * - manager for test-model.
+ */
+export class MyTestManager extends MyCoreManager<TestModel, HelloService> {
+    public constructor(parent: HelloService) {
+        super('test', parent, $FIELD.test, 'name');
+    }
 }
 
 /**

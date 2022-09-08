@@ -6,6 +6,8 @@
  * @author      Tyler <tyler@lemoncloud.io>
  * @date        2020-06-10 refactor with api
  * @date        2020-06-23 optimized with lemon-core#2.2.1
+ * @author      Steve Jung <steve@lemoncloud.io>
+ * @date        2022-09-08 supports database w/ manager
  *
  * @copyright (C) 2020 LemonCloud Co Ltd. - All Rights Reserved.
  */
@@ -27,7 +29,7 @@ describe('QueueService /w DummyHelloService', () => {
 
     it('should pass postMessage()', async done => {
         const { service } = instance('dummy');
-        expect2(service.hello()).toEqual('hello-mocks-service');
+        expect2(() => service.hello()).toEqual('hello-mocks-service');
         const webhook = 'https://hooks.slack.com/services/AAAAAAAAA/BBBBBBBBB/CCCCCCCCCCCCCCCC';
         const error_msg = {
             attachments: [
@@ -48,7 +50,7 @@ describe('QueueService /w DummyHelloService', () => {
 
     it('should pass running currect env', async done => {
         const { service } = instance('dummy');
-        expect2(service.hello()).toEqual('hello-mocks-service');
+        expect2(() => service.hello()).toEqual('hello-mocks-service');
         /* eslint-disable prettier/prettier */
         expect2(await service.loadSlackChannel('hello', 'Hello').catch(GETERR)).toEqual('env[SLACK_HELLO] is required!');
         expect2(await service.loadSlackChannel('hello', 'AA')).toEqual('https://hooks.slack.com/services/AAAAAAAAA/BBBBBBBBB/CCCCCCCCCCCCCCCC');
@@ -59,7 +61,7 @@ describe('QueueService /w DummyHelloService', () => {
 
     it('should pass getSubscriptionConfirmation()', async done => {
         const { service } = instance('dummy');
-        expect2(service.hello()).toEqual('hello-mocks-service');
+        expect2(() => service.hello()).toEqual('hello-mocks-service');
         /* eslint-disable prettier/prettier */
         expect2(await service.getSubscriptionConfirmation({snsMessageType:'', subscribeURL:''})).toEqual('PASS');
         expect2(await service.getSubscriptionConfirmation({snsMessageType:'SubscriptionConfirmation', subscribeURL:''})).toEqual('PASS');
@@ -70,7 +72,7 @@ describe('QueueService /w DummyHelloService', () => {
 
     it('should pass buildSlackNotification()', async done => {
         const { service } = instance('dummy');
-        expect2(service.hello()).toEqual('hello-mocks-service');
+        expect2(() => service.hello()).toEqual('hello-mocks-service');
         /* eslint-disable prettier/prettier */
         const color = '#FFB71B';
         const result = {
@@ -182,7 +184,7 @@ describe('QueueService /w DummyHelloService', () => {
 
     it('should pass saveMessageToS3()', async done => {
         const { service } = instance('dummy');
-        expect2(service.hello()).toEqual('hello-mocks-service');
+        expect2(() => service.hello()).toEqual('hello-mocks-service');
         const error_hello = loadJsonSync('./data/error-hello.json');
         const result = {
             attachments: [
@@ -204,7 +206,7 @@ describe('QueueService /w DummyHelloService', () => {
 
     it('should pass buildAlarmForm()', async done => {
         const { service } = instance('dummy');
-        expect2(service.hello()).toEqual('hello-mocks-service');
+        expect2(() => service.hello()).toEqual('hello-mocks-service');
         /* eslint-disable prettier/prettier */
         const result = {
             body: {
@@ -295,7 +297,7 @@ describe('QueueService /w DummyHelloService', () => {
 
     it('should pass buildDeliveryFailure()', async done => {
         const { service } = instance('dummy');
-        expect2(service.hello()).toEqual('hello-mocks-service');
+        expect2(() => service.hello()).toEqual('hello-mocks-service');
         /* eslint-disable prettier/prettier */
         const now = Math.floor(new Date().getTime() / 1000);
         const result = {
@@ -374,7 +376,7 @@ describe('QueueService /w DummyHelloService', () => {
 
     it('should pass buildErrorForm()', async done => {
         const { service } = instance('dummy');
-        expect2(service.hello()).toEqual('hello-mocks-service');
+        expect2(() => service.hello()).toEqual('hello-mocks-service');
         /* eslint-disable prettier/prettier */
         const now = Math.floor(new Date().getTime() / 1000);
         const result = {
@@ -407,7 +409,7 @@ describe('QueueService /w DummyHelloService', () => {
 
     it('should pass buildCallbackForm()', async done => {
         const { service } = instance('dummy');
-        expect2(service.hello()).toEqual('hello-mocks-service');
+        expect2(() => service.hello()).toEqual('hello-mocks-service');
         /* eslint-disable prettier/prettier */
         const now = Math.floor(new Date().getTime() / 1000);
         const result = {
@@ -446,7 +448,7 @@ describe('QueueService /w DummyHelloService', () => {
 
     it('should pass buildCommonSlackForm()', async done => {
         const { service } = instance('dummy');
-        expect2(service.hello()).toEqual('hello-mocks-service');
+        expect2(() => service.hello()).toEqual('hello-mocks-service');
         const fx = (d: any) => service.buildCommonSlackForm(d);
         expect2(() => fx({ data: {} })).toEqual({ body: undefined, channel: '' });
         expect2(() => fx({ data: { channel: 'dddd' } })).toEqual({ body: undefined, channel: 'dddd' });
@@ -471,7 +473,7 @@ describe('communication with horse, queue, session service', () => {
     const PROFILE = loadProfile(process); // override process.env.
     it('should pass postMessage()', async done => {
         const { service } = instance('dummy');
-        expect2(service.hello()).toEqual('hello-mocks-service');
+        expect2(() => service.hello()).toEqual('hello-mocks-service');
         /* eslint-disable prettier/prettier */
         /* eslint-enable prettier/prettier */
         done();
