@@ -80,6 +80,9 @@ export interface RouteRule {
      */
     moveTo?: string;
 
+    /** override `color` of `SlackAttachment` */
+    color?: string;
+
     /**
      * forward the input message to other
      * = id of `TargetModel`

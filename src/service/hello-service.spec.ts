@@ -14,16 +14,18 @@
 import { loadProfile } from 'lemon-core/dist/environ';
 import { GETERR, expect2, loadJsonSync } from 'lemon-core';
 import { HelloService, DummyHelloService } from './hello-service';
+import { Model, ModelType, TestModel } from './hello-model';
 
 //! create service instance.
 export const instance = (type = 'dummy') => {
     const current = new Date().getTime();
     const service: DummyHelloService = type == 'dummy' ? new DummyHelloService() : new HelloService();
+    service.setCurrent(current);
     return { service, current };
 };
 
 //! main test body.
-describe('QueueService /w DummyHelloService', () => {
+describe('HelloService /w dummy', () => {
     const PROFILE = loadProfile(process); // override process.env.
     PROFILE && console.info(`! PROFILE =`, PROFILE);
 
@@ -33,7 +35,7 @@ describe('QueueService /w DummyHelloService', () => {
         footer = `lemon-hello-api/local#${$pack.version}`;
     });
 
-    it('should pass postMessage()', async done => {
+    it('should pass postMessage()', async () => {
         const { service } = instance('dummy');
         expect2(() => service.hello()).toEqual('hello-mocks-service');
         const webhook = 'https://hooks.slack.com/services/AAAAAAAAA/BBBBBBBBB/CCCCCCCCCCCCCCCC';
@@ -51,10 +53,9 @@ describe('QueueService /w DummyHelloService', () => {
         /* eslint-disable prettier/prettier */
         expect2(await service.postMessage(webhook, error_msg)).toEqual({ body: "ok", statusCode: 200, statusMessage: "OK" });
         /* eslint-enable prettier/prettier */
-        done();
     });
 
-    it('should pass running currect env', async done => {
+    it('should pass running currect env', async () => {
         const { service } = instance('dummy');
         expect2(() => service.hello()).toEqual('hello-mocks-service');
         /* eslint-disable prettier/prettier */
@@ -62,10 +63,9 @@ describe('QueueService /w DummyHelloService', () => {
         expect2(await service.loadSlackChannel('hello', 'AA')).toEqual('https://hooks.slack.com/services/AAAAAAAAA/BBBBBBBBB/CCCCCCCCCCCCCCCC');
         expect2(await service.loadSlackChannel('AA', null)).toEqual('https://hooks.slack.com/services/AAAAAAAAA/BBBBBBBBB/CCCCCCCCCCCCCCCC');
         /* eslint-enable prettier/prettier */
-        done();
     });
 
-    it('should pass getSubscriptionConfirmation()', async done => {
+    it('should pass getSubscriptionConfirmation()', async () => {
         const { service } = instance('dummy');
         expect2(() => service.hello()).toEqual('hello-mocks-service');
         /* eslint-disable prettier/prettier */
@@ -73,10 +73,9 @@ describe('QueueService /w DummyHelloService', () => {
         expect2(await service.getSubscriptionConfirmation({snsMessageType:'SubscriptionConfirmation', subscribeURL:''})).toEqual('PASS');
         expect2(await service.getSubscriptionConfirmation({snsMessageType:'SubscriptionConfirmation', subscribeURL:'http://lemoncloud.io'})).toEqual('OK');
         /* eslint-enable prettier/prettier */
-        done();
     });
 
-    it('should pass buildSlackNotification()', async done => {
+    it('should pass buildSlackNotification()', async () => {
         const { service } = instance('dummy');
         expect2(() => service.hello()).toEqual('hello-mocks-service');
         /* eslint-disable prettier/prettier */
@@ -185,11 +184,9 @@ describe('QueueService /w DummyHelloService', () => {
         result.body.attachments[0].title = '[ElastiCache:SnapshotComplete] event received.';
         result.body.attachments[0].color = '#FFB71B';
         expect2(() => fx(redisEvent, color)).toEqual(result);
-
-        done();
     });
 
-    it('should pass saveMessageToS3()', async done => {
+    it('should pass saveMessageToS3()', async () => {
         const { service } = instance('dummy');
         expect2(() => service.hello()).toEqual('hello-mocks-service');
         const error_hello = loadJsonSync('./data/error-hello.json');
@@ -208,10 +205,9 @@ describe('QueueService /w DummyHelloService', () => {
         // TODO 어떻게 스팩을 더 상세화 할 수 있을까.
         // expect2(await service.saveMessageToS3(error_hello), '!attachments.text').toEqual(result);
         /* eslint-enable prettier/prettier */
-        done();
     });
 
-    it('should pass buildAlarmForm()', async done => {
+    it('should pass buildAlarmForm()', async () => {
         const { service } = instance('dummy');
         expect2(() => service.hello()).toEqual('hello-mocks-service');
         /* eslint-disable prettier/prettier */
@@ -300,10 +296,9 @@ describe('QueueService /w DummyHelloService', () => {
         expect2(await service.buildAlarmForm({data:{AlarmName:'hello error', AlarmDescription:'error test msg', AWSAccountId:'123-123', NewStateValue:'draft', NewStateReason:'404', StateChangeTime:now, Region:'asia-2', OldStateValue:'pending', Trigger:'off'}})).toEqual(result);
 
         /* eslint-enable prettier/prettier */
-        done();
     });
 
-    it('should pass buildDeliveryFailure()', async done => {
+    it('should pass buildDeliveryFailure()', async () => {
         const { service } = instance('dummy');
         expect2(() => service.hello()).toEqual('hello-mocks-service');
         /* eslint-disable prettier/prettier */
@@ -380,10 +375,9 @@ describe('QueueService /w DummyHelloService', () => {
         ]
         expect2(await service.buildDeliveryFailure({data:{EventType:'event', FailureMessage:'failed event', EndpointArn:'arn:aaaa', FailureType:'exception', DeliveryAttempts:'done', Service:'hello', Time:now, MessageId:'123-123-123', Resource:'hello.json'}})).toEqual(result);
         /* eslint-enable prettier/prettier */
-        done();
     });
 
-    it('should pass buildErrorForm()', async done => {
+    it('should pass buildErrorForm()', async () => {
         const { service } = instance('dummy');
         expect2(() => service.hello()).toEqual('hello-mocks-service');
         /* eslint-disable prettier/prettier */
@@ -414,10 +408,9 @@ describe('QueueService /w DummyHelloService', () => {
         result.body.attachments[0].text = '{\"channel\":\"public\",\"message\":\"hello message\"}';
         expect2(await service.buildErrorForm({data:{channel:'public', message:'hello message'}})).toEqual(result);
         /* eslint-enable prettier/prettier */
-        done();
     });
 
-    it('should pass buildCallbackForm()', async done => {
+    it('should pass buildCallbackForm()', async () => {
         const { service } = instance('dummy');
         expect2(() => service.hello()).toEqual('hello-mocks-service');
         /* eslint-disable prettier/prettier */
@@ -454,10 +447,9 @@ describe('QueueService /w DummyHelloService', () => {
         result.body.attachments[0].text = '{\"channel\":\"public\",\"service\":\"hello-service\",\"cmd\":\"hello\"}';
         expect2(service.buildCallbackForm({data:{channel:'public', service:'hello-service', cmd:'hello'}})).toEqual(result);
         /* eslint-enable prettier/prettier */
-        done();
     });
 
-    it('should pass buildCommonSlackForm()', async done => {
+    it('should pass buildCommonSlackForm()', async () => {
         const { service } = instance('dummy');
         expect2(() => service.hello()).toEqual('hello-mocks-service');
         const fx = (d: any) => service.buildCommonSlackForm(d);
@@ -476,17 +468,109 @@ describe('QueueService /w DummyHelloService', () => {
         ).toEqual(result);
         /* eslint-disable prettier/prettier */
         /* eslint-enable prettier/prettier */
-        done();
+    });
+});
+
+describe('services w/ model-manager', () => {
+    //! test service w/ dummy data
+    it('should pass account-service', async () => {
+        const { service, current } = instance('dummy');
+        const _ts = (type: ModelType): Model => ({
+            ns: 'TT',
+            type,
+            createdAt: current,
+            updatedAt: current,
+            deletedAt: 0,
+        });
+
+        //! test service marking
+        expect2(service.hello()).toEqual('hello-mocks-service');
+        const FIELDS =
+            'name,test,stereo,ns,type,sid,uid,gid,lock,next,meta,createdAt,updatedAt,deletedAt,error,id'.split(',');
+        expect2(() => service.$test.hello()).toEqual(
+            `typed-storage-service:test/proxy-storage-service:dummy-storage-service:dummy-table/_id`,
+        );
+        expect2(() => service.$test.FIELDS).toEqual([...FIELDS]);
+
+        //! test MyCoreManager of handling name.
+        if (1) {
+            const $test = service.$test;
+
+            expect2(() => $test.onBeforeSave({ name: 'a' }, {})).toEqual({ name: 'a' }); // keep name
+            expect2(() => $test.onBeforeSave({ name: 'a' }, { name: 'b' })).toEqual({ name: undefined }); // clear name
+
+            expect2(() => $test.validateName(null)).toEqual(false);
+            expect2(() => $test.validateName('')).toEqual(false);
+            expect2(() => $test.validateName('a')).toEqual(true);
+            expect2(() => $test.validateName(' ')).toEqual(false);
+            expect2(() => $test.validateName(2 as any)).toEqual(true);
+            expect2(() => $test.validateName('abc')).toEqual(true);
+
+            //! check w/ lookup
+            expect2(await $test.$unique.updateLookup({ id: 'XYZ' }, 'X').catch(GETERR)).toEqual({
+                ..._ts('test'),
+                _id: 'TT:test:XYZ',
+                id: 'XYZ',
+                name: 'X',
+            });
+
+            expect2(() => $test.asIdByName('a')).toEqual('#name/a');
+            expect2(() => $test.asIdByName(null)).toEqual('#name/');
+
+            //! readByName
+            expect2(await $test.findByName(undefined).catch(GETERR)).toEqual('@name (string) is required!');
+            expect2(await $test.findByName(null).catch(GETERR)).toEqual('@name (string) is required!');
+            expect2(await $test.findByName('').catch(GETERR)).toEqual('@name (string) is required!');
+            expect2(await $test.findByName('a').catch(GETERR)).toEqual('404 NOT FOUND - test:name/a');
+            expect2(await $test.findByName('abc').catch(GETERR)).toEqual('404 NOT FOUND - test:name/abc');
+            expect2(await $test.findByName('   ').catch(GETERR)).toEqual('@name (   ) is not valid!');
+            expect2(await $test.findByName(123 as any).catch(GETERR)).toEqual('@name (string) is required!');
+            expect2(await $test.findByName({} as any).catch(GETERR)).toEqual('@name (string) is required!');
+
+            //! updateName(model) with name 'abc'
+            const model: TestModel = { id: 't01', name: 'test' };
+            expect2(await $test.storage.read(model.id).catch(GETERR)).toEqual('404 NOT FOUND - _id:TT:test:t01');
+            expect2(await $test.storage.read($test.asIdByName('abc')).catch(GETERR)).toEqual(
+                '404 NOT FOUND - _id:TT:test:#name/abc',
+            );
+            expect2(await $test.findByName('abc').catch(GETERR)).toEqual('404 NOT FOUND - test:name/abc');
+
+            /* eslint-disable prettier/prettier */
+            expect2(await $test.updateName(model, undefined).catch(GETERR)).toEqual('@name () is not valid!');
+            expect2(await $test.updateName(model, null).catch(GETERR)).toEqual('@name () is not valid!');
+            expect2(await $test.updateName(model, '').catch(GETERR)).toEqual('@name () is not valid!');
+            expect2(await $test.updateName(model, 'abc').catch(GETERR)).toEqual('@name (abc) is not same as (test)!');
+            expect2(await $test.updateName({ ...model, name:'abc' }, 'abc').catch(GETERR), '!updatedAt').toEqual({ id:'t01', name:'abc' });
+
+            expect2(await $test.storage.read(model.id).catch(GETERR),'_id,id,name').toEqual({ _id: "TT:test:t01", id:'t01', name: "abc" });
+            expect2(await $test.storage.read($test.asIdByName('abc')), '!createdAt,!updatedAt,!deletedAt').toEqual({ _id:'TT:test:#name/abc', id:'#name/abc', name:'abc', ns:'TT', meta:'t01', type:'test', stereo:'#' });
+            expect2(await $test.findByName('abc').catch(GETERR), '_id,id,name').toEqual({ _id: "TT:test:t01", id:'t01', name: "abc" });
+
+            //! updateName(model2) with same name 'abc'
+            const model2: TestModel = { id:'t02', name:'Test' };
+            expect2(await $test.storage.read(model2.id).catch(GETERR)).toEqual('404 NOT FOUND - _id:TT:test:t02');
+            expect2(await $test.updateName(model2, undefined).catch(GETERR)).toEqual('@name () is not valid!');
+            expect2(await $test.updateName(model2, null).catch(GETERR)).toEqual('@name () is not valid!');
+            expect2(await $test.updateName(model2, '').catch(GETERR)).toEqual('@name () is not valid!');
+            expect2(await $test.updateName({ ...model2, name:'abc' }, 'abc').catch(GETERR)).toEqual('400 DUPLICATED NAME - name[abc] is duplicated to test[t01]');
+            /* eslint-enable prettier/prettier */
+        }
+    });
+
+    it('should pass channel rules', async () => {
+        const { service } = instance('dummy');
+        expect2(() => service.hello()).toEqual('hello-mocks-service');
     });
 });
 
 describe('communication with horse, queue, session service', () => {
     const PROFILE = loadProfile(process); // override process.env.
-    it('should pass postMessage()', async done => {
+    PROFILE && console.info(`! PROFILE =`, PROFILE);
+
+    it('should pass postMessage()', async () => {
         const { service } = instance('dummy');
         expect2(() => service.hello()).toEqual('hello-mocks-service');
         /* eslint-disable prettier/prettier */
         /* eslint-enable prettier/prettier */
-        done();
     });
 });

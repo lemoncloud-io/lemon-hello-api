@@ -25,7 +25,7 @@ import {
     $info,
 } from 'lemon-core';
 import { CallbackSlackData, CallbackPayload } from '../common/types';
-import { $FIELD, ChannelModel, Model, ModelType, TargetModel, TestModel } from './hello-model';
+import { $FIELD, ChannelModel, Model, ModelType, RouteRule, TargetModel, TestModel } from './hello-model';
 
 //! import dependency
 import https from 'https';
@@ -98,20 +98,20 @@ export interface PayloadOfReportSlack {
  */
 export class HelloService extends CoreService<Model, ModelType> {
     protected $channels: any = {};
-    protected $kms: AWSKMSService;
-    protected $sns: AWSSNSService;
-    protected $s3s: AWSS3Service;
+    public readonly $kms: AWSKMSService;
+    public readonly $sns: AWSSNSService;
+    public readonly $s3s: AWSS3Service;
 
-    protected $test: MyTestManager;
-    protected $channel: MyChannelManager;
-    protected $target: MyTargetManager;
+    public readonly $test: MyTestManager;
+    public readonly $channel: MyChannelManager;
+    public readonly $target: MyTargetManager;
 
-    public constructor($kms?: AWSKMSService, $sns?: AWSSNSService, $s3s?: AWSS3Service) {
-        super();
+    public constructor(tableName?: string) {
+        super(tableName);
         _log(NS, `HelloService(${this.tableName}, ${this.NS})...`);
-        this.$kms = $kms || new AWSKMSService();
-        this.$sns = $sns || new AWSSNSService();
-        this.$s3s = $s3s || new AWSS3Service();
+        this.$kms = new AWSKMSService();
+        this.$sns = new AWSSNSService();
+        this.$s3s = new AWSS3Service();
 
         this.$test = new MyTestManager(this);
         this.$channel = new MyChannelManager(this);
@@ -649,6 +649,19 @@ export class MyChannelManager extends MyCoreManager<ChannelModel, HelloService> 
     public constructor(parent: HelloService) {
         super('channel', parent, $FIELD.channel);
     }
+
+    /** transform the input data into `route-rule` */
+    public asRule = (data: RouteRule): RouteRule => {
+        const rule: RouteRule = {
+            pattern: $T.S2(data?.pattern, '', ' ').trim(),
+        };
+        if (data.copyTo !== undefined) rule.copyTo = $T.S2(data?.copyTo, '', ' ').trim();
+        if (data.moveTo !== undefined) rule.moveTo = $T.S2(data?.moveTo, '', ' ').trim();
+        if (data.color !== undefined) rule.color = $T.S2(data?.color, '', ' ').trim();
+        if (data.forward !== undefined) rule.forward = $T.S2(data?.forward, '', ' ').trim();
+
+        return rule;
+    };
 }
 
 /**
@@ -667,7 +680,7 @@ export class MyTargetManager extends MyCoreManager<TargetModel, HelloService> {
  */
 export class DummyHelloService extends HelloService {
     public constructor() {
-        super();
+        super('dummy-table.yml');
         this.$channels = {
             SLACK_AA: 'https://hooks.slack.com/services/AAAAAAAAA/BBBBBBBBB/CCCCCCCCCCCCCCCC',
         };
