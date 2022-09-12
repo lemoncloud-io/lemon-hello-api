@@ -13,7 +13,8 @@
  */
 import { loadProfile } from 'lemon-core/dist/environ';
 import { GETERR, expect2, loadJsonSync } from 'lemon-core';
-import { HelloService, DummyHelloService } from './hello-service';
+import { HelloService } from './hello-service';
+import { DummyHelloService } from './hello-dummies';
 import { Model, ModelType, TestModel } from './hello-model';
 
 //! create service instance.
@@ -473,7 +474,7 @@ describe('HelloService /w dummy', () => {
 
 describe('services w/ model-manager', () => {
     //! test service w/ dummy data
-    it('should pass account-service', async () => {
+    it('should pass hello-service', async () => {
         const { service, current } = instance('dummy');
         const _ts = (type: ModelType): Model => ({
             ns: 'TT',
