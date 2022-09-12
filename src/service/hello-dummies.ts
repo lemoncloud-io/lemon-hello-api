@@ -12,17 +12,45 @@
  * @copyright (C) 2020 LemonCloud Co Ltd. - All Rights Reserved.
  */
 // eslint-disable-next-line @typescript-eslint/no-unused-vars
-import { $U, $T, _log, _inf, _err, SlackAttachment } from 'lemon-core';
+import { $U, $T, _log, _inf, _err, AWSS3Service } from 'lemon-core';
+import { Metadata } from 'aws-sdk/clients/s3';
+import { PutObjectResult, TagSet } from 'lemon-core/dist/cores/aws/aws-s3-service';
 import { HelloService, ParamToSlack, RecordData } from './hello-service';
 const NS = $U.NS('DUMS', 'blue'); // NAMESPACE TO BE PRINTED.
+
+/**
+ * type: `AWSS3Dummy`
+ * - working with dummy environment.
+ */
+class AWSS3Dummy extends AWSS3Service {
+    /**
+     * override `putObject`
+     */
+    public putObject = async (
+        content: string | Buffer,
+        key?: string,
+        metadata?: Metadata,
+        tags?: TagSet,
+    ): Promise<PutObjectResult> => {
+        const Bucket = content.toString();
+        const Key = key || 'any-key';
+        const Location = 's3://dummy';
+        return { Bucket, Key, Location, ETag: null };
+    };
+}
 
 /**
  * class: `DummyHelloService`
  * - provide dummy-service for unit-test.
  */
 export class DummyHelloService extends HelloService {
-    public constructor() {
-        super('dummy-table.yml');
+    /**
+     * parametered constructor.
+     *
+     * @param s3
+     */
+    public constructor(s3: AWSS3Service = new AWSS3Dummy()) {
+        super('dummy-table.yml', { s3 });
         this.$channels = {
             SLACK_AA: 'https://hooks.slack.com/services/AAAAAAAAA/BBBBBBBBB/CCCCCCCCCCCCCCCC',
         };
@@ -47,7 +75,7 @@ export class DummyHelloService extends HelloService {
         });
     };
 
-    //! store channel map in cache
+    //TODO - improve test spec by using dummy `kms`.
     public loadSlackChannel = async (name: string, defName?: string): Promise<string> => {
         const ENV_NAME = `SLACK_${name}`.toUpperCase();
         const ENV_DEFAULT = defName ? `SLACK_${defName}`.toUpperCase() : '';
@@ -79,82 +107,6 @@ export class DummyHelloService extends HelloService {
             return 'OK';
         }
         return 'PASS';
-    };
-
-    //! chain to save message data to S3.
-    public saveMessageToS3 = async (message: any) => {
-        const val = $U.env('SLACK_PUT_S3', '1') as string;
-        const SLACK_PUT_S3 = $U.N(val, 0);
-        _log(NS, `saveMessageToS3(${SLACK_PUT_S3})...`);
-        const attachments: SlackAttachment[] = message.attachments;
-
-        //! if put to s3, then filter attachments
-        if (SLACK_PUT_S3 && attachments && attachments.length) {
-            const attachment = attachments[0] || {};
-            const pretext = attachment.pretext || '';
-            const title = attachment.title || '';
-            const color = attachment.color || 'green';
-            const thumb_url = attachment.thumb_url ? attachment.thumb_url : undefined;
-            _log(NS, `> title[${pretext}] =`, title);
-            const data = Object.assign({}, message); // copy.
-            data.attachments = data.attachments.map((_: any) => {
-                //! convert internal data.
-                _ = Object.assign({}, _); // copy.
-                const text = `${_.text || ''}`;
-                try {
-                    if (text.startsWith('{') && text.endsWith('}')) _.text = JSON.parse(_.text);
-                    if (_.text && _.text['stack-trace'] && typeof _.text['stack-trace'] == 'string')
-                        _.text['stack-trace'] = _.text['stack-trace'].split('\n');
-                } catch (e) {
-                    _err(NS, '> WARN! ignored =', e);
-                }
-                return _;
-            });
-            const TAGS = [':slack:', ':cubimal_chick:', ':rotating_light:'];
-            const MOONS =
-                ':new_moon:,:waxing_crescent_moon:,:first_quarter_moon:,:moon:,:full_moon:,:waning_gibbous_moon:,:last_quarter_moon:,:waning_crescent_moon:'.split(
-                    ',',
-                );
-            const CLOCKS =
-                ':clock12:,:clock1230:,:clock1:,:clock130:,:clock2:,:clock230:,:clock3:,:clock330:,:clock4:,:clock430:,:clock5:,:clock530:,:clock6:,:clock630:,:clock7:,:clock730:,:clock8:,:clock830:,:clock9:,:clock930:,:clock10:,:clock1030:,:clock11:,:clock1130:'.split(
-                    ',',
-                );
-            const now = new Date();
-            const hour = now.getHours();
-            const tag = 0 ? TAGS[2] : MOONS[Math.floor((MOONS.length * hour) / 24)];
-            return Promise.resolve(data)
-                .then(res => {
-                    const { Bucket, Key, Location } = res;
-                    _inf(NS, `> uploaded[${Bucket}]@2 =`, $U.json(res));
-                    const link = Location;
-                    const _pretext = title == 'error-report' ? title : pretext;
-                    const text = title == 'error-report' ? pretext : title;
-                    const tag0 = `${text}`.startsWith('#error') ? ':rotating_light:' : '';
-                    message = {
-                        attachments: [
-                            {
-                                pretext: _pretext,
-                                text: `<${link}|${tag0 || tag || '*'}> ${text}`,
-                                color,
-                                mrkdwn: true,
-                                mrkdwn_in: ['pretext', 'text'],
-                                thumb_url,
-                            },
-                        ],
-                    };
-                    return message;
-                })
-                .catch(e => {
-                    _err(NS, 'WARN! internal.err =', e);
-                    message.attachments.push({
-                        pretext: '**WARN** internal error in `lemon-hello-api`',
-                        color: 'red',
-                        title: `${e.message || e.reason || e.error || e}: ${e.stack || ''}`,
-                    });
-                    return message;
-                });
-        }
-        return message;
     };
 
     public buildDeliveryFailure = async ({ subject, data, context }: RecordData): Promise<ParamToSlack> => {

@@ -18,8 +18,8 @@ import { DummyHelloService } from './hello-dummies';
 import { Model, ModelType, TestModel } from './hello-model';
 
 //! create service instance.
-export const instance = (type = 'dummy') => {
-    const current = new Date().getTime();
+export const instance = (type = 'dummy', current?: number) => {
+    current = current ?? new Date().getTime();
     const service: DummyHelloService = type == 'dummy' ? new DummyHelloService() : new HelloService();
     service.setCurrent(current);
     return { service, current };
@@ -188,9 +188,24 @@ describe('HelloService /w dummy', () => {
     });
 
     it('should pass saveMessageToS3()', async () => {
-        const { service } = instance('dummy');
+        const { service } = instance('dummy', 1662964983745);
         expect2(() => service.hello()).toEqual('hello-mocks-service');
+
+        // verify `s3.putObject`
+        expect2(await service.$s3s.putObject('X').catch(GETERR)).toEqual({
+            Bucket: 'X',
+            Key: 'any-key',
+            Location: 's3://dummy',
+            ETag: null,
+        });
+
+        // verify the input data.
         const error_hello = loadJsonSync('./data/error-hello.json');
+        expect2(() => error_hello?.attachments, 'pretext,title').toEqual([
+            { pretext: 'hello lemon', title: 'error-report' },
+        ]);
+
+        // verify the expected data.
         const result = {
             attachments: [
                 {
@@ -198,14 +213,12 @@ describe('HelloService /w dummy', () => {
                     mrkdwn: true,
                     mrkdwn_in: ['pretext', 'text'],
                     pretext: 'error-report',
+                    text: '<s3://dummy|:waning_gibbous_moon:> hello lemon',
                     thumb_url: undefined as any,
                 },
             ],
         };
-        /* eslint-disable prettier/prettier */
-        // TODO 어떻게 스팩을 더 상세화 할 수 있을까.
-        // expect2(await service.saveMessageToS3(error_hello), '!attachments.text').toEqual(result);
-        /* eslint-enable prettier/prettier */
+        expect2(await service.saveMessageToS3(error_hello).catch(GETERR)).toEqual(result);
     });
 
     it('should pass buildAlarmForm()', async () => {

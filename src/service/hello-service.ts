@@ -106,12 +106,18 @@ export class HelloService extends CoreService<Model, ModelType> {
     public readonly $channel: MyChannelManager;
     public readonly $target: MyTargetManager;
 
-    public constructor(tableName?: string) {
+    /**
+     * default constructor w/ optional parameters.
+     *
+     * @param tableName target table-name, or dummy `.yml` file.
+     * @param params optional parameters.
+     */
+    public constructor(tableName?: string, params?: { kms?: AWSKMSService; sns?: AWSSNSService; s3?: AWSS3Service }) {
         super(tableName);
         _log(NS, `HelloService(${this.tableName}, ${this.NS})...`);
-        this.$kms = new AWSKMSService();
-        this.$sns = new AWSSNSService();
-        this.$s3s = new AWSS3Service();
+        this.$kms = params?.kms ?? new AWSKMSService();
+        this.$sns = params?.sns ?? new AWSSNSService();
+        this.$s3s = params?.s3 ?? new AWSS3Service();
 
         this.$test = new MyTestManager(this);
         this.$channel = new MyChannelManager(this);
@@ -247,7 +253,7 @@ export class HelloService extends CoreService<Model, ModelType> {
             //! choose the icon.
             // eslint-disable-next-line prettier/prettier
             const MOONS = ':new_moon:,:waxing_crescent_moon:,:first_quarter_moon:,:moon:,:full_moon:,:waning_gibbous_moon:,:last_quarter_moon:,:waning_crescent_moon:'.split(',');
-            const now = new Date();
+            const now = this.current ? new Date(this.current) : new Date();
             let hour = now.getHours() + now.getMinutes() / 60.0 + 1.0;
             hour = hour >= 24 ? hour - 24 : hour;
             const tag = MOONS[Math.floor((MOONS.length * hour) / 24)];
