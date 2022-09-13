@@ -646,6 +646,7 @@ describe('model-manager in service', () => {
                 endpoint: '',
             });
             expect2(() => $dev, 'id,name').toEqual({ id: 'develop' });
+            expect2(() => route.lastResponse).toEqual(null);
 
             const body1: SlackPostBody = {
                 attachments: [
@@ -664,6 +665,7 @@ describe('model-manager in service', () => {
                 ],
             };
             expect2(await route.route(body2)).toEqual(2); // copied to `develop`
+            expect2(() => route.lastResponse).toEqual({ statusCode: 200, body: 'ok', statusMessage: 'OK' });
         }
     });
 });

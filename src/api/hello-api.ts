@@ -6,10 +6,12 @@
  * @author      Steve Jung <steve@lemoncloud.io>
  * @date        2020-06-10 refactor with api
  * @date        2020-06-23 optimized with lemon-core#2.2.1
+ * @date        2022-09-13 support route by channel's rules.
  *
  * @copyright (C) 2020 LemonCloud Co Ltd. - All Rights Reserved.
  */
-import { $U, _log, _inf, _err, GETERR$ } from 'lemon-core';
+// eslint-disable-next-line @typescript-eslint/no-unused-vars
+import { $U, $T, _log, _inf, _err } from 'lemon-core';
 import $engine, {
     loadJsonSync,
     AWSKMSService,
@@ -190,14 +192,15 @@ export class HelloAPIController extends GeneralWEBController {
         _log(NS, '> message :=', $U.json(message));
 
         //NOTE! filter message only if sending to slack-hook.
-        const noop = (_: any) => _;
-        const filter = !direct && webhook.startsWith('https://hooks.slack.com') ? this.service.saveMessageToS3 : noop;
-        const res = await this.service.postMessage(webhook, filter(message)).catch(e => {
-            _err(NS, `! slack[${channel}].err =`, e instanceof Error ? e : $U.json(e));
-            return GETERR$(e);
-        });
-        _log(NS, `> res =`, res);
+        const _filter = async (msg: any) =>
+            !direct && webhook.startsWith('https://hooks.slack.com') ? this.service.saveMessageToS3(msg) : msg;
+        const body = await _filter(message);
+        const route = this.service.$routes($ctx);
+        const sent = await route.route(body, channel, [], { id: channel, endpoint: webhook });
+        _log(NS, `> sent =`, sent);
+
         //! returns.
+        const res = route.lastResponse;
         return res;
     };
 

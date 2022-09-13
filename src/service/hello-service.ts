@@ -8,6 +8,7 @@
  * @date        2020-06-23 optimized with lemon-core#2.2.1
  * @author      Steve Jung <steve@lemoncloud.io>
  * @date        2022-09-08 supports database w/ manager
+ * @date        2022-09-13 support route by channel's rules.
  *
  * @copyright (C) 2020 LemonCloud Co Ltd. - All Rights Reserved.
  */
@@ -93,6 +94,12 @@ export interface PayloadOfReportSlack {
     };
 }
 
+export interface PostResponse {
+    body: string;
+    statusCode: number;
+    statusMessage: string;
+}
+
 /**
  * class: `HelloService`
  * - catch `report-error` via SNS, then save into S3 and post to slack.
@@ -137,10 +144,7 @@ export class HelloService extends CoreService<Model, ModelType> {
      * @param {*} hookUrl       URL
      * @param {*} message       Object or String.
      */
-    public postMessage = async (
-        hookUrl: string,
-        message: any,
-    ): Promise<{ body: string; statusCode: number; statusMessage: string }> => {
+    public postMessage = async (hookUrl: string, message: any): Promise<PostResponse> => {
         _log(NS, `> postMessage = hookUrl[${hookUrl}]`);
         message = typeof message == 'object' && message instanceof Promise ? await message : message;
         _log(NS, `> message = `, $U.json(message));
@@ -621,6 +625,8 @@ export class HelloService extends CoreService<Model, ModelType> {
             public constructor(protected service: HelloService) {}
             /** say hello */
             public hello = () => `route-handler/${this.service.hello()}`;
+            /** last response of send() */
+            public lastResponse: PostResponse = null;
 
             /** route the slack body to target */
             public route = async (
@@ -718,6 +724,7 @@ export class HelloService extends CoreService<Model, ModelType> {
                             return null;
                         });
                         _log(NS, `>> sent:${channel} =`, $U.json(sent));
+                        this.lastResponse = sent;
                         return sent?.statusCode == 200 ? 1 : 0;
                     }
                 }

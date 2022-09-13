@@ -15,7 +15,7 @@
 import { $U, $T, _log, _inf, _err, AWSS3Service } from 'lemon-core';
 import { Metadata } from 'aws-sdk/clients/s3';
 import { PutObjectResult, TagSet } from 'lemon-core/dist/cores/aws/aws-s3-service';
-import { HelloService, ParamToSlack, RecordData } from './hello-service';
+import { HelloService, ParamToSlack, PostResponse, RecordData } from './hello-service';
 const NS = $U.NS('DUMS', 'blue'); // NAMESPACE TO BE PRINTED.
 
 /**
@@ -65,7 +65,7 @@ export class DummyHelloService extends HelloService {
      *      "statusMessage": "OK"
      *  }
      */
-    public postMessage = async (hookUrl: string, message: any) => {
+    public postMessage = async (hookUrl: string, message: any): Promise<PostResponse> => {
         const body = 'ok';
         const statusCode = !hookUrl || hookUrl.startsWith('https://') ? 200 : 400;
         const statusMessage = 'OK';
