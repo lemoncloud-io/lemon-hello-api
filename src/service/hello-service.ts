@@ -638,6 +638,7 @@ export class HelloService extends CoreService<Model, ModelType> {
                 channel = channel || body?.channel || 'public';
                 paths = paths || [];
                 parent = parent ? parent : await _channel(channel);
+                _log(NS, `>> route(${channel})`);
 
                 //! check of end-of-routing
                 if (paths?.includes(channel)) {
@@ -650,8 +651,10 @@ export class HelloService extends CoreService<Model, ModelType> {
                 const rules = $ch?.rules || [];
                 for (const i in rules) {
                     const rule = rules[i];
+                    _log(NS, `>> rule[${channel}:${i}] =`, $U.json(rule));
                     const matched = this.match(body, rule);
                     if (matched) {
+                        _log(NS, `>> match[${channel}:${i}] =`, $U.json(matched));
                         //- duplicate also to other channel
                         if (rule.copyTo && !paths.includes(rule.copyTo)) {
                             paths.push(rule.copyTo);
@@ -691,7 +694,12 @@ export class HelloService extends CoreService<Model, ModelType> {
                     return text.split(' ').includes(pattern);
                 };
                 const matched = body.attachments?.reduce<SlackAttachment[]>((L, N) => {
-                    if ((N?.title && _test(N.title)) || (N?.pretext && _test(N.pretext))) {
+                    if (
+                        (N?.text && _test(N.text)) ||
+                        (N?.title && _test(N.title)) ||
+                        (N?.pretext && _test(N.pretext)) ||
+                        false
+                    ) {
                         if (rule.color) {
                             L.push({ ...N, color: rule.color });
                         } else {
@@ -711,6 +719,7 @@ export class HelloService extends CoreService<Model, ModelType> {
 
             /** process per each channel */
             public send = async (body: SlackPostBody, channel: string, parent: ChannelModel): Promise<number> => {
+                _inf(NS, `>> route.send(${body?.channel || ''}, ${channel || ''})`);
                 if (body && channel) {
                     const target = await _channel(channel);
                     const endpoint = target?.endpoint || parent?.endpoint;

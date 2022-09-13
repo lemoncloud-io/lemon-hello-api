@@ -42,6 +42,7 @@ export class HelloAPIController extends GeneralWEBController {
      */
     public constructor(service?: HelloService, $kms?: AWSKMSService, $sns?: AWSSNSService, $s3s?: AWSS3Service) {
         super('hello');
+        _log(NS, `HelloAPIController()...`);
 
         //! shared memory.
         //WARN! - `serverless offline`는 상태를 유지하지 않으므로, NODES값들이 실행때마다 리셋이될 수 있음.
@@ -195,6 +196,7 @@ export class HelloAPIController extends GeneralWEBController {
         const _filter = async (msg: any) =>
             !direct && webhook.startsWith('https://hooks.slack.com') ? this.service.saveMessageToS3(msg) : msg;
         const body = await _filter(message);
+        _log(NS, `> body =`, $U.json(body));
         const route = this.service.$routes($ctx);
         const sent = await route.route(body, channel, [], { id: channel, endpoint: webhook });
         _log(NS, `> sent =`, sent);
