@@ -12,7 +12,7 @@
  * @copyright (C) 2020 LemonCloud Co Ltd. - All Rights Reserved.
  */
 import { loadProfile } from 'lemon-core/dist/environ';
-import { GETERR, expect2, loadJsonSync } from 'lemon-core';
+import { GETERR, expect2, loadJsonSync, NextContext, SlackPostBody } from 'lemon-core';
 import { HelloService } from './hello-service';
 import { DummyHelloService } from './hello-dummies';
 import { Model, ModelType, TestModel } from './hello-model';
@@ -576,6 +576,94 @@ describe('model-manager in service', () => {
         const { service } = instance('dummy');
         expect2(() => service.hello()).toEqual('hello-mocks-service');
 
-        //
+        // test PostMessage().
+        expect2(await service.postMessage(null, ''), 'statusCode').toEqual({ statusCode: 200 });
+        expect2(await service.postMessage('http://lem.on', ''), 'statusCode').toEqual({ statusCode: 400 });
+        expect2(await service.postMessage('https://lem.on', ''), 'statusCode').toEqual({ statusCode: 200 });
+        expect2(await service.postMessage(null, 'error').catch(GETERR), 'statusCode').toEqual('error');
+        expect2(await service.postMessage(null, 'error - xx').catch(GETERR), 'statusCode').toEqual('error - xx');
+        expect2(await service.postMessage(null, { error: 'xx' }).catch(GETERR), 'statusCode').toEqual('.error is xx');
+
+        // test route-handler.
+        const context: NextContext = {};
+        const route = service.$routes(context);
+        expect2(() => route.hello()).toEqual('route-handler/hello-mocks-service');
+
+        // test `.send()`
+        if (1) {
+            const endpoint = 'https://ab.cd';
+            expect2(await route.send({} as any, 'hello', null)).toEqual(0);
+            expect2(await route.send({} as any, 'hello', { endpoint })).toEqual(1);
+            expect2(await route.send({ error: 'x' } as any, 'hello', { endpoint })).toEqual(0);
+        }
+
+        // test `.match()`
+        if (1) {
+            const body: SlackPostBody = {
+                text: 'hello world',
+                channel: 'hello',
+                attachments: [
+                    {
+                        pretext: 'hi pretext',
+                        title: '#no pre',
+                    },
+                ],
+            };
+            expect2(() => route.match(body, { pattern: null })).toEqual();
+            expect2(() => route.match(body, { pattern: '#no' })).toEqual({ ...body });
+            expect2(() => route.match(body, { pattern: '#no', color: 'red' })?.attachments[0]).toEqual({
+                ...body.attachments[0],
+                color: 'red',
+            });
+
+            expect2(() => route.match(body, { pattern: 'pretext' })).toEqual({ ...body });
+            expect2(() => route.match(body, { pattern: 'pretext ' })).toEqual();
+            expect2(() => route.match(body, { pattern: ' pretext' })).toEqual();
+            expect2(() => route.match(body, { pattern: '/pre/' })).toEqual({ ...body });
+            expect2(() => route.match(body, { pattern: '/^hi.*/' })).toEqual({ ...body });
+            expect2(() => route.match(body, { pattern: '/^Hi.*/' })).toEqual();
+        }
+
+        // test `.route()`
+        if (1) {
+            const $pub = await service.$channel.save('public', {
+                rules: [
+                    {
+                        pattern: 'hello',
+                        moveTo: 'public',
+                    },
+                    {
+                        pattern: '#error',
+                        copyTo: 'develop',
+                    },
+                ],
+                endpoint: 'https://public.io',
+            });
+            expect2(() => $pub, 'id,name').toEqual({ id: 'public' });
+
+            const $dev = await service.$channel.save('develop', {
+                rules: [],
+                endpoint: '',
+            });
+            expect2(() => $dev, 'id,name').toEqual({ id: 'develop' });
+
+            const body1: SlackPostBody = {
+                attachments: [
+                    {
+                        title: 'hello world',
+                    },
+                ],
+            };
+            expect2(await route.route(body1)).toEqual(1); // moved to `public`
+
+            const body2: SlackPostBody = {
+                attachments: [
+                    {
+                        title: '#error world',
+                    },
+                ],
+            };
+            expect2(await route.route(body2)).toEqual(2); // copied to `develop`
+        }
     });
 });

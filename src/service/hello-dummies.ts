@@ -67,8 +67,11 @@ export class DummyHelloService extends HelloService {
      */
     public postMessage = async (hookUrl: string, message: any) => {
         const body = 'ok';
-        const statusCode = 200;
+        const statusCode = !hookUrl || hookUrl.startsWith('https://') ? 200 : 400;
         const statusMessage = 'OK';
+        if (message === 'error') throw new Error(message);
+        if (typeof message === 'string' && message.startsWith('error ')) throw new Error(message);
+        if (typeof message?.error === 'string') throw new Error(`.error is ${message?.error}`);
         return { body, statusCode, statusMessage };
     };
 

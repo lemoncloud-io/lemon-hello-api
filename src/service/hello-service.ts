@@ -22,6 +22,7 @@ import {
     SlackPostBody,
     CoreManager,
     CoreService,
+    NextContext,
     $info,
 } from 'lemon-core';
 import { CallbackSlackData, CallbackPayload } from '../common/types';
@@ -144,8 +145,9 @@ export class HelloService extends CoreService<Model, ModelType> {
         message = typeof message == 'object' && message instanceof Promise ? await message : message;
         _log(NS, `> message = `, $U.json(message));
 
-        const body = (typeof message == 'string' ? message : JSON.stringify(message)) || '';
+        //TODO - improve `url.parse()` due to deprecated.
         const options: any = url.parse(hookUrl);
+        const body = (typeof message == 'string' ? message : JSON.stringify(message)) || '';
         options.method = 'POST';
         options.headers = {
             'Content-Type': 'application/json; charset=utf-8',
@@ -570,10 +572,10 @@ export class HelloService extends CoreService<Model, ModelType> {
 
             //! build attachment.
             const ts = Math.floor(new Date().getTime() / 1000);
-            const fields2 = fields.map((F, i) =>
-                typeof F === 'string'
-                    ? { title: `${F || ''}`.split('/')[0] || `${i + 1}`, value: F }
-                    : { ...(F as any) },
+            const fields2 = fields.map((field, i) =>
+                typeof field === 'string'
+                    ? { title: `${field || ''}`.split('/')[0] || `${i + 1}`, value: field }
+                    : { ...(field as any) },
             );
             const footer = `${service}/${stage}#${version}`;
             const attachment = { username, color, pretext, title, text, ts, fields: fields2, footer };
@@ -596,6 +598,132 @@ export class HelloService extends CoreService<Model, ModelType> {
             color || '',
             username || '',
         );
+    };
+
+    /**
+     * route handler for slack-body per each request-context.
+     *
+     * @param context the current request-context.
+     */
+    public $routes = (context: NextContext) => {
+        _log(NS, `! route.context =`, $U.json(context));
+
+        //! local cache of channel-model
+        const channels: { [key: string]: ChannelModel } = {};
+        const _channel = async (name: string): Promise<ChannelModel> => {
+            if (channels[name] !== undefined) return channels[name];
+            const model = await this.$channel.find(name);
+            channels[name] = model;
+            return model;
+        };
+        //! main handler...
+        return new (class {
+            public constructor(protected service: HelloService) {}
+            /** say hello */
+            public hello = () => `route-handler/${this.service.hello()}`;
+
+            /** route the slack body to target */
+            public route = async (
+                body: SlackPostBody,
+                channel?: string,
+                paths?: string[],
+                parent?: ChannelModel,
+            ): Promise<number> => {
+                channel = channel || body?.channel || 'public';
+                paths = paths || [];
+                parent = parent ? parent : await _channel(channel);
+
+                //! check of end-of-routing
+                if (paths?.includes(channel)) {
+                    return this.send(body, channel, parent);
+                }
+
+                //! apply rules.
+                let sent = 0;
+                const $ch = await _channel(channel);
+                const rules = $ch?.rules || [];
+                for (const i in rules) {
+                    const rule = rules[i];
+                    const matched = this.match(body, rule);
+                    if (matched) {
+                        //- duplicate also to other channel
+                        if (rule.copyTo && !paths.includes(rule.copyTo)) {
+                            paths.push(rule.copyTo);
+                            sent += await this.route(matched, rule.copyTo, [...paths], parent);
+                        }
+                        //- forward to specific channel
+                        if (rule.moveTo && !paths.includes(rule.moveTo)) {
+                            paths.push(rule.moveTo);
+                            sent += await this.route(matched, rule.moveTo, [...paths], parent);
+                            // break here.
+                            return sent;
+                        }
+                    }
+                }
+
+                //! send via this channel.
+                if (channel && !paths.includes(channel)) {
+                    paths.push(channel);
+                    sent += await this.route(body, channel, [...paths], parent);
+                }
+
+                //! returns.
+                return sent;
+            };
+
+            /** test if pattern is matched */
+            public match = (body: SlackPostBody, rule: RouteRule): SlackPostBody => {
+                const pattern = `${rule?.pattern || ''}`;
+                const _test = (text: string): boolean => {
+                    if (!pattern) return false;
+                    if (pattern.startsWith('#')) return text.includes(pattern);
+                    if (pattern.startsWith('/') && pattern.endsWith('/')) {
+                        const re = new RegExp(pattern.substring(1, pattern.length - 2), 'g');
+                        return re.test(text);
+                    }
+                    //! default is word matching
+                    return text.split(' ').includes(pattern);
+                };
+                const matched = body.attachments?.reduce<SlackAttachment[]>((L, N) => {
+                    if ((N?.title && _test(N.title)) || (N?.pretext && _test(N.pretext))) {
+                        if (rule.color) {
+                            L.push({ ...N, color: rule.color });
+                        } else {
+                            L.push(N);
+                        }
+                    }
+                    return L;
+                }, []);
+                if (matched.length > 0) {
+                    return {
+                        ...body,
+                        attachments: matched,
+                    };
+                }
+                return;
+            };
+
+            /** process per each channel */
+            public send = async (body: SlackPostBody, channel: string, parent: ChannelModel): Promise<number> => {
+                if (body && channel) {
+                    const target = await _channel(channel);
+                    const endpoint = target?.endpoint || parent?.endpoint;
+                    const message: SlackPostBody = {
+                        ...body,
+                        channel,
+                    };
+                    if (endpoint) {
+                        const sent = await this.service.postMessage(endpoint, message).catch(e => {
+                            _err(NS, `! err.send:${channel} =`, e);
+                            return null;
+                        });
+                        _log(NS, `>> sent:${channel} =`, $U.json(sent));
+                        return sent?.statusCode == 200 ? 1 : 0;
+                    }
+                }
+                return 0;
+            };
+        })(this);
     };
 }
 

@@ -75,7 +75,7 @@ export interface RouteRule {
 
     /**
      * move channel to other one.
-     * - change the `.channel` in attachments.
+     * - change the `.channel` in `SlackPostBody`
      * ex) A -> B
      */
     moveTo?: string;
