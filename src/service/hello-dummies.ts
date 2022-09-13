@@ -66,13 +66,10 @@ export class DummyHelloService extends HelloService {
      *  }
      */
     public postMessage = async (hookUrl: string, message: any) => {
-        return new Promise(resolve => {
-            const body = 'ok';
-            const statusCode = 200;
-            const statusMessage = 'OK';
-            const result = { body, statusCode, statusMessage };
-            resolve(result);
-        });
+        const body = 'ok';
+        const statusCode = 200;
+        const statusMessage = 'OK';
+        return { body, statusCode, statusMessage };
     };
 
     //TODO - improve test spec by using dummy `kms`.

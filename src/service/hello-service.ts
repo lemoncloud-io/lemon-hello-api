@@ -135,7 +135,10 @@ export class HelloService extends CoreService<Model, ModelType> {
      * @param {*} hookUrl       URL
      * @param {*} message       Object or String.
      */
-    public postMessage = async (hookUrl: string, message: any) => {
+    public postMessage = async (
+        hookUrl: string,
+        message: any,
+    ): Promise<{ body: string; statusCode: number; statusMessage: string }> => {
         _log(NS, `> postMessage = hookUrl[${hookUrl}]`);
         message = typeof message == 'object' && message instanceof Promise ? await message : message;
         _log(NS, `> message = `, $U.json(message));
