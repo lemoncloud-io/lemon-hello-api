@@ -72,29 +72,6 @@ export class DummyHelloService extends HelloService {
         return { body, statusCode, statusMessage };
     };
 
-    //TODO - improve test spec by using dummy `kms`.
-    public loadSlackChannel = async (name: string, defName?: string): Promise<string> => {
-        const ENV_NAME = `SLACK_${name}`.toUpperCase();
-        const ENV_DEFAULT = defName ? `SLACK_${defName}`.toUpperCase() : '';
-        const $env = process.env || {};
-        const webhook_name = `${this.$channels[ENV_NAME] || $env[ENV_NAME] || ''}`.trim();
-        const webhook_default = `${this.$channels[ENV_DEFAULT] || $env[ENV_DEFAULT] || ''}`.trim();
-        const webhook = webhook_name || webhook_default;
-        _inf(NS, `> webhook[${name}] :=`, webhook);
-        if (!webhook) return Promise.reject(new Error(`env[${ENV_NAME}] is required!`));
-        return Promise.resolve(webhook)
-            .then(() => {
-                // dummy url
-                return 'https://hooks.slack.com/services/AAAAAAAAA/BBBBBBBBB/CCCCCCCCCCCCCCCC';
-            })
-            .then(_ => {
-                if (!(_ && _.startsWith('http'))) {
-                    throw new Error(`404 NOT FOUND - Channel:${name}`);
-                }
-                return _;
-            });
-    };
-
     public getSubscriptionConfirmation = async (param: { snsMessageType: string; subscribeURL: string }) => {
         _log(NS, `getSubscriptionConfirmation()...`);
         // Send HTTP GET to subscribe URL in request for subscription confirmation

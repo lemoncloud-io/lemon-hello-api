@@ -98,6 +98,7 @@ export interface PayloadOfReportSlack {
  */
 export class HelloService extends CoreService<Model, ModelType> {
     protected $channels: any = {};
+
     public readonly $kms: AWSKMSService;
     public readonly $sns: AWSSNSService;
     public readonly $s3s: AWSS3Service;
@@ -174,17 +175,31 @@ export class HelloService extends CoreService<Model, ModelType> {
         });
     };
 
-    //! store channel map in cache
-    public loadSlackChannel = async (name: string, defName?: string): Promise<string> => {
-        const ENV_NAME = `SLACK_${name || 'public'}`.toUpperCase();
-        const ENV_DEFAULT = defName ? `SLACK_${defName || 'default'}`.toUpperCase() : '';
-        const $env = process.env || {};
-        // NOTE channel cache를 이렇게 사용해도 되나?
-        const webhook_name = `${this.$channels[ENV_NAME] || $env[ENV_NAME] || ''}`.trim();
-        const webhook_default = `${this.$channels[ENV_DEFAULT] || $env[ENV_DEFAULT] || ''}`.trim();
-        const webhook = webhook_name || webhook_default;
+    /**
+     * store channel map in cache
+     *
+     * @param name channel name (= 'public')
+     * @param defName (optional) default name if not found
+     * @param prefix (optional) prefix name of target environment key.
+     * @returns URL address to post
+     */
+    public loadSlackChannel = async (name: string, defName?: string, prefix = 'SLACK'): Promise<string> => {
+        name = name || 'public';
+        defName = defName || '';
+
+        const DELIM = prefix ? '_' : '';
+        const ENV_NAME = `${prefix}${DELIM}${name}`.toUpperCase();
+        const DEF_NAME = defName ? `${prefix}${DELIM}${defName}`.toUpperCase() : '';
+        const _find = (name: string): string => (name ? `${this.$channels[name] || process.env?.[name] || ''}` : '');
+
+        // const webhook_name = this.$channels[ENV_NAME] || $env[ENV_NAME] || '';
+        // const webhook_default = this.$channels[DEF_NAME] || $env[DEF_NAME] || '';
+        // const webhook = webhook_name || webhook_default;
+        const webhook = (_find(ENV_NAME) || _find(DEF_NAME) || '').trim();
         _inf(NS, `> webhook[${name}] :=`, webhook);
-        if (!webhook) return Promise.reject(new Error(`env[${ENV_NAME}] is required!`));
+        if (!webhook) throw new Error(`@env[${ENV_NAME}] is not found!`);
+
+        //! decrypt if required.
         return Promise.resolve(webhook)
             .then(_ => {
                 if (!_.startsWith('http')) {
@@ -198,16 +213,19 @@ export class HelloService extends CoreService<Model, ModelType> {
             })
             .then(_ => {
                 if (!(_ && _.startsWith('http'))) {
-                    throw new Error(`404 NOT FOUND - Channel:${name}`);
+                    throw new Error(`404 NOT FOUND - Channel:${name}, Hook:${webhook?.substring(0, 100)}`);
                 }
                 return _;
             });
     };
 
+    /**
+     * process the request of subscription-confirmation
+     */
     public getSubscriptionConfirmation = async (param: { snsMessageType: string; subscribeURL: string }) => {
         _log(NS, `getSubscriptionConfirmation()...`);
         // Send HTTP GET to subscribe URL in request for subscription confirmation
-        if (param.snsMessageType == 'SubscriptionConfirmation' && param.subscribeURL) {
+        if (param?.snsMessageType === 'SubscriptionConfirmation' && param.subscribeURL) {
             const uri = new URL(param.subscribeURL);
             const path = `${uri.pathname || ''}`;
             const search = `${uri.search || ''}`;
@@ -219,24 +237,32 @@ export class HelloService extends CoreService<Model, ModelType> {
         return 'PASS';
     };
 
+    /**
+     * convert object to json string.
+     */
     public asText = (data: any) => {
         const keys = (data && Object.keys(data)) || [];
         return keys.length > 0 ? JSON.stringify(data) : '';
     };
 
-    //! chain to save message data to S3.
-    public saveMessageToS3 = async (message: any) => {
+    /**
+     * save message data into S3.
+     */
+    public saveMessageToS3 = async (message: SlackPostBody | any) => {
         _log(NS, `saveMessageToS3()...`);
-        const val = $U.env('SLACK_PUT_S3', '1') as string;
-        const SLACK_PUT_S3 = $U.N(val, 0);
-        const attachments: SlackAttachment[] = (message && message.attachments) || [];
+        const SLACK_PUT_S3 = $U.env('SLACK_PUT_S3', '1') as string;
+        const isUseS3 = !!$U.N(SLACK_PUT_S3, 0);
+        const attachments: SlackAttachment[] = message?.attachments || [];
+
+        const isSlackPostBody = (message: any): message is SlackPostBody =>
+            Array.isArray(attachments) && attachments.length > 0;
 
         //! if put to s3, then filter attachments
-        if (SLACK_PUT_S3 && attachments && attachments.length > 0) {
-            const attachment = attachments[0] || {};
-            const pretext = attachment.pretext || '';
-            const title = attachment.title || '';
-            const color = attachment.color || 'green';
+        if (isUseS3 && isSlackPostBody(message)) {
+            const attachment = attachments[0];
+            const pretext = $T.S(attachment.pretext, '');
+            const title = $T.S(attachment.title, '');
+            const color = $T.S(attachment.color, 'green');
             const thumb_url = attachment.thumb_url ? attachment.thumb_url : undefined;
             _log(NS, `> title[${pretext}] =`, title);
             const saves = { ...message };
@@ -253,6 +279,7 @@ export class HelloService extends CoreService<Model, ModelType> {
                 }
                 return N;
             });
+
             //! choose the icon.
             // eslint-disable-next-line prettier/prettier
             const MOONS = ':new_moon:,:waxing_crescent_moon:,:first_quarter_moon:,:moon:,:full_moon:,:waning_gibbous_moon:,:last_quarter_moon:,:waning_crescent_moon:'.split(',');
@@ -261,12 +288,13 @@ export class HelloService extends CoreService<Model, ModelType> {
             hour = hour >= 24 ? hour - 24 : hour;
             const tag = MOONS[Math.floor((MOONS.length * hour) / 24)];
             const json = $U.json(saves);
+
             // _log(NS, `> json =`, json);
             return this.$s3s
                 .putObject(json)
                 .then(res => {
                     const { Bucket, Key, Location } = res;
-                    _inf(NS, `> uploaded[${Bucket}] =`, $U.json(res));
+                    _inf(NS, `> uploaded[${Bucket}/${Key}] =`, $U.json(res));
                     const link = Location;
                     const _pretext = title == 'error-report' ? title : pretext;
                     const text = title == 'error-report' ? pretext : title;
@@ -343,6 +371,9 @@ export class HelloService extends CoreService<Model, ModelType> {
         return this.packageWithChannel('public')(pretext, title, this.asText(body), [], color);
     };
 
+    /**
+     * build simple form for alarm
+     */
     public buildAlarmForm = async ({ subject, data, context }: RecordData): Promise<ParamToSlack> => {
         _log(`buildAlarmForm(${subject})...`);
         data = data || {};
@@ -384,6 +415,9 @@ export class HelloService extends CoreService<Model, ModelType> {
         return this.packageDefaultChannel({ pretext, title, text, fields });
     };
 
+    /**
+     * build simple form for delivery failure of SNS
+     */
     public buildDeliveryFailure = async ({ subject, data, context }: RecordData): Promise<ParamToSlack> => {
         _log(`buildDeliveryFailure(${subject})...`);
         data = data || {};
@@ -447,6 +481,9 @@ export class HelloService extends CoreService<Model, ModelType> {
         return this.packageDefaultChannel(result);
     };
 
+    /**
+     * build simple form for error-report
+     */
     public buildErrorForm = async ({ subject, data, context }: RecordData): Promise<ParamToSlack> => {
         _log(`buildErrorForm(${subject})...`);
         data = data || {};
@@ -462,6 +499,9 @@ export class HelloService extends CoreService<Model, ModelType> {
         return this.packageWithChannel(channel)(message, 'error-report', this.asText(data), []);
     };
 
+    /**
+     * build simple form for callback
+     */
     public buildCallbackForm = ({ subject, data, context }: RecordData): ParamToSlack => {
         _log(`buildCallbackForm(${subject})...`);
         subject = `${subject || ''}`;
@@ -509,7 +549,9 @@ export class HelloService extends CoreService<Model, ModelType> {
         return { channel, body };
     };
 
-    //! post to slack channel(default is public).
+    /**
+     * post to slack channel(default is public).
+     */
     public packageWithChannel =
         (channel: string) =>
         (
@@ -541,7 +583,9 @@ export class HelloService extends CoreService<Model, ModelType> {
             return { channel: `${channel || ''}`, body };
         };
 
-    //! post to slack default channel.
+    /**
+     * post to slack default channel.
+     */
     public packageDefaultChannel = ({ pretext, title, text, fields, color, username }: BindParamOfSlack) => {
         _log(NS, `packageDefaultChannel()...`);
         return this.packageWithChannel('')(

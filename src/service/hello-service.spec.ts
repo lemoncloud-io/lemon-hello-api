@@ -26,7 +26,7 @@ export const instance = (type = 'dummy', current?: number) => {
 };
 
 //! main test body.
-describe('HelloService /w dummy', () => {
+describe('hello-service /w dummy', () => {
     const PROFILE = loadProfile(process); // override process.env.
     PROFILE && console.info(`! PROFILE =`, PROFILE);
 
@@ -59,8 +59,9 @@ describe('HelloService /w dummy', () => {
     it('should pass running currect env', async () => {
         const { service } = instance('dummy');
         expect2(() => service.hello()).toEqual('hello-mocks-service');
+
         /* eslint-disable prettier/prettier */
-        expect2(await service.loadSlackChannel('hello', 'Hello').catch(GETERR)).toEqual('env[SLACK_HELLO] is required!');
+        expect2(await service.loadSlackChannel('hello', 'Hello').catch(GETERR)).toEqual('@env[SLACK_HELLO] is not found!');
         expect2(await service.loadSlackChannel('hello', 'AA')).toEqual('https://hooks.slack.com/services/AAAAAAAAA/BBBBBBBBB/CCCCCCCCCCCCCCCC');
         expect2(await service.loadSlackChannel('AA', null)).toEqual('https://hooks.slack.com/services/AAAAAAAAA/BBBBBBBBB/CCCCCCCCCCCCCCCC');
         /* eslint-enable prettier/prettier */
@@ -485,9 +486,9 @@ describe('HelloService /w dummy', () => {
     });
 });
 
-describe('services w/ model-manager', () => {
+describe('model-manager in service', () => {
     //! test service w/ dummy data
-    it('should pass hello-service', async () => {
+    it('should pass test-manager w/ storage', async () => {
         const { service, current } = instance('dummy');
         const _ts = (type: ModelType): Model => ({
             ns: 'TT',
@@ -574,17 +575,7 @@ describe('services w/ model-manager', () => {
     it('should pass channel rules', async () => {
         const { service } = instance('dummy');
         expect2(() => service.hello()).toEqual('hello-mocks-service');
-    });
-});
 
-describe('communication with horse, queue, session service', () => {
-    const PROFILE = loadProfile(process); // override process.env.
-    PROFILE && console.info(`! PROFILE =`, PROFILE);
-
-    it('should pass postMessage()', async () => {
-        const { service } = instance('dummy');
-        expect2(() => service.hello()).toEqual('hello-mocks-service');
-        /* eslint-disable prettier/prettier */
-        /* eslint-enable prettier/prettier */
+        //
     });
 });
