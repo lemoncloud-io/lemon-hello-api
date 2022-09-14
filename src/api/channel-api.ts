@@ -37,16 +37,35 @@ export class ChannelAPIController extends GeneralWEBController {
 
     /**
      * get model by id
+     *
+     * ```sh
+     * $ http ':8888/channel/public'
+     * $ http ':8888/channel/todaq'
      */
     public doGet: NextHandler = async (id, param, body, context) => {
         _log(NS, `doGet(${id})....`);
         id = id === '0' ? '' : $T.S2(id).trim();
         if (!id) throw new Error(`@id (string) is required!`);
-        return this.service.$channel.retrieve(id);
+
+        //! load the default endpoint from environment.
+        const endpoint = await this.service.loadSlackChannel(id);
+        if (!endpoint) throw new Error(`@id[${id}] (channel-id) is invalid!`);
+        _log(NS, '> webhook :=', endpoint);
+
+        //! find from DB, and show in detail
+        const model = await this.service.$channel.find(id);
+        return {
+            ...model,
+            endpoint: model?.endpoint || endpoint,
+            id,
+        };
     };
 
     /**
      * update model by id
+     *
+     * ```sh
+     * $ http PUT ':8888/channel/public' name=public
      */
     public doPut: NextHandler = async (id, param, body, context) => {
         _log(NS, `doPut(${id})....`);

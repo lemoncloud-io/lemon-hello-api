@@ -185,9 +185,9 @@ export class HelloAPIController extends GeneralWEBController {
         _log(NS, `> direct@[${channel}] :=`, direct);
 
         //! load target webhook via environ.
-        const webhook = await this.service.loadSlackChannel(channel, 0 ? '' : 'public');
-        if (!webhook) throw new Error(`@id[${channel}] (channel-id) is invalid!`);
-        _log(NS, '> webhook :=', webhook);
+        const endpoint = await this.service.loadSlackChannel(channel, 'public');
+        if (!endpoint) throw new Error(`@id[${channel}] (channel-id) is invalid!`);
+        _log(NS, '> endpoint :=', endpoint);
 
         //! prepare slack message via body.
         const message = typeof body !== 'string' ? body : { text: `${body}` };
@@ -195,7 +195,7 @@ export class HelloAPIController extends GeneralWEBController {
 
         //! route message
         const route = this.service.$routes($ctx, { direct });
-        const sent = await route.route(message, channel, [], { id: channel, endpoint: webhook });
+        const sent = await route.route(message, channel, [], { id: channel, endpoint });
         _log(NS, `> sent =`, sent);
 
         //! returns.

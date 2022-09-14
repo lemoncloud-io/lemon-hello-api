@@ -100,7 +100,7 @@ provider:
   # Lambda Runtime Environment
   memorySize: 256
   timeout: 30
-  runtime: ${self:custom.CONF.${self:custom.CORE.profile}.runtime, 'nodejs12.x'}
+  runtime: ${self:custom.CONF.${self:custom.CORE.profile}.runtime, 'nodejs16.x'}
   region: ${self:custom.CONF.${self:custom.CORE.profile}.region, self:custom.CORE.region}      # profile의 region를 먼저 사용하고, 없으면 실행 옵션값.
 
   # VPC Configuration for Lambda.
@@ -341,24 +341,21 @@ package:
 resources:
   Resources:
     # -------------------------------
-    # Dynamo
+    # Dynamo Table
     # -------------------------------
-    # TestTable:
-    #   Type: 'AWS::DynamoDB::Table'
-    #   #DeletionPolicy: Retain
-    #   Properties:
-    #     TableName: BotItemTable
-    #     AttributeDefinitions:
-    #       - AttributeName: id
-    #         AttributeType: S
-    #     KeySchema:
-    #       - AttributeName: id
-    #         KeyType: HASH
-    #     ProvisionedThroughput:
-    #       ReadCapacityUnits: 20
-    #       WriteCapacityUnits: 20
-    #     StreamSpecification:
-    #       StreamViewType: "NEW_AND_OLD_IMAGES"
+    MyTable:
+      Type: 'AWS::DynamoDB::Table'
+      Properties:
+        TableName: '${self:custom.tableName.${self:custom.CORE.stage}}'
+        AttributeDefinitions:
+          - AttributeName: '_id'
+            AttributeType: S
+        KeySchema:
+          - AttributeName: '_id'
+            KeyType: HASH
+        BillingMode: PAY_PER_REQUEST
+        StreamSpecification:
+          StreamViewType: "NEW_AND_OLD_IMAGES"
 
     # -------------------------------
     # SQS Queue
@@ -381,23 +378,6 @@ resources:
       Type: 'AWS::SNS::Topic'
       Properties:
         TopicName: '${self:custom.topicName.${self:custom.CORE.stage}}'
-
-    # -------------------------------
-    # Dynamo Table
-    # -------------------------------
-    MyTable:
-      Type: 'AWS::DynamoDB::Table'
-      Properties:
-        TableName: '${self:custom.tableName.${self:custom.CORE.stage}}'
-        AttributeDefinitions:
-          - AttributeName: '_id'
-            AttributeType: S
-        KeySchema:
-          - AttributeName: '_id'
-            KeyType: HASH
-        BillingMode: PAY_PER_REQUEST
-        StreamSpecification:
-          StreamViewType: "NEW_AND_OLD_IMAGES"
 
     # -------------------------------
     # S3 Bucket

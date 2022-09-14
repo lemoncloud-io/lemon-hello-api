@@ -5,7 +5,7 @@
 
 # lemon-hello-api
 
-Simple Serverless MicroService API with `Lambda` + `API Gateway` + `Web Socket` + `SNS` + `SQS` + `KMS`
+Simple Serverless MicroService API with `Lambda` + `API Gateway` + `Web Socket` + `SNS` + `SQS` + `KMS`, and `DynamoDB`.
 
 - Sample DevOps with `babel` + `eslint` + `jest` + `supertest` + `codecov` + `travis`
 
@@ -16,40 +16,23 @@ Simple Serverless MicroService API with `Lambda` + `API Gateway` + `Web Socket` 
 
 - Standard devops by lemon based on `Nodejs` + `Typescript`
 - Support sending message to `Slack` from AWS CloudWatch. (see `lemon-hello-sns` AWS SNS after deploying)
-- Save slack message to S3 bucket as json object
+- Save slack message to `S3` bucket as json object
+- Use `DynamoDB` to manage the route-rules per each channels.
 
 
 ## Usage
 
-- **Case 1** fork & run by run `npm install`
+- Fork and Customize the code, and run `npm install`
 
     ```bash
-    # STEP.1 install packages..
-    $ npm install
+    # STEP.1 install packages. (using ci)
+    $ npm ci
     # STEP.2 customize profile in env/<profile>.yml
     # STEP.3 add profile infor to env/config.js
     # STEP.4 deploy into your AWS account.
     $ npm run deploy
     ```
 
-- **Case 2** Use as module, and report error via `SNS`.
-
-    ```bash
-    # install as dependencies
-    $ npm install lemon-hello-api --save
-    ```
-
-    ```js
-    const payload = {...};
-    try {
-        ...
-    } catch (e){
-        const hello = require('lemon-hello-api');
-        // `LS=1` means 'log silence'
-        const sns = hello.lemon({ LS: '1' })('sns');
-        const msgId = await $sns.reportError(e, payload);
-    }
-    ```
 
 - **Example** Screenshot of `slack` when receiving message.
 
@@ -146,6 +129,7 @@ Version History
 
 | Version   | Description
 |--         |--
+| 2.4.0     | use `DynamoDB` to manage route-rules.
 | 2.3.2     | optimized with `lemon-core#3.1.2`, and `nodejs16` runtime.
 | 2.3.1     | optimized with `lemon-core#3.1.1`.
 | 2.2.3     | optimized `notification` message.
