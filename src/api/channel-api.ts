@@ -2,14 +2,14 @@
  * API: `/channel`
  * - service api for channel-model
  *
- *
  * @author      Steve Jung <steve@lemoncloud.io>
  * @date        2022-09-13 support route by channel's rules.
  *
  * @copyright (C) 2022 LemonCloud Co Ltd. - All Rights Reserved.
  */
 // eslint-disable-next-line @typescript-eslint/no-unused-vars
-import { $U, $T, _log, _inf, _err, GeneralWEBController, NextHandler } from 'lemon-core';
+import { $U, $T, _log, _inf, _err } from 'lemon-core';
+import { GeneralWEBController, NextHandler } from 'lemon-core';
 import { ChannelModel, RouteRule } from '../service/hello-model';
 import $service, { HelloService } from '../service/hello-service';
 const NS = $U.NS('channel', 'yellow'); // NAMESPACE TO BE PRINTED.
@@ -49,8 +49,7 @@ export class ChannelAPIController extends GeneralWEBController {
 
         //! load the default endpoint from environment.
         const endpoint = await this.service.loadSlackChannel(id);
-        if (!endpoint) throw new Error(`@id[${id}] (channel-id) is invalid!`);
-        _log(NS, '> webhook :=', endpoint);
+        endpoint && _inf(NS, `> endpoint @env[${id}] :=`, endpoint);
 
         //! find from DB, and show in detail
         const model = await this.service.$channel.find(id);
@@ -75,21 +74,25 @@ export class ChannelAPIController extends GeneralWEBController {
         // STEP.0 validate parameters.
         const name = body?.name !== undefined ? $T.S2(body.name, '', ' ').trim() : undefined;
         const useS3 = body?.useS3 !== undefined ? $T.B(body.useS3) : undefined;
+        const channel = body?.channel !== undefined ? $T.S2(body.channel, '', ' ').trim() : undefined;
         const endpoint = body?.endpoint !== undefined ? $T.S2(body.endpoint, '', ' ').trim() : undefined;
 
         // STEP.1 find the target model (null if not found)
-        const $org = await this.service.$channel.retrieve(id);
-        _inf(NS, `> origin =`, $U.json($org));
+        const $org = await this.service.$channel.find(id);
+        _inf(NS, `> origin =`, typeof $org, $U.json($org));
 
         // STEP.2 prepare model to update
         const model: ChannelModel = {};
         if (name !== undefined) model.name = name;
         if (useS3 !== undefined) model.useS3 = useS3;
+        if (channel !== undefined) model.channel = channel;
         if (endpoint !== undefined) model.endpoint = endpoint;
 
         // STEP.3 update.
         if (Object.keys(model).length > 0) {
-            const saved = await this.service.$channel.update(id, model);
+            const saved = $org
+                ? await this.service.$channel.update(id, model)
+                : await this.service.$channel.save(id, model);
             _inf(NS, `> updated =`, $U.json(saved));
             return { ...$org, ...saved, id };
         }
@@ -103,6 +106,7 @@ export class ChannelAPIController extends GeneralWEBController {
      *
      *```sh
      * echo '{"pattern":"hello","copyTo":"alarm","color":"red"}' | http PUT ':8888/channel/public/rules'
+     * echo '{"pattern":"SNS: DeliveryFailure","moveTo":"stage"}' | http PUT ':8888/channel/public/rules'
      */
     public doPutRules: NextHandler = async (id, param, body, context) => {
         _log(NS, `doPutRules(${id})....`);
@@ -118,7 +122,7 @@ export class ChannelAPIController extends GeneralWEBController {
         const model = await this.service.$channel.prepare(id, { rules: [] }, true);
 
         // STEP.2 and update.
-        const rules = [...model.rules, ...rules0];
+        const rules = [...(model.rules || []), ...rules0];
         const updated = await this.service.$channel.update(id, { rules });
         _inf(NS, `> updated =`, $U.json(updated));
 

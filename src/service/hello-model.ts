@@ -101,6 +101,12 @@ export interface ChannelModel extends Model {
      */
     id?: string;
 
+    /**
+     * (optional) redirected channel name to use in slack.
+     * - `.id` is the default.
+     */
+    channel?: string;
+
     /** (optional) readable name of this channel */
     name?: string;
 

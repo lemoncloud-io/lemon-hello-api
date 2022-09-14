@@ -16,7 +16,12 @@ default_env: &default_env
 # local development configuration.
 local:
   <<: *default_env
-  STAGE: 'local'
+  # STAGE: 'local'
+
+  #! override as prod environ.
+  STAGE: '!production'
+  MY_DYNAMO_TABLE: LemonHelloTable
+  NS: SS
 
 #-----------------------------------
 # development server

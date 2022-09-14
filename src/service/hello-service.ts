@@ -730,7 +730,7 @@ export class HelloService extends CoreService<Model, ModelType> {
                     const $msg = isUseS3 ? await this.service.saveMessageToS3(body, asBool(target?.useS3)) : body;
                     const message: SlackPostBody = {
                         ...$msg,
-                        channel,
+                        channel: target?.channel || channel,
                     };
                     if (endpoint) {
                         const sent = await this.service.postMessage(endpoint, message).catch(e => {
