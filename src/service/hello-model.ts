@@ -113,6 +113,12 @@ export interface ChannelModel extends Model {
      * target address (URL)
      */
     endpoint?: string;
+
+    /**
+     * flag of using S3 to save in JSON.
+     * - see `saveMessageToS3()`
+     */
+    useS3?: number;
 }
 
 /**

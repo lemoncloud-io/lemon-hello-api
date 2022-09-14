@@ -10,7 +10,7 @@
  */
 // eslint-disable-next-line @typescript-eslint/no-unused-vars
 import { $U, $T, _log, _inf, _err, GeneralWEBController, NextHandler } from 'lemon-core';
-import { RouteRule } from '../service/hello-model';
+import { ChannelModel, RouteRule } from '../service/hello-model';
 import $service, { HelloService } from '../service/hello-service';
 const NS = $U.NS('channel', 'yellow'); // NAMESPACE TO BE PRINTED.
 
@@ -43,6 +43,40 @@ export class ChannelAPIController extends GeneralWEBController {
         id = id === '0' ? '' : $T.S2(id).trim();
         if (!id) throw new Error(`@id (string) is required!`);
         return this.service.$channel.retrieve(id);
+    };
+
+    /**
+     * update model by id
+     */
+    public doPut: NextHandler = async (id, param, body, context) => {
+        _log(NS, `doPut(${id})....`);
+        id = id === '0' ? '' : $T.S2(id).trim();
+        if (!id) throw new Error(`@id (string) is required!`);
+
+        // STEP.0 validate parameters.
+        const name = body?.name !== undefined ? $T.S2(body.name, '', ' ').trim() : undefined;
+        const useS3 = body?.useS3 !== undefined ? $T.B(body.useS3) : undefined;
+        const endpoint = body?.endpoint !== undefined ? $T.S2(body.endpoint, '', ' ').trim() : undefined;
+
+        // STEP.1 find the target model (null if not found)
+        const $org = await this.service.$channel.retrieve(id);
+        _inf(NS, `> origin =`, $U.json($org));
+
+        // STEP.2 prepare model to update
+        const model: ChannelModel = {};
+        if (name !== undefined) model.name = name;
+        if (useS3 !== undefined) model.useS3 = useS3;
+        if (endpoint !== undefined) model.endpoint = endpoint;
+
+        // STEP.3 update.
+        if (Object.keys(model).length > 0) {
+            const saved = await this.service.$channel.update(id, model);
+            _inf(NS, `> updated =`, $U.json(saved));
+            return { ...$org, ...saved, id };
+        }
+
+        //! returns.
+        return { ...$org, id };
     };
 
     /**

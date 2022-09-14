@@ -254,10 +254,10 @@ export class HelloService extends CoreService<Model, ModelType> {
     /**
      * save message data into S3.
      */
-    public saveMessageToS3 = async (message: SlackPostBody | any) => {
+    public saveMessageToS3 = async (message: SlackPostBody | any, isUseS3?: boolean) => {
         _log(NS, `saveMessageToS3()...`);
         const SLACK_PUT_S3 = $U.env('SLACK_PUT_S3', '1') as string;
-        const isUseS3 = !!$U.N(SLACK_PUT_S3, 0);
+        isUseS3 = isUseS3 ?? !!$U.N(SLACK_PUT_S3, 0);
         const attachments: SlackAttachment[] = message?.attachments || [];
 
         const isSlackPostBody = (message: any): message is SlackPostBody =>
@@ -608,8 +608,9 @@ export class HelloService extends CoreService<Model, ModelType> {
      * route handler for slack-body per each request-context.
      *
      * @param context the current request-context.
+     * @param options (optional) running options.
      */
-    public $routes = (context: NextContext) => {
+    public $routes = (context: NextContext, options?: { direct?: boolean }) => {
         _log(NS, `! route.context =`, $U.json(context));
 
         //! local cache of channel-model
@@ -720,11 +721,15 @@ export class HelloService extends CoreService<Model, ModelType> {
             /** process per each channel */
             public send = async (body: SlackPostBody, channel: string, parent: ChannelModel): Promise<number> => {
                 _inf(NS, `>> route.send(${body?.channel || ''}, ${channel || ''})`);
+                const direct = options?.direct ?? false;
+                const asBool = (a: any): boolean => (a === undefined || a === null || a === '' ? undefined : !!a);
                 if (body && channel) {
                     const target = await _channel(channel);
                     const endpoint = target?.endpoint || parent?.endpoint;
+                    const isUseS3 = !direct && endpoint?.startsWith('https://hooks.slack.com');
+                    const $msg = isUseS3 ? await this.service.saveMessageToS3(body, asBool(target?.useS3)) : body;
                     const message: SlackPostBody = {
-                        ...body,
+                        ...$msg,
                         channel,
                     };
                     if (endpoint) {
