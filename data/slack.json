@@ -3,7 +3,8 @@
     "attachments": [
         {
             "text": "hello test",
-            "pretext": "pre-test"
+            "pretext": "pre-test",
+            "title": "hello title"
         }
     ]
 }

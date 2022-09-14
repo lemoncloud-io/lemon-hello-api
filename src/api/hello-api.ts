@@ -6,10 +6,12 @@
  * @author      Steve Jung <steve@lemoncloud.io>
  * @date        2020-06-10 refactor with api
  * @date        2020-06-23 optimized with lemon-core#2.2.1
+ * @date        2022-09-13 support route by channel's rules.
  *
  * @copyright (C) 2020 LemonCloud Co Ltd. - All Rights Reserved.
  */
-import { $U, _log, _inf, _err, GETERR$ } from 'lemon-core';
+// eslint-disable-next-line @typescript-eslint/no-unused-vars
+import { $U, $T, _log, _inf, _err } from 'lemon-core';
 import $engine, {
     loadJsonSync,
     AWSKMSService,
@@ -40,6 +42,7 @@ export class HelloAPIController extends GeneralWEBController {
      */
     public constructor(service?: HelloService, $kms?: AWSKMSService, $sns?: AWSSNSService, $s3s?: AWSS3Service) {
         super('hello');
+        _log(NS, `HelloAPIController()...`);
 
         //! shared memory.
         //WARN! - `serverless offline`는 상태를 유지하지 않으므로, NODES값들이 실행때마다 리셋이될 수 있음.
@@ -163,22 +166,23 @@ export class HelloAPIController extends GeneralWEBController {
      * $ cat data/error-hello.json | http ':8888/hello/public/slack'
      * $ cat data/error-hello.json | http ':8888/hello/public/slack?direct' # direct to slack hook w/o filter.
      * ```
-     * @param {*} channel           slack-channel id (see environment)
-     * @param {*} $param            (optional)
-     * @param {*} $body             {error?:'', message:'', data:{...}}
+     * @param {*} id                id of slack-channel (see environment)
+     * @param {*} param            (optional)
+     * @param {*} body             {error?:'', message:'', data:{...}}
      * @param {*} $ctx              context
      */
-    public postHelloSlack: NextHandler = async (channel: any, $param: any, $body: any, $ctx: any) => {
-        _log(NS, `postHelloSlack(${channel})....`);
-        $param = $param || {};
-        channel = `${channel || ''}`;
-        _log(NS, `> body[${channel}] =`, $U.json($body));
+    public postHelloSlack: NextHandler = async (id: any, param: any, body: any, $ctx: any) => {
+        _log(NS, `postHelloSlack(${id})....`);
+        id = $T.S2(id).trim();
+        param && _log(NS, `> param =`, $U.json(param));
+        body && _log(NS, `> body =`, $U.json(body));
+        if (!body) throw new Error(`@body (object|string) is required!`);
 
         //! determine to post directly.
-        const hasForce = channel.startsWith('!');
-        channel = channel.startsWith('!') ? channel.substring(1) : channel;
-        const direct = $U.N($param.direct, $param.direct === '' ? 1 : hasForce ? 1 : 0);
-        _log(NS, '> direct :=', direct);
+        const channel = id.startsWith('!') ? id.substring(1) : id;
+        const hasForce = id.startsWith('!');
+        const direct = !!$U.N(param.direct, param.direct === '' ? 1 : hasForce ? 1 : 0);
+        _log(NS, `> direct@[${channel}] :=`, direct);
 
         //! load target webhook via environ.
         const webhook = await this.service.loadSlackChannel(channel, 0 ? '' : 'public');
@@ -186,18 +190,16 @@ export class HelloAPIController extends GeneralWEBController {
         _log(NS, '> webhook :=', webhook);
 
         //! prepare slack message via body.
-        const message = typeof $body === 'string' ? { text: $body } : $body;
+        const message = typeof body !== 'string' ? body : { text: `${body}` };
         _log(NS, '> message :=', $U.json(message));
 
-        //NOTE! filter message only if sending to slack-hook.
-        const noop = (_: any) => _;
-        const filter = !direct && webhook.startsWith('https://hooks.slack.com') ? this.service.saveMessageToS3 : noop;
-        const res = await this.service.postMessage(webhook, filter(message)).catch(e => {
-            _err(NS, `! slack[${channel}].err =`, e instanceof Error ? e : $U.json(e));
-            return GETERR$(e);
-        });
-        _log(NS, `> res =`, res);
+        //! route message
+        const route = this.service.$routes($ctx, { direct });
+        const sent = await route.route(message, channel, [], { id: channel, endpoint: webhook });
+        _log(NS, `> sent =`, sent);
+
         //! returns.
+        const res = route.lastResponse;
         return res;
     };
 

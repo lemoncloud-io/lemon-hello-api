@@ -35,6 +35,13 @@ custom:
   #------------------------------------------------
   documentation: ${file(./swagger/documentation.yml):documentation}
   #------------------------------------------------
+  # Dynamo: (MovesTest)
+  #------------------------------------------------
+  tableName:
+    local: LemonHelloTest
+    dev: LemonHelloTest
+    prod: LemonHelloTable
+  #------------------------------------------------
   # SQS Queue
   #------------------------------------------------
   queueName:
@@ -149,6 +156,22 @@ provider:
         - kms:Encrypt
         - kms:Verify
       Resource: "arn:aws:kms:${self:provider.region}:*:key/${self:custom.CONF.${self:custom.CORE.profile}.kmsKey, ''}"   #TODO - improve resource setting.
+    # DynamoDB (ModelTable)
+    - Effect: Allow
+      Action:
+        - dynamodb:Query
+        - dynamodb:Scan
+        - dynamodb:GetItem
+        - dynamodb:PutItem
+        - dynamodb:UpdateItem
+        - dynamodb:DeleteItem
+        - dynamodb:GetRecords
+        - dynamodb:GetShardIterator
+        - dynamodb:DescribeTable
+        - dynamodb:DescribeStream
+        - dynamodb:ListStreams
+      Resource: "arn:aws:dynamodb:${opt:region, self:provider.region}:*:table/${self:custom.tableName.${self:custom.CORE.stage}}"
+
 
   # -------------------------------------------------------
   # you can define service wide environment variables here
@@ -156,6 +179,7 @@ provider:
   environment:
     DEFAULT_REGION: '${self:provider.region}'
     REPORT_ERROR_ARN: 'arn:aws:sns:${self:provider.region}:${aws:accountId}:lemon-hello-sns'
+    MY_DYNAMO_TABLE: '${self:custom.tableName.${self:custom.CORE.stage}}'
     MY_S3_BUCKET: '${self:custom.bucketName.${self:custom.CORE.stage}}'
     MY_SQS_ENDPOINT: 'https://sqs.${self:provider.region}.amazonaws.com/${aws:accountId}/${self:custom.queueName.${self:custom.CORE.stage}}' # see `sqs-service`
     MY_SNS_ENDPOINT: 'arn:aws:sns:${self:provider.region}:${aws:accountId}:${self:custom.topicName.${self:custom.CORE.stage}}'               # see `sns-service`
@@ -170,16 +194,16 @@ functions:
     handler: handler.lambda     # use core `lambda-handler`.
     timeout: 300                # max timeout. (= 5 min)
     events:
-      # # -------------------------------------------------------
-      # # Shared DynamoStream Service.
-      # - stream:
-      #     type: dynamodb
-      #     batchSize: 1
-      #     startingPosition: LATEST
-      #     arn:
-      #       Fn::GetAtt:
-      #         - MyTable
-      #         - StreamArn
+      # -------------------------------------------------------
+      # Shared DynamoStream Service.
+      - stream:
+          type: dynamodb
+          batchSize: 1
+          startingPosition: LATEST
+          arn:
+            Fn::GetAtt:
+              - MyTable
+              - StreamArn
       # -------------------------------------------------------
       # Shared SNS Service.
       - sns: 'arn:aws:sns:${self:provider.region}:${aws:accountId}:${self:custom.topicName.${self:custom.CORE.stage}}'
@@ -249,6 +273,53 @@ functions:
           method: delete
           cors: ${self:custom.cors, true}
           authorizer: aws_iam
+      # -------------------------------------------------------
+      # REST API : General Controller. (authed)
+      - http:
+          path: /{type}
+          method: get
+          cors: ${self:custom.cors, true}
+          authorizer: aws_iam
+      - http:
+          path: /{type}/{id}
+          method: get
+          cors: ${self:custom.cors, true}
+          authorizer: aws_iam
+      - http:
+          path: /{type}/{id}/{cmd}
+          method: get
+          cors: ${self:custom.cors, true}
+          authorizer: aws_iam
+      - http:
+          path: /{type}/{id}
+          method: put
+          cors: ${self:custom.cors, true}
+          authorizer: aws_iam
+      - http:
+          path: /{type}/{id}/{cmd}
+          method: put
+          cors: ${self:custom.cors, true}
+          authorizer: aws_iam
+      - http:
+          path: /{type}/{id}
+          method: post
+          cors: ${self:custom.cors, true}
+          authorizer: aws_iam
+      - http:
+          path: /{type}/{id}/{cmd}
+          method: post
+          cors: ${self:custom.cors, true}
+          authorizer: aws_iam
+      - http:
+          path: /{type}/{id}
+          method: delete
+          cors: ${self:custom.cors, true}
+          authorizer: aws_iam
+      - http:
+          path: /{type}/{id}/{cmd}
+          method: delete
+          cors: ${self:custom.cors, true}
+          authorizer: aws_iam
 
 #--------------------------------------------------------------
 # ! INCLUDE ONLY DISTRIBUTIONS !
@@ -310,6 +381,23 @@ resources:
       Type: 'AWS::SNS::Topic'
       Properties:
         TopicName: '${self:custom.topicName.${self:custom.CORE.stage}}'
+
+    # -------------------------------
+    # Dynamo Table
+    # -------------------------------
+    MyTable:
+      Type: 'AWS::DynamoDB::Table'
+      Properties:
+        TableName: '${self:custom.tableName.${self:custom.CORE.stage}}'
+        AttributeDefinitions:
+          - AttributeName: '_id'
+            AttributeType: S
+        KeySchema:
+          - AttributeName: '_id'
+            KeyType: HASH
+        BillingMode: PAY_PER_REQUEST
+        StreamSpecification:
+          StreamViewType: "NEW_AND_OLD_IMAGES"
 
     # -------------------------------
     # S3 Bucket
