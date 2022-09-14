@@ -692,6 +692,7 @@ export class HelloService extends CoreService<Model, ModelType> {
                         return re.test(text);
                     }
                     //! default is word matching
+                    if (text.includes(pattern)) return true;
                     return text.split(' ').includes(pattern);
                 };
                 const matched = body.attachments?.reduce<SlackAttachment[]>((L, N) => {
