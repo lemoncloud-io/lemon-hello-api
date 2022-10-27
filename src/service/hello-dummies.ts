@@ -149,4 +149,12 @@ export class DummyHelloService extends HelloService {
         // package default.
         return this.packageDefaultChannel(result);
     };
+
+    public getRandomImage = async (animal: string = 'cat'): Promise<PostResponse> => {
+        if (!['dog', 'cat'].includes(animal)) throw new Error(`ERR! ${animal} keywords are not supported.`);
+        const body = `https://cdn2.the${animal}api.com/images/MTc5NjU2OA.jpg`; // dummy
+        const statusCode = 200;
+        const statusMessage = 'OK';
+        return { body, statusCode, statusMessage };
+    };
 }

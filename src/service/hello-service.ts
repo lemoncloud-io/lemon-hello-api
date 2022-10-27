@@ -13,7 +13,7 @@
  * @copyright (C) 2020 LemonCloud Co Ltd. - All Rights Reserved.
  */
 // eslint-disable-next-line @typescript-eslint/no-unused-vars
-import { $U, $T, _log, _inf, _err } from 'lemon-core';
+import { $U, $T, _log, _inf, _err, loadJsonSync } from 'lemon-core';
 import {
     APIService,
     SlackAttachment,
@@ -259,7 +259,6 @@ export class HelloService extends CoreService<Model, ModelType> {
         const SLACK_PUT_S3 = $U.env('SLACK_PUT_S3', '1') as string;
         isUseS3 = isUseS3 ?? !!$U.N(SLACK_PUT_S3, 0);
         const attachments: SlackAttachment[] = message?.attachments || [];
-
         const isSlackPostBody = (message: any): message is SlackPostBody =>
             Array.isArray(attachments) && attachments.length > 0;
 
@@ -270,6 +269,7 @@ export class HelloService extends CoreService<Model, ModelType> {
             const title = $T.S(attachment.title, '');
             const color = $T.S(attachment.color, 'green');
             const thumb_url = attachment.thumb_url ? attachment.thumb_url : undefined;
+            const image_url = attachment.image_url ? attachment.image_url : undefined;
             _log(NS, `> title[${pretext}] =`, title);
             const saves = { ...message };
             saves.attachments = attachments.map((N: any) => {
@@ -288,7 +288,10 @@ export class HelloService extends CoreService<Model, ModelType> {
 
             //! choose the icon.
             // eslint-disable-next-line prettier/prettier
-            const MOONS = ':new_moon:,:waxing_crescent_moon:,:first_quarter_moon:,:moon:,:full_moon:,:waning_gibbous_moon:,:last_quarter_moon:,:waning_crescent_moon:'.split(',');
+            const MOONS =
+                ':new_moon:,:waxing_crescent_moon:,:first_quarter_moon:,:moon:,:full_moon:,:waning_gibbous_moon:,:last_quarter_moon:,:waning_crescent_moon:'.split(
+                    ',',
+                );
             const now = this.current ? new Date(this.current) : new Date();
             let hour = now.getHours() + now.getMinutes() / 60.0 + 1.0;
             hour = hour >= 24 ? hour - 24 : hour;
@@ -313,6 +316,7 @@ export class HelloService extends CoreService<Model, ModelType> {
                             mrkdwn: true,
                             mrkdwn_in: ['pretext', 'text'],
                             thumb_url,
+                            image_url,
                         },
                     ];
                     return message;
@@ -733,6 +737,7 @@ export class HelloService extends CoreService<Model, ModelType> {
                         ...$msg,
                         channel: target?.channel || channel,
                     };
+                    _log(message);
                     if (endpoint) {
                         const sent = await this.service.postMessage(endpoint, message).catch(e => {
                             _err(NS, `! err.send:${channel} =`, e);
@@ -746,6 +751,50 @@ export class HelloService extends CoreService<Model, ModelType> {
                 return 0;
             };
         })(this);
+    };
+
+    public determinePostDirectly = (id: any, param: any) => {
+        const channel = id.startsWith('!') ? id.substring(1) : id;
+        const hasForce = id.startsWith('!');
+        const direct = !!$U.N(param.direct, param.direct === '' ? 1 : hasForce ? 1 : 0);
+        return [channel, direct];
+    };
+
+    public makeSlackBody = async (url: string): Promise<SlackPostBody> => {
+        const message = loadJsonSync('./data/image-slack.json');
+        if (typeof message !== 'object') throw new Error('!ERR Failed to load json file.');
+        if (!message.attachments) throw new Error('!ERR Property attachments does not exist in json file.');
+        if (!url.startsWith('https://cdn2')) throw new Error('!ERR Invalid image address.');
+        message.attachments[0].image_url = url;
+
+        return message;
+    };
+
+    public getRandomImage = async (animal: string = 'cat'): Promise<PostResponse> => {
+        _log(NS, `getRandomImage(${animal})....`);
+        if (!['dog', 'cat'].includes(animal)) throw new Error(`ERR! ${animal} keywords are not supported.`);
+        let targetUrl = `https://api.the${animal}api.com/v1/images/search`;
+
+        let options: any = url.parse(targetUrl);
+        options.method = 'GET';
+
+        return new Promise((resolve, reject) => {
+            const getReq = https.request(options, res => {
+                const chunks: any = [];
+                res.setEncoding('utf8');
+                res.on('data', chunk => chunks.push(chunk));
+                res.on('end', () => {
+                    const statusCode = res.statusCode || 200;
+                    const statusMessage = res.statusMessage || 'OK';
+                    const body = chunks.join('');
+                    if (statusCode < 400) resolve({ body, statusCode, statusMessage });
+                    else reject(new Error(`Request failed. status: ${statusCode}, body: ${body}`));
+                });
+            });
+            getReq.on('error', reject);
+            getReq.write('');
+            getReq.end();
+        });
     };
 }
 
