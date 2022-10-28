@@ -22,9 +22,15 @@ default_env: &default_env
 #-----------------------------------
 # local development configuration.
 local:
+<<<<<<< HEAD
     <<: *default_env
     STAGE: 'local'
     MY_DYNAMO_TABLE: LemonHelloTest
+=======
+  <<: *default_env
+  STAGE: 'local'
+  MY_DYNAMO_TABLE: LemonHelloTest
+>>>>>>> ed695a042af7f9c551130fefaebe971b9b0c634e
 
 #-----------------------------------
 # development server
