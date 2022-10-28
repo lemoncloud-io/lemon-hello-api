@@ -499,8 +499,6 @@ export class HelloAPIController extends GeneralWEBController {
             return node;
         });
     };
-
-    // written by aiden
     public getHelloTime: NextHandler = async (id: any, param: any, body: any, ctx: any) => {
         _log(NS, `getHelloTime(${id})...`);
         _log(NS, `> context =`, $U.json(ctx));
@@ -519,6 +517,9 @@ export class HelloAPIController extends GeneralWEBController {
     /**
      * Post animal image via Slack Web Hook
      * Only dog or cat picture supported
+     * echo '{"keyword":"cat"}' | http ':8888/hello/test/slack'
+     * echo '{"keyword":"dog"}' | http ':8888/hello/public/slack'
+     *
      * ```
      * @param {*} id                id of slack-channel (see environment)
      * @param {*} param            (optional)
@@ -531,6 +532,9 @@ export class HelloAPIController extends GeneralWEBController {
         param && _log(NS, `> param =`, $U.json(param));
         body && _log(NS, `> body =`, $U.json(body));
         if (!body) throw new Error(`@body (object|string) is required!`);
+        // Verify the keyword and determine url.
+        const animalType = this.service.checkImageKeyword(body);
+        _log(NS, `> imageType :=`, animalType.type); // cat or dog
 
         //! determine to post directly.
         const [channel, direct] = this.service.determinePostDirectly(id, param);
@@ -542,10 +546,8 @@ export class HelloAPIController extends GeneralWEBController {
         _log(NS, '> endpoint :=', endpoint);
 
         //! Get photos from "TheCatApi or TheDogApi"
-        const receiveImageInfo = await this.service.getRandomImage(body?.keyword);
-        const imageInfo = JSON.parse(receiveImageInfo.body);
-        const imageUrl: string = imageInfo[0].url;
-        _log(NS, `> ${body.keyword} image := ${imageUrl}`);
+        const imageUrl = await this.service.getRandomImage(animalType);
+        _log(NS, `> ${animalType.type} image := ${imageUrl}`);
 
         // ! prepare slack message via body.
         const message = await this.service.makeSlackBody(imageUrl);
@@ -558,7 +560,6 @@ export class HelloAPIController extends GeneralWEBController {
 
         // ! returns.
         const res = route.lastResponse;
-
         return res;
     };
 }

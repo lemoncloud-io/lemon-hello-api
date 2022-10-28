@@ -15,7 +15,7 @@
 import { $U, $T, _log, _inf, _err, AWSS3Service } from 'lemon-core';
 import { Metadata } from 'aws-sdk/clients/s3';
 import { PutObjectResult, TagSet } from 'lemon-core/dist/cores/aws/aws-s3-service';
-import { HelloService, ParamToSlack, PostResponse, RecordData } from './hello-service';
+import { HelloService, ImageInfo, ParamToSlack, PostResponse, RecordData } from './hello-service';
 const NS = $U.NS('DUMS', 'blue'); // NAMESPACE TO BE PRINTED.
 
 /**
@@ -150,11 +150,16 @@ export class DummyHelloService extends HelloService {
         return this.packageDefaultChannel(result);
     };
 
-    public getRandomImage = async (animal: string = 'cat'): Promise<PostResponse> => {
-        if (!['dog', 'cat'].includes(animal)) throw new Error(`ERR! ${animal} keywords are not supported.`);
-        const body = `https://cdn2.the${animal}api.com/images/MTc5NjU2OA.jpg`; // dummy
-        const statusCode = 200;
-        const statusMessage = 'OK';
-        return { body, statusCode, statusMessage };
+    public getRandomImage = async (imageInfo: ImageInfo): Promise<string> => {
+        const { type, imageUrl } = imageInfo;
+        if (!['dog', 'cat'].includes(type)) throw new Error(`@animal (string) is invalid - ${type} are not supported`);
+        if (
+            !['https://api.thedogapi.com/v1/images/search', 'https://api.thecatapi.com/v1/images/search'].includes(
+                imageUrl,
+            )
+        )
+            throw new Error(`@image url (string) is invalid - ${imageUrl} are not supported`);
+        const url = `https://cdn2.the${type}api.com/images/MTc5NjU2OA.jpg`;
+        return url;
     };
 }

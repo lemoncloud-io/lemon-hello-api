@@ -104,26 +104,41 @@ describe('hello-service /w dummy', () => {
         done();
     }); 
 
-    it('should pass getRandomCatImage()', async done => {
+    it('should pass getRandomImage()', async done => {
         const { service } = instance("dummy");
-        
-        const expected = {
-            statusCode: 200,
-            statusMessage: "OK"
-        };
-
+        const dogCaseExpected = `https://cdn2.thedogapi.com/images/MTc5NjU2OA.jpg`;
+        const catCaseExpected = `https://cdn2.thecatapi.com/images/MTc5NjU2OA.jpg`;
+        const failCaseExpected = '@image url (string) is invalid - https://api.thecowapi.com/v1/images/search are not supported'
         expect2(() => service.hello()).toEqual('hello-mocks-service');
 
-        expect2(await service.getRandomImage("cow").catch(GETERR)).toEqual("ERR! cow keywords are not supported.");
-        expect2(await service.getRandomImage("").catch(GETERR)).toEqual("ERR!  keywords are not supported.");
-        
-        expect2(await service.getRandomImage()).toMatchObject(expected);
-        expect2(await service.getRandomImage("cat")).toMatchObject({...expected,body:"https://cdn2.thecatapi.com/images/MTc5NjU2OA.jpg"});
-        expect2(await service.getRandomImage("dog")).toMatchObject({...expected,body:"https://cdn2.thedogapi.com/images/MTc5NjU2OA.jpg"});
-    
+        expect2(await service.getRandomImage({type:'dog',imageUrl:'https://api.thedogapi.com/v1/images/search'})).toEqual(dogCaseExpected);
+        expect2(await service.getRandomImage({type:'cat',imageUrl:'https://api.thecatapi.com/v1/images/search'})).toEqual(catCaseExpected);
+        expect2(await service.getRandomImage({type:'cat',imageUrl:'https://api.thecowapi.com/v1/images/search'}).catch(GETERR)).toEqual(failCaseExpected);
         done();
     })
 
+    it('should pass checkImageKeyword()', done => {
+        const { service } = instance("dummy");
+        const dogCaseExpected = {
+            type : 'dog',
+            imageUrl : 'https://api.thedogapi.com/v1/images/search'
+        }
+        const catCaseExpected = {
+            type :'cat',
+            imageUrl : 'https://api.thecatapi.com/v1/images/search'
+        }
+    
+        expect2(() => service.hello()).toEqual('hello-mocks-service');
+
+        expect2(() => service.checkImageKeyword({'name':'lemon'})).toEqual(catCaseExpected);
+        expect2(() => service.checkImageKeyword({"keyword":"dog"})).toEqual(dogCaseExpected);
+        expect2(() => service.checkImageKeyword({"keyword":"cat"})).toEqual(catCaseExpected);
+        expect2(() => service.checkImageKeyword({})).toEqual(catCaseExpected);
+        expect2(() => service.checkImageKeyword({"keyword":""})).toEqual(catCaseExpected);
+
+        expect2(() => service.checkImageKeyword({"keyword":"cow"})).toEqual('@animal (string) is invalid - cow are not supported');
+        done();
+    })
 
 
 });

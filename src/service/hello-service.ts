@@ -100,6 +100,11 @@ export interface PostResponse {
     statusMessage: string;
 }
 
+export interface ImageInfo {
+    type: 'dog' | 'cat';
+    imageUrl: string;
+}
+
 /**
  * class: `HelloService`
  * - catch `report-error` via SNS, then save into S3 and post to slack.
@@ -737,7 +742,6 @@ export class HelloService extends CoreService<Model, ModelType> {
                         ...$msg,
                         channel: target?.channel || channel,
                     };
-                    _log(message);
                     if (endpoint) {
                         const sent = await this.service.postMessage(endpoint, message).catch(e => {
                             _err(NS, `! err.send:${channel} =`, e);
@@ -763,6 +767,7 @@ export class HelloService extends CoreService<Model, ModelType> {
     public makeSlackBody = async (url: string): Promise<SlackPostBody> => {
         const message = loadJsonSync('./data/image-slack.json');
         if (typeof message !== 'object') throw new Error('!ERR Failed to load json file.');
+
         if (!message.attachments) throw new Error('!ERR Property attachments does not exist in json file.');
         if (!url.startsWith('https://cdn2')) throw new Error('!ERR Invalid image address.');
         message.attachments[0].image_url = url;
@@ -770,24 +775,33 @@ export class HelloService extends CoreService<Model, ModelType> {
         return message;
     };
 
-    public getRandomImage = async (animal: string = 'cat'): Promise<PostResponse> => {
-        _log(NS, `getRandomImage(${animal})....`);
-        if (!['dog', 'cat'].includes(animal)) throw new Error(`ERR! ${animal} keywords are not supported.`);
-        let targetUrl = `https://api.the${animal}api.com/v1/images/search`;
+    /**
+     * https://thecatapi.com/
+     * GET random image url from TheDogApi or TheCatApi
+     */
+    public getRandomImage = async (imageInfo: ImageInfo): Promise<string> => {
+        _log(NS, `getRandomImage()....`);
+        const { imageUrl } = imageInfo;
 
-        let options: any = url.parse(targetUrl);
+        if (
+            !['https://api.thecatapi.com/v1/images/search', 'https://api.thedogapi.com/v1/images/search'].includes(
+                imageUrl,
+            )
+        )
+            throw new Error(`@image url (string) is invalid - ${imageUrl} are not supported`);
+
+        const options: any = url.parse(imageUrl);
         options.method = 'GET';
-
         return new Promise((resolve, reject) => {
             const getReq = https.request(options, res => {
                 const chunks: any = [];
                 res.setEncoding('utf8');
                 res.on('data', chunk => chunks.push(chunk));
                 res.on('end', () => {
-                    const statusCode = res.statusCode || 200;
-                    const statusMessage = res.statusMessage || 'OK';
-                    const body = chunks.join('');
-                    if (statusCode < 400) resolve({ body, statusCode, statusMessage });
+                    const statusCode = res.statusCode;
+                    const body = JSON.parse(chunks.join(''));
+                    const imageUrl = body[0].url;
+                    if (statusCode < 400) resolve(imageUrl);
                     else reject(new Error(`Request failed. status: ${statusCode}, body: ${body}`));
                 });
             });
@@ -795,6 +809,17 @@ export class HelloService extends CoreService<Model, ModelType> {
             getReq.write('');
             getReq.end();
         });
+    };
+
+    public checkImageKeyword = (body: any): ImageInfo => {
+        const keyword = body.keyword ? body.keyword : 'cat';
+        if (!['dog', 'cat'].includes(keyword))
+            throw new Error(`@animal (string) is invalid - ${keyword} are not supported`);
+        const targetUrl = {
+            type: keyword,
+            imageUrl: `https://api.the${keyword}api.com/v1/images/search`,
+        };
+        return targetUrl;
     };
 }
 

@@ -89,25 +89,25 @@ describe('hello-controller', () => {
             .end(done);
     });
 
-    // it('should pass postHelloImage()', async done => {
-    //     const expected = {
-    //         body : 'ok',
-    //         statusCode: 200,
-    //         statusMessage: "OK"
-    //     };
+    it('should pass postHelloImage()', async done => {
+        const expected = {
+            body : 'ok',
+            statusCode: 200,
+            statusMessage: "OK"
+        };
 
-    //     const res = await request(app)
-    //                         .post('/hello/test/image')
-    //                         .set('Autorization', 'Basic jest')
-    //                         .send({keyword:"cat"});
+        const res = await request(app)
+                            .post('/hello/test/image')
+                            .set('Autorization', 'Basic jest')
+                            .send({keyword:"cat"});
         
-    //     expect2(res).toMatchObject({
-    //         status: 200,
-    //         text: $U.json(expected)
-    //     });
+        expect2(res).toMatchObject({
+            status: 200,
+            text: $U.json(expected)
+        });
         
-    //     done();
-    // });
+        done();
+    });
 
     it('should not pass postHelloImage()', async done => {
         const res = await request(app)
@@ -115,7 +115,7 @@ describe('hello-controller', () => {
                             .set('Autorization', 'Basic jest')
                             .send({keyword:"cow"});
         
-        expect2(res.text).toEqual('ERR! cow keywords are not supported.');
+        expect2(res.text).toEqual('@animal (string) is invalid - cow are not supported');
 
         done();
     });
