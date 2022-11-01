@@ -152,13 +152,12 @@ export class DummyHelloService extends HelloService {
 
     public getRandomImage = async (imageInfo: ImageInfo): Promise<string> => {
         const { type, imageUrl } = imageInfo;
-        if (!['dog', 'cat'].includes(type)) throw new Error(`@animal (string) is invalid - ${type} are not supported`);
         if (
             !['https://api.thedogapi.com/v1/images/search', 'https://api.thecatapi.com/v1/images/search'].includes(
                 imageUrl,
             )
         )
-            throw new Error(`@image url (string) is invalid - ${imageUrl} are not supported`);
+            throw new Error(`.imageUrl[${imageUrl}] is invalid - 404 ERROR`);
         const url = `https://cdn2.the${type}api.com/images/MTc5NjU2OA.jpg`;
         return url;
     };

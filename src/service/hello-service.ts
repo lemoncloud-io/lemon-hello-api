@@ -101,7 +101,7 @@ export interface PostResponse {
 }
 
 export interface ImageInfo {
-    type: 'dog' | 'cat';
+    type: string;
     imageUrl: string;
 }
 
@@ -717,6 +717,7 @@ export class HelloService extends CoreService<Model, ModelType> {
                             L.push(N);
                         }
                     }
+                    $T;
                     return L;
                 }, []);
                 if (matched.length > 0) {
@@ -757,7 +758,7 @@ export class HelloService extends CoreService<Model, ModelType> {
         })(this);
     };
 
-    public determinePostDirectly = (id: any, param: any) => {
+    public determinePostDirectly = (id: string, param: any): [string, boolean] => {
         const channel = id.startsWith('!') ? id.substring(1) : id;
         const hasForce = id.startsWith('!');
         const direct = !!$U.N(param.direct, param.direct === '' ? 1 : hasForce ? 1 : 0);
@@ -765,14 +766,14 @@ export class HelloService extends CoreService<Model, ModelType> {
     };
 
     public makeSlackBody = async (url: string): Promise<SlackPostBody> => {
-        const message = loadJsonSync('./data/image-slack.json');
-        if (typeof message !== 'object') throw new Error('!ERR Failed to load json file.');
+        const slackImageForm = loadJsonSync('./data/image-slack.json');
+        if (typeof slackImageForm !== 'object') throw new Error('@slackImageForm is required - load failed');
 
-        if (!message.attachments) throw new Error('!ERR Property attachments does not exist in json file.');
-        if (!url.startsWith('https://cdn2')) throw new Error('!ERR Invalid image address.');
-        message.attachments[0].image_url = url;
+        if (!slackImageForm.attachments) throw new Error('.attachment (slackImageForm) is required');
+        if (!url.startsWith('https://cdn2')) throw new Error(`@url[${url}] is invalid - not supported`);
+        slackImageForm.attachments[0].image_url = url;
 
-        return message;
+        return slackImageForm;
     };
 
     /**
@@ -782,13 +783,6 @@ export class HelloService extends CoreService<Model, ModelType> {
     public getRandomImage = async (imageInfo: ImageInfo): Promise<string> => {
         _log(NS, `getRandomImage()....`);
         const { imageUrl } = imageInfo;
-
-        if (
-            !['https://api.thecatapi.com/v1/images/search', 'https://api.thedogapi.com/v1/images/search'].includes(
-                imageUrl,
-            )
-        )
-            throw new Error(`@image url (string) is invalid - ${imageUrl} are not supported`);
 
         const options: any = url.parse(imageUrl);
         options.method = 'GET';
@@ -802,7 +796,7 @@ export class HelloService extends CoreService<Model, ModelType> {
                     const body = JSON.parse(chunks.join(''));
                     const imageUrl = body[0].url;
                     if (statusCode < 400) resolve(imageUrl);
-                    else reject(new Error(`Request failed. status: ${statusCode}, body: ${body}`));
+                    else reject(new Error(`@imageUrl[${imageUrl}] is invalid - ${statusCode} error`));
                 });
             });
             getReq.on('error', reject);
@@ -812,9 +806,9 @@ export class HelloService extends CoreService<Model, ModelType> {
     };
 
     public checkImageKeyword = (body: any): ImageInfo => {
-        const keyword = body.keyword ? body.keyword : 'cat';
+        const keyword = $T.S(body?.keyword, 'cat');
         if (!['dog', 'cat'].includes(keyword))
-            throw new Error(`@animal (string) is invalid - ${keyword} are not supported`);
+            throw new Error(`.keyword[${keyword}] (string) is invalid - not supported`);
         const targetUrl = {
             type: keyword,
             imageUrl: `https://api.the${keyword}api.com/v1/images/search`,

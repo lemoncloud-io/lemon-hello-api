@@ -99,13 +99,13 @@ describe('hello-controller', () => {
         const res = await request(app)
                             .post('/hello/test/image')
                             .set('Autorization', 'Basic jest')
-                            .send({keyword:"cat"});
-        
+                            .send({keyword:"dog"});
+
         expect2(res).toMatchObject({
             status: 200,
             text: $U.json(expected)
         });
-        
+
         done();
     });
 
@@ -114,8 +114,8 @@ describe('hello-controller', () => {
                             .post('/hello/test/image')
                             .set('Autorization', 'Basic jest')
                             .send({keyword:"cow"});
-        
-        expect2(res.text).toEqual('@animal (string) is invalid - cow are not supported');
+
+        expect2(res.text).toEqual('.keyword[cow] (string) is invalid - not supported');
 
         done();
     });

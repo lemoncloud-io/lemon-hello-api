@@ -45,100 +45,106 @@ describe('hello-service /w dummy', () => {
             ],
         };
         /* eslint-disable prettier/prettier */
-        expect2(await service.postMessage(webhook, error_msg)).toEqual({ body: "ok", statusCode: 200, statusMessage: "OK" });
+        expect2(await service.postMessage(webhook, error_msg)).toEqual({
+            body: 'ok',
+            statusCode: 200,
+            statusMessage: 'OK',
+        });
         /* eslint-enable prettier/prettier */
     });
-    
+
     it('should pass getHelloTime()', async done => {
         const date = new Date();
         const expected = {
-            status : 200,
-            text : `Hello lemon! - ${date.getHours()}:${date.getMinutes()}`
-        }
+            status: 200,
+            text: `Hello lemon! - ${date.getHours()}:${date.getMinutes()}`,
+        };
         const res = await request(app).get('/hello/0/time');
         expect2(res).toMatchObject(expected);
-        done(); 
+        done();
     });
 
     it('should not pass getHelloTime()', async done => {
-        const wrongId = 3
+        const wrongId = 3;
         const res = await request(app).get(`/hello/${wrongId}/time`);
         expect2(res).toMatchObject({
             status: 404,
-            text: `404 NOT FOUND - id:${wrongId}`
+            text: `404 NOT FOUND - id:${wrongId}`,
         });
-        done(); 
+        done();
     });
 
     it('should pass determinePostDirectly()', done => {
         const { service } = instance('dummy');
 
-        expect2(() => service.determinePostDirectly('lemon', {})).toEqual(['lemon', false]); 
-        expect2(() => service.determinePostDirectly('!lemon', {})).toEqual(['lemon', true]); 
-        expect2(() => service.determinePostDirectly('lemon', {direct : ''})).toEqual(['lemon', true]);
-        expect2(() => service.determinePostDirectly('!lemon', {direct : ''})).toEqual(['lemon', true]);
-        expect2(() => service.determinePostDirectly('lemon', {direct : 'false'})).toEqual(['lemon', false]);
+        expect2(() => service.determinePostDirectly('lemon', {})).toEqual(['lemon', false]);
+        expect2(() => service.determinePostDirectly('!lemon', {})).toEqual(['lemon', true]);
+        expect2(() => service.determinePostDirectly('lemon', { direct: '' })).toEqual(['lemon', true]);
+        expect2(() => service.determinePostDirectly('!lemon', { direct: '' })).toEqual(['lemon', true]);
+        expect2(() => service.determinePostDirectly('lemon', { direct: 'false' })).toEqual(['lemon', false]);
         done();
     });
 
     it('should pass makeSlackBody()', async done => {
-        const { service } = instance("dummy");
+        const { service } = instance('dummy');
         const expected = {
-                            "attachments": [
-                                {
-                                    "fallback": "Hello Cute Animal!",
-                                    "color": "#2eb886",
-                                    "title": "귀여운 사진을 드리겠습니다.",
-                                    "fields": [
-                                        {
-                                            "title": "Priority",
-                                            "value": "High",
-                                            "short": false
-                                        }
-                                    ],"image_url": "https://cdn2.thecatapi.com/images/MTc5NjU2OA.jpg"
-                             }]};
-        
+            attachments: [
+                {
+                    fallback: 'Hello Cute Animal!',
+                    color: '#2eb886',
+                    title: '귀여운 사진을 드리겠습니다.',
+                    fields: [
+                        {
+                            title: 'Priority',
+                            value: 'High',
+                            short: false,
+                        },
+                    ],
+                    image_url: 'https://cdn2.thecatapi.com/images/MTc5NjU2OA.jpg',
+                },
+            ],
+        };
+
         expect2(() => service.hello()).toEqual(`hello-mocks-service`);
-        expect2(await service.makeSlackBody('http://lemon.io/image/1.jpg').catch(GETERR)).toEqual('!ERR Invalid image address.');
+        expect2(await service.makeSlackBody('http://lemon.io/image/1.jpg').catch(GETERR)).toEqual(
+            "@url[http://lemon.io/image/1.jpg] is invalid - not supported"
+        );
         expect2(await service.makeSlackBody('https://cdn2.thecatapi.com/images/MTc5NjU2OA.jpg')).toEqual(expected);
         done();
-    }); 
+    });
 
     it('should pass getRandomImage()', async done => {
-        const { service } = instance("dummy");
+        const { service } = instance('dummy');
         const dogCaseExpected = `https://cdn2.thedogapi.com/images/MTc5NjU2OA.jpg`;
         const catCaseExpected = `https://cdn2.thecatapi.com/images/MTc5NjU2OA.jpg`;
-        const failCaseExpected = '@image url (string) is invalid - https://api.thecowapi.com/v1/images/search are not supported'
         expect2(() => service.hello()).toEqual('hello-mocks-service');
 
         expect2(await service.getRandomImage({type:'dog',imageUrl:'https://api.thedogapi.com/v1/images/search'})).toEqual(dogCaseExpected);
         expect2(await service.getRandomImage({type:'cat',imageUrl:'https://api.thecatapi.com/v1/images/search'})).toEqual(catCaseExpected);
-        expect2(await service.getRandomImage({type:'cat',imageUrl:'https://api.thecowapi.com/v1/images/search'}).catch(GETERR)).toEqual(failCaseExpected);
-        done();
-    })
+        expect2(await service.getRandomImage({type:'cow',imageUrl:'https://api.thecowapi.com/v1/images/search'}).catch(GETERR)).toEqual(`.imageUrl[https://api.thecowapi.com/v1/images/search] is invalid - 404 ERROR`);
 
-    it('should pass checkImageKeyword()', done => {
-        const { service } = instance("dummy");
-        const dogCaseExpected = {
-            type : 'dog',
-            imageUrl : 'https://api.thedogapi.com/v1/images/search'
-        }
-        const catCaseExpected = {
-            type :'cat',
-            imageUrl : 'https://api.thecatapi.com/v1/images/search'
-        }
+        done();
+    });
     
+    it('should pass checkImageKeyword()', done => {
+        const { service } = instance('dummy');
+        const dogCaseExpected = {
+            type: 'dog',
+            imageUrl: 'https://api.thedogapi.com/v1/images/search',
+        };
+        const catCaseExpected = {
+            type: 'cat',
+            imageUrl: 'https://api.thecatapi.com/v1/images/search',
+        };
+
         expect2(() => service.hello()).toEqual('hello-mocks-service');
 
-        expect2(() => service.checkImageKeyword({'name':'lemon'})).toEqual(catCaseExpected);
-        expect2(() => service.checkImageKeyword({"keyword":"dog"})).toEqual(dogCaseExpected);
-        expect2(() => service.checkImageKeyword({"keyword":"cat"})).toEqual(catCaseExpected);
         expect2(() => service.checkImageKeyword({})).toEqual(catCaseExpected);
-        expect2(() => service.checkImageKeyword({"keyword":""})).toEqual(catCaseExpected);
-
-        expect2(() => service.checkImageKeyword({"keyword":"cow"})).toEqual('@animal (string) is invalid - cow are not supported');
+        expect2(() => service.checkImageKeyword({ name: 'lemon' })).toEqual(catCaseExpected);
+        expect2(() => service.checkImageKeyword({ keyword: 'cat' })).toEqual(catCaseExpected);
+        expect2(() => service.checkImageKeyword({ keyword: 'dog' })).toEqual(dogCaseExpected);
+        expect2(() => service.checkImageKeyword({ keyword: 'cow' })).toEqual(`.keyword[cow] (string) is invalid - not supported`);
+        expect2(() => service.checkImageKeyword({ keyword: '' })).toEqual('.keyword[] (string) is invalid - not supported');
         done();
-    })
-
-
+    });
 });
