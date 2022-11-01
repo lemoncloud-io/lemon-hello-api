@@ -1,6 +1,6 @@
 # how-to-develop
 
-# 1. AWS Profile Registration
+## 1. AWS Profile Registration
 
 **AWS** 명령줄 인터페이스(**CLI**)는 **AWS** 서비스를 관리하는 통합 도구입니다. <br>
 CLI를 통해 여러 **AWS** 서비스를 명령줄에서 제어하고 스크립트를 통해 자동화할 수 있습니다.
@@ -42,7 +42,7 @@ AWS IAM에서 발급 받은 credential 파일에서 `Access Key ID`와 `Secret A
 
 ---
 
-# 2. How to Build
+## 2. How to Build
 
 - **STEP.1 - package 설치하기**
     
@@ -147,7 +147,7 @@ slack에 대해 새로운 기능을 구현한 api를 작성하고 싶다면,
 
 ---
 
-# 3. Code Convention
+## 3. Code Convention
 
 Contribute를 위해서는 다음과 같은 Code convention을 따라야 합니다.
 
@@ -214,7 +214,7 @@ Contribute를 위해서는 다음과 같은 Code convention을 따라야 합니�
 
 ---
 
-# 4. How to Development
+## 4. How to Development
 
 > - TDD (Test-Driven-Development) 방법론을 통해 개발하는 것을 권장합니다.
 > - Test coverage, Branch coverage 등을 고려하여 작성할 것을 권장합니다.
