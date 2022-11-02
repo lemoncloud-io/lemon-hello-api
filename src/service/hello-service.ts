@@ -100,6 +100,9 @@ export interface PostResponse {
     statusMessage: string;
 }
 
+/**
+ * information for fetching random image.
+ */
 export interface ImageInfo {
     type: string;
     imageUrl: string;
@@ -758,6 +761,9 @@ export class HelloService extends CoreService<Model, ModelType> {
         })(this);
     };
 
+    /**
+     * determine to post directly.
+     */
     public determinePostDirectly = (id: string, param: any): [string, boolean] => {
         const channel = id.startsWith('!') ? id.substring(1) : id;
         const hasForce = id.startsWith('!');
@@ -765,6 +771,9 @@ export class HelloService extends CoreService<Model, ModelType> {
         return [channel, direct];
     };
 
+    /**
+     * build the slack message body to post the image.
+     */
     public makeSlackBody = async (url: string): Promise<SlackPostBody> => {
         const slackImageForm = loadJsonSync('./data/image-slack.json');
         if (typeof slackImageForm !== 'object') throw new Error('@slackImageForm is required - load failed');
@@ -778,10 +787,10 @@ export class HelloService extends CoreService<Model, ModelType> {
 
     /**
      * https://thecatapi.com/
-     * GET random image url from TheDogApi or TheCatApi
+     * fetch random image url from TheDogApi or TheCatApi
      */
-    public getRandomImage = async (imageInfo: ImageInfo): Promise<string> => {
-        _log(NS, `getRandomImage()....`);
+    public fetchRandomImageUrl = async (imageInfo: ImageInfo): Promise<string> => {
+        _log(NS, `fetchRandomImageUrl()....`);
         const { imageUrl } = imageInfo;
 
         const options: any = url.parse(imageUrl);
@@ -796,7 +805,7 @@ export class HelloService extends CoreService<Model, ModelType> {
                     const body = JSON.parse(chunks.join(''));
                     const imageUrl = body[0].url;
                     if (statusCode < 400) resolve(imageUrl);
-                    else reject(new Error(`@imageUrl[${imageUrl}] is invalid - ${statusCode} error`));
+                    else reject(new Error(`@imageUrl[${imageUrl}] (string) is invalid - ${imageUrl} are not supported`));
                 });
             });
             getReq.on('error', reject);
@@ -805,10 +814,12 @@ export class HelloService extends CoreService<Model, ModelType> {
         });
     };
 
-    public checkImageKeyword = (body: any): ImageInfo => {
+    /**
+     * determines the target URL based on the keyword.
+     */
+    public asImageInfo = (body: any): ImageInfo => {
         const keyword = $T.S(body?.keyword, 'cat');
-        if (!['dog', 'cat'].includes(keyword))
-            throw new Error(`.keyword[${keyword}] (string) is invalid - not supported`);
+        if (!['dog', 'cat'].includes(keyword)) throw new Error(`.keyword[${keyword}] (string) is invalid - not supported`);
         const targetUrl = {
             type: keyword,
             imageUrl: `https://api.the${keyword}api.com/v1/images/search`,

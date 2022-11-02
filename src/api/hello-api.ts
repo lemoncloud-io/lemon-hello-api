@@ -533,7 +533,7 @@ export class HelloAPIController extends GeneralWEBController {
         body && _log(NS, `> body =`, $U.json(body));
         if (!body) throw new Error(`@body (object|string) is required!`);
         // Verify the keyword and determine url.
-        const animalType = this.service.checkImageKeyword(body);
+        const animalType = this.service.asImageInfo(body);
         _log(NS, `> imageType :=`, animalType.type); // cat or dog
 
         //! determine to post directly.
@@ -546,7 +546,7 @@ export class HelloAPIController extends GeneralWEBController {
         _log(NS, '> endpoint :=', endpoint);
 
         //! Get photos from "TheCatApi or TheDogApi"
-        const imageUrl = await this.service.getRandomImage(animalType);
+        const imageUrl = await this.service.fetchRandomImageUrl(animalType);
         _log(NS, `> ${animalType.type} image := ${imageUrl}`);
 
         // ! prepare slack message via body.

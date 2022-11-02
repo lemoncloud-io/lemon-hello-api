@@ -204,12 +204,19 @@ Contribute를 위해서는 다음과 같은 Code convention을 따라야 합니�
     
     ```tsx
     // example
-    public checkImageKeyword = (body: any): ImageInfo => {
+    public asImageInfo = (body: any): ImageInfo => {
     		// const keyword = body.keyword ? body.keyword : 'cat';
     		const keyword = $T.S(body?.keyword, 'cat'); // recommend
     		...
     };
     ```
+- **In case of Naming Rule**<br>
+개발 요소에 대한 명명 규칙 (Naming Rule)은 다음과 같습니다.
+    > - 여러 개의 단어로 이루어진 경우, Camel Case를 적용합니다.
+    > - 단순 입/출력 변환 같은 경우, 함수의 이름을 as로 시작합니다.
+    > - 외부의 리소스를 가져올 경우, 함수의 이름을 fetch로 시작합니다.
+    > - interface 혹은 함수를 작성했을 경우, 설명(comment)을 추가해야 합니다.
+    > etc.
     
 
 ---

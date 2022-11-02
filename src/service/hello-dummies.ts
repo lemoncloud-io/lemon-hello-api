@@ -150,7 +150,7 @@ export class DummyHelloService extends HelloService {
         return this.packageDefaultChannel(result);
     };
 
-    public getRandomImage = async (imageInfo: ImageInfo): Promise<string> => {
+    public fetchRandomImageUrl = async (imageInfo: ImageInfo): Promise<string> => {
         const { type, imageUrl } = imageInfo;
         if (
             !['https://api.thedogapi.com/v1/images/search', 'https://api.thecatapi.com/v1/images/search'].includes(
