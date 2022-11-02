@@ -11,7 +11,7 @@
  * @copyright (C) 2020 LemonCloud Co Ltd. - All Rights Reserved.
  */
 // eslint-disable-next-line @typescript-eslint/no-unused-vars
-import { $U, $T, _log, _inf, _err } from 'lemon-core';
+import { $U, $T, _log, _inf, _err, SlackPostBody } from 'lemon-core';
 import $engine, {
     loadJsonSync,
     AWSKMSService,
@@ -498,6 +498,69 @@ export class HelloAPIController extends GeneralWEBController {
             delete this.NODES[id]; // set null in order to keep id.
             return node;
         });
+    };
+    public getHelloTime: NextHandler = async (id: any, param: any, body: any, ctx: any) => {
+        _log(NS, `getHelloTime(${id})...`);
+        _log(NS, `> context =`, $U.json(ctx));
+
+        const i = $U.N(id, 0);
+        const val = this.NODES[i];
+        if (!val) throw new Error(`404 NOT FOUND - id:${id}`);
+
+        const date = new Date();
+        const getTime = `${date.getHours()}:${date.getMinutes()}`;
+        const res = `Hello ${val.name}! - ${getTime}`;
+        _log(NS, `> res = ${res}`);
+        return res;
+    };
+
+    /**
+     * Post animal image via Slack Web Hook
+     * Only dog or cat picture supported
+     * echo '{"keyword":"cat"}' | http ':8888/hello/test/slack'
+     * echo '{"keyword":"dog"}' | http ':8888/hello/public/slack'
+     *
+     * ```
+     * @param {*} id                id of slack-channel (see environment)
+     * @param {*} param            (optional)
+     * @param {*} body             {error?:'', message:'', data:{...}}
+     * @param {*} $ctx              context
+     */
+    public postHelloImage: NextHandler = async (id: any, param: any, body: any, $ctx: any) => {
+        _log(NS, `postHelloImage(${id})....`);
+        id = $T.S2(id).trim();
+        param && _log(NS, `> param =`, $U.json(param));
+        body && _log(NS, `> body =`, $U.json(body));
+        if (!body) throw new Error(`@body (object|string) is required!`);
+        // Verify the keyword and determine url.
+        const animalType = this.service.asImageInfo(body);
+        _log(NS, `> imageType :=`, animalType.type); // cat or dog
+
+        //! determine to post directly.
+        const [channel, direct] = this.service.determinePostDirectly(id, param);
+        _log(NS, `> direct@[${channel}] :=`, direct);
+
+        //! load target webhook via environ.
+        const endpoint = await this.service.loadSlackChannel(channel, 'public');
+        if (!endpoint) throw new Error(`@id[${channel}] (channel-id) is invalid!`);
+        _log(NS, '> endpoint :=', endpoint);
+
+        //! Get photos from "TheCatApi or TheDogApi"
+        const imageUrl = await this.service.fetchRandomImageUrl(animalType);
+        _log(NS, `> ${animalType.type} image := ${imageUrl}`);
+
+        // ! prepare slack message via body.
+        const message = await this.service.makeSlackBody(imageUrl);
+        _log(NS, '> message :=', message);
+
+        // ! route message
+        const route = this.service.$routes($ctx, { direct });
+        const sent = await route.route(message, channel, [], { id: channel, endpoint });
+        _log(NS, `> sent =`, sent);
+
+        // ! returns.
+        const res = route.lastResponse;
+        return res;
     };
 }
 

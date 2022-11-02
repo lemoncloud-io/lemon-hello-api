@@ -88,4 +88,35 @@ describe('hello-controller', () => {
             .expect(200, { ...expected })
             .end(done);
     });
+
+    it('should pass postHelloImage()', async done => {
+        const expected = {
+            body : 'ok',
+            statusCode: 200,
+            statusMessage: "OK"
+        };
+
+        const res = await request(app)
+                            .post('/hello/test/image')
+                            .set('Autorization', 'Basic jest')
+                            .send({keyword:"dog"});
+
+        expect2(res).toMatchObject({
+            status: 200,
+            text: $U.json(expected)
+        });
+
+        done();
+    });
+
+    it('should not pass postHelloImage()', async done => {
+        const res = await request(app)
+                            .post('/hello/test/image')
+                            .set('Autorization', 'Basic jest')
+                            .send({keyword:"cow"});
+
+        expect2(res.text).toEqual('.keyword[cow] (string) is invalid - not supported');
+
+        done();
+    });
 });

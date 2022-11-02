@@ -15,7 +15,7 @@
 import { $U, $T, _log, _inf, _err, AWSS3Service } from 'lemon-core';
 import { Metadata } from 'aws-sdk/clients/s3';
 import { PutObjectResult, TagSet } from 'lemon-core/dist/cores/aws/aws-s3-service';
-import { HelloService, ParamToSlack, PostResponse, RecordData } from './hello-service';
+import { HelloService, ImageInfo, ParamToSlack, PostResponse, RecordData } from './hello-service';
 const NS = $U.NS('DUMS', 'blue'); // NAMESPACE TO BE PRINTED.
 
 /**
@@ -148,5 +148,17 @@ export class DummyHelloService extends HelloService {
 
         // package default.
         return this.packageDefaultChannel(result);
+    };
+
+    public fetchRandomImageUrl = async (imageInfo: ImageInfo): Promise<string> => {
+        const { type, imageUrl } = imageInfo;
+        if (
+            !['https://api.thedogapi.com/v1/images/search', 'https://api.thecatapi.com/v1/images/search'].includes(
+                imageUrl,
+            )
+        )
+            throw new Error(`.imageUrl[${imageUrl}] is invalid - 404 ERROR`);
+        const url = `https://cdn2.the${type}api.com/images/MTc5NjU2OA.jpg`;
+        return url;
     };
 }

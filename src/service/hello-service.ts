@@ -13,7 +13,7 @@
  * @copyright (C) 2020 LemonCloud Co Ltd. - All Rights Reserved.
  */
 // eslint-disable-next-line @typescript-eslint/no-unused-vars
-import { $U, $T, _log, _inf, _err } from 'lemon-core';
+import { $U, $T, _log, _inf, _err, loadJsonSync } from 'lemon-core';
 import {
     APIService,
     SlackAttachment,
@@ -98,6 +98,14 @@ export interface PostResponse {
     body: string;
     statusCode: number;
     statusMessage: string;
+}
+
+/**
+ * information for fetching random image.
+ */
+export interface ImageInfo {
+    type: string;
+    imageUrl: string;
 }
 
 /**
@@ -259,7 +267,6 @@ export class HelloService extends CoreService<Model, ModelType> {
         const SLACK_PUT_S3 = $U.env('SLACK_PUT_S3', '1') as string;
         isUseS3 = isUseS3 ?? !!$U.N(SLACK_PUT_S3, 0);
         const attachments: SlackAttachment[] = message?.attachments || [];
-
         const isSlackPostBody = (message: any): message is SlackPostBody =>
             Array.isArray(attachments) && attachments.length > 0;
 
@@ -270,6 +277,7 @@ export class HelloService extends CoreService<Model, ModelType> {
             const title = $T.S(attachment.title, '');
             const color = $T.S(attachment.color, 'green');
             const thumb_url = attachment.thumb_url ? attachment.thumb_url : undefined;
+            const image_url = attachment.image_url ? attachment.image_url : undefined;
             _log(NS, `> title[${pretext}] =`, title);
             const saves = { ...message };
             saves.attachments = attachments.map((N: any) => {
@@ -288,7 +296,10 @@ export class HelloService extends CoreService<Model, ModelType> {
 
             //! choose the icon.
             // eslint-disable-next-line prettier/prettier
-            const MOONS = ':new_moon:,:waxing_crescent_moon:,:first_quarter_moon:,:moon:,:full_moon:,:waning_gibbous_moon:,:last_quarter_moon:,:waning_crescent_moon:'.split(',');
+            const MOONS =
+                ':new_moon:,:waxing_crescent_moon:,:first_quarter_moon:,:moon:,:full_moon:,:waning_gibbous_moon:,:last_quarter_moon:,:waning_crescent_moon:'.split(
+                    ',',
+                );
             const now = this.current ? new Date(this.current) : new Date();
             let hour = now.getHours() + now.getMinutes() / 60.0 + 1.0;
             hour = hour >= 24 ? hour - 24 : hour;
@@ -313,6 +324,7 @@ export class HelloService extends CoreService<Model, ModelType> {
                             mrkdwn: true,
                             mrkdwn_in: ['pretext', 'text'],
                             thumb_url,
+                            image_url,
                         },
                     ];
                     return message;
@@ -708,6 +720,7 @@ export class HelloService extends CoreService<Model, ModelType> {
                             L.push(N);
                         }
                     }
+                    $T;
                     return L;
                 }, []);
                 if (matched.length > 0) {
@@ -746,6 +759,72 @@ export class HelloService extends CoreService<Model, ModelType> {
                 return 0;
             };
         })(this);
+    };
+
+    /**
+     * determine to post directly.
+     */
+    public determinePostDirectly = (id: string, param: any): [string, boolean] => {
+        const channel = id.startsWith('!') ? id.substring(1) : id;
+        const hasForce = id.startsWith('!');
+        const direct = !!$U.N(param.direct, param.direct === '' ? 1 : hasForce ? 1 : 0);
+        return [channel, direct];
+    };
+
+    /**
+     * build the slack message body to post the image.
+     */
+    public makeSlackBody = async (url: string): Promise<SlackPostBody> => {
+        const slackImageForm = loadJsonSync('./data/image-slack.json');
+        if (typeof slackImageForm !== 'object') throw new Error('@slackImageForm is required - load failed');
+
+        if (!slackImageForm.attachments) throw new Error('.attachment (slackImageForm) is required');
+        if (!url.startsWith('https://cdn2')) throw new Error(`@url[${url}] is invalid - not supported`);
+        slackImageForm.attachments[0].image_url = url;
+
+        return slackImageForm;
+    };
+
+    /**
+     * https://thecatapi.com/
+     * fetch random image url from TheDogApi or TheCatApi
+     */
+    public fetchRandomImageUrl = async (imageInfo: ImageInfo): Promise<string> => {
+        _log(NS, `fetchRandomImageUrl()....`);
+        const { imageUrl } = imageInfo;
+
+        const options: any = url.parse(imageUrl);
+        options.method = 'GET';
+        return new Promise((resolve, reject) => {
+            const getReq = https.request(options, res => {
+                const chunks: any = [];
+                res.setEncoding('utf8');
+                res.on('data', chunk => chunks.push(chunk));
+                res.on('end', () => {
+                    const statusCode = res.statusCode;
+                    const body = JSON.parse(chunks.join(''));
+                    const imageUrl = body[0].url;
+                    if (statusCode < 400) resolve(imageUrl);
+                    else reject(new Error(`@imageUrl[${imageUrl}] (string) is invalid - ${imageUrl} are not supported`));
+                });
+            });
+            getReq.on('error', reject);
+            getReq.write('');
+            getReq.end();
+        });
+    };
+
+    /**
+     * determines the target URL based on the keyword.
+     */
+    public asImageInfo = (body: any): ImageInfo => {
+        const keyword = $T.S(body?.keyword, 'cat');
+        if (!['dog', 'cat'].includes(keyword)) throw new Error(`.keyword[${keyword}] (string) is invalid - not supported`);
+        const targetUrl = {
+            type: keyword,
+            imageUrl: `https://api.the${keyword}api.com/v1/images/search`,
+        };
+        return targetUrl;
     };
 }
 
