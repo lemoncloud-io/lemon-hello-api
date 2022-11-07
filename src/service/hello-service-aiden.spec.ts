@@ -1,15 +1,21 @@
 /**
  * `hello-service-aiden.spec.ts`
  * - common unit test for `hello-controller`
- * @author Aiden
+ * 
+ * 
+ * @author      Aiden <aiden@lemoncloud.io>
+ * @date        2022-11-02 initial version
+ * 
+ * @copyright (C) 2020 LemonCloud Co Ltd. - All Rights Reserved.
  */
-
+// eslint-disable-next-line @typescript-eslint/no-unused-vars
 import { loadProfile } from 'lemon-core/dist/environ';
-import { GETERR, expect2, loadJsonSync, SlackPostBody, NextContext } from 'lemon-core';
+import { GETERR, expect2, loadJsonSync, $U } from 'lemon-core';
 import { HelloService } from './hello-service';
 import { DummyHelloService } from './hello-dummies';
 import request from 'supertest';
 import { app } from '../express';
+import { Model, ModelType } from './hello-model';
 
 //! create service instance.
 export const instance = (type = 'dummy', current?: number) => {
@@ -112,39 +118,38 @@ describe('hello-service /w dummy', () => {
         expect2(await service.makeSlackBody('https://cdn2.thecatapi.com/images/MTc5NjU2OA.jpg')).toEqual(expected);
         done();
     });
-
+    // eslint-disable-next-line @typescript-eslint/no-unused-vars
     it('should pass fetchRandomImageUrl()', async done => {
         const { service } = instance('dummy');
         const dogCaseExpected = `https://cdn2.thedogapi.com/images/MTc5NjU2OA.jpg`;
         const catCaseExpected = `https://cdn2.thecatapi.com/images/MTc5NjU2OA.jpg`;
         expect2(() => service.hello()).toEqual('hello-mocks-service');
-
-        expect2(await service.fetchRandomImageUrl({type:'dog',imageUrl:'https://api.thedogapi.com/v1/images/search'})).toEqual(dogCaseExpected);
-        expect2(await service.fetchRandomImageUrl({type:'cat',imageUrl:'https://api.thecatapi.com/v1/images/search'})).toEqual(catCaseExpected);
-        expect2(await service.fetchRandomImageUrl({type:'cow',imageUrl:'https://api.thecowapi.com/v1/images/search'}).catch(GETERR)).toEqual(`.imageUrl[https://api.thecowapi.com/v1/images/search] is invalid - 404 ERROR`);
+        
+        expect2(await service.fetchRandomImageUrl({keyword:'cat',imageUrl:'https://lemon.catimg.com/dummy/AAAAAAAAA'})).toEqual(catCaseExpected);
+        expect2(await service.fetchRandomImageUrl({keyword:'dog',imageUrl:'https://lemon.dogimg.com/dummy/BBBBBBBB'})).toEqual(dogCaseExpected);
+        expect2(await service.fetchRandomImageUrl({keyword:'cow',imageUrl:'https://lemon.cowimg.com/dummy/CCCCCCCC'}).catch(GETERR)).toEqual(`.imageUrl[https://lemon.cowimg.com/dummy/CCCCCCCC] is invalid - 404 ERROR`);
 
         done();
     });
     
-    it('should pass asImageInfo()', done => {
-        const { service } = instance('dummy');
+    it('should pass asImageInfo()', async done => {
+        const { service, current } = instance('dummy');
         const dogCaseExpected = {
-            type: 'dog',
-            imageUrl: 'https://api.thedogapi.com/v1/images/search',
+            keyword: 'dog',
+            imageUrl: 'https://lemon.dogimg.com/dummy/BBBBBBBB',
         };
         const catCaseExpected = {
-            type: 'cat',
-            imageUrl: 'https://api.thecatapi.com/v1/images/search',
+            keyword: 'cat',
+            imageUrl: 'https://lemon.catimg.com/dummy/AAAAAAAAA',
         };
 
         expect2(() => service.hello()).toEqual('hello-mocks-service');
 
-        expect2(() => service.asImageInfo({})).toEqual(catCaseExpected);
-        expect2(() => service.asImageInfo({ name: 'lemon' })).toEqual(catCaseExpected);
-        expect2(() => service.asImageInfo({ keyword: 'cat' })).toEqual(catCaseExpected);
-        expect2(() => service.asImageInfo({ keyword: 'dog' })).toEqual(dogCaseExpected);
-        expect2(() => service.asImageInfo({ keyword: 'cow' })).toEqual(`.keyword[cow] (string) is invalid - not supported`);
-        expect2(() => service.asImageInfo({ keyword: '' })).toEqual('.keyword[] (string) is invalid - not supported');
+        expect2(await service.asImageInfo({})).toEqual(catCaseExpected);
+        expect2(await service.asImageInfo({ name: 'lemon' })).toEqual(catCaseExpected);
+        expect2(await service.asImageInfo({ keyword: 'cat' })).toEqual(catCaseExpected);
+        expect2(await service.asImageInfo({ keyword: 'dog' })).toEqual(dogCaseExpected);
+        expect2(await service.asImageInfo({ keyword: 'cow' }).catch(GETERR)).toEqual(`.keyword[cow] (string) is invalid - not supported`);
         done();
     });
 });

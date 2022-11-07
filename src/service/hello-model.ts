@@ -16,7 +16,7 @@ import { keys } from 'ts-transformer-keys';
  * type: `ModelType`
  * - use this type to make pkey per data.
  */
-export type ModelType = 'test' | 'channel' | 'target';
+export type ModelType = 'test' | 'channel' | 'target' | 'animal';
 
 /**
  * class: `Model`
@@ -138,6 +138,10 @@ export interface TargetModel extends Model {
     id?: string;
 }
 
+export interface AnimalModel extends Model {
+    imageUrl?: string;
+}
+
 /**
  * extract field names from models
  * - only fields start with lowercase, or all upper.
@@ -158,4 +162,5 @@ export const $FIELD = {
     test: filterFields(keys<TestModel>()),
     channel: filterFields(keys<ChannelModel>()),
     target: filterFields(keys<TargetModel>()),
+    animal: filterFields(keys<AnimalModel>()),
 };

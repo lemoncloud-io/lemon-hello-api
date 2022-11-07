@@ -12,7 +12,7 @@
  * @copyright (C) 2020 LemonCloud Co Ltd. - All Rights Reserved.
  */
 // eslint-disable-next-line @typescript-eslint/no-unused-vars
-import { $U, $T, _log, _inf, _err, AWSS3Service } from 'lemon-core';
+import { $U, $T, _log, _inf, _err, AWSS3Service, loadDataYml } from 'lemon-core';
 import { Metadata } from 'aws-sdk/clients/s3';
 import { PutObjectResult, TagSet } from 'lemon-core/dist/cores/aws/aws-s3-service';
 import { HelloService, ImageInfo, ParamToSlack, PostResponse, RecordData } from './hello-service';
@@ -151,14 +151,27 @@ export class DummyHelloService extends HelloService {
     };
 
     public fetchRandomImageUrl = async (imageInfo: ImageInfo): Promise<string> => {
-        const { type, imageUrl } = imageInfo;
-        if (
-            !['https://api.thedogapi.com/v1/images/search', 'https://api.thecatapi.com/v1/images/search'].includes(
-                imageUrl,
-            )
-        )
+        const { keyword, imageUrl } = imageInfo;
+        if (!['https://lemon.catimg.com/dummy/AAAAAAAAA', 'https://lemon.dogimg.com/dummy/BBBBBBBB'].includes(imageUrl))
             throw new Error(`.imageUrl[${imageUrl}] is invalid - 404 ERROR`);
-        const url = `https://cdn2.the${type}api.com/images/MTc5NjU2OA.jpg`;
+        const url = `https://cdn2.the${keyword}api.com/images/MTc5NjU2OA.jpg`;
         return url;
+    };
+
+    public asImageInfo = async (imageInfo: any): Promise<ImageInfo> => {
+        const dummy = loadDataYml('image-dummy-data.yml');
+        const keyword = $T.S(imageInfo.keyword, 'cat');
+        const _id = `TT:animal:${keyword}`;
+        const res: ImageInfo = {};
+
+        dummy.data.map((data: ImageInfo) => {
+            if (data._id === _id) {
+                res.keyword = keyword;
+                res.imageUrl = data.imageUrl;
+            }
+        });
+
+        if (!res.imageUrl) throw new Error(`.keyword[${keyword}] (string) is invalid - not supported`);
+        return res;
     };
 }

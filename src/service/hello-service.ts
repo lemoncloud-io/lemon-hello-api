@@ -13,7 +13,7 @@
  * @copyright (C) 2020 LemonCloud Co Ltd. - All Rights Reserved.
  */
 // eslint-disable-next-line @typescript-eslint/no-unused-vars
-import { $U, $T, _log, _inf, _err, loadJsonSync } from 'lemon-core';
+import { $U, $T, _log, _inf, _err, loadJsonSync, GETERR, loadDataYml } from 'lemon-core';
 import {
     APIService,
     SlackAttachment,
@@ -27,7 +27,7 @@ import {
     $info,
 } from 'lemon-core';
 import { CallbackSlackData, CallbackPayload } from '../common/types';
-import { $FIELD, ChannelModel, Model, ModelType, RouteRule, TargetModel, TestModel } from './hello-model';
+import { $FIELD, ChannelModel, Model, ModelType, RouteRule, TargetModel, TestModel, AnimalModel } from './hello-model';
 
 //! import dependency
 import https from 'https';
@@ -104,8 +104,9 @@ export interface PostResponse {
  * information for fetching random image.
  */
 export interface ImageInfo {
-    type: string;
-    imageUrl: string;
+    keyword?: string;
+    imageUrl?: string;
+    _id?: string;
 }
 
 /**
@@ -122,6 +123,7 @@ export class HelloService extends CoreService<Model, ModelType> {
     public readonly $test: MyTestManager;
     public readonly $channel: MyChannelManager;
     public readonly $target: MyTargetManager;
+    public readonly $animal: MyAnimalManager;
 
     /**
      * default constructor w/ optional parameters.
@@ -139,6 +141,7 @@ export class HelloService extends CoreService<Model, ModelType> {
         this.$test = new MyTestManager(this);
         this.$channel = new MyChannelManager(this);
         this.$target = new MyTargetManager(this);
+        this.$animal = new MyAnimalManager(this);
     }
 
     /**
@@ -817,14 +820,20 @@ export class HelloService extends CoreService<Model, ModelType> {
     /**
      * determines the target URL based on the keyword.
      */
-    public asImageInfo = (body: any): ImageInfo => {
+    public asImageInfo = async (body: ImageInfo): Promise<ImageInfo> => {
         const keyword = $T.S(body?.keyword, 'cat');
-        if (!['dog', 'cat'].includes(keyword)) throw new Error(`.keyword[${keyword}] (string) is invalid - not supported`);
-        const targetUrl = {
-            type: keyword,
-            imageUrl: `https://api.the${keyword}api.com/v1/images/search`,
+        const model = this.$animal.storage;
+        const readData = await model.read(keyword).catch(e => {
+            if (GETERR(e).startsWith('404 NOT FOUND'))
+                throw new Error(`.keyword[${keyword}] (string) is invalid - not supported`);
+            throw e;
+        });
+        
+        const res = {
+            keyword: keyword,
+            imageUrl: readData.imageUrl,
         };
-        return targetUrl;
+        return res;
     };
 }
 
@@ -953,6 +962,12 @@ export class MyChannelManager extends MyCoreManager<ChannelModel, HelloService> 
 export class MyTargetManager extends MyCoreManager<TargetModel, HelloService> {
     public constructor(parent: HelloService) {
         super('target', parent, $FIELD.target);
+    }
+}
+
+export class MyAnimalManager extends MyCoreManager<AnimalModel, HelloService> {
+    public constructor(parent: HelloService) {
+        super('animal', parent, $FIELD.animal);
     }
 }
 

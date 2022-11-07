@@ -517,8 +517,8 @@ export class HelloAPIController extends GeneralWEBController {
     /**
      * Post animal image via Slack Web Hook
      * Only dog or cat picture supported
-     * echo '{"keyword":"cat"}' | http ':8888/hello/test/slack'
-     * echo '{"keyword":"dog"}' | http ':8888/hello/public/slack'
+     * echo '{"keyword":"cat"}' | http ':8888/hello/test/image'
+     * echo '{"keyword":"dog"}' | http ':8888/hello/public/image'
      *
      * ```
      * @param {*} id                id of slack-channel (see environment)
@@ -533,8 +533,8 @@ export class HelloAPIController extends GeneralWEBController {
         body && _log(NS, `> body =`, $U.json(body));
         if (!body) throw new Error(`@body (object|string) is required!`);
         // Verify the keyword and determine url.
-        const animalType = this.service.asImageInfo(body);
-        _log(NS, `> imageType :=`, animalType.type); // cat or dog
+        const animalType = await this.service.asImageInfo(body);
+        _log(NS, `> imageType :=`, animalType); // cat or dog
 
         //! determine to post directly.
         const [channel, direct] = this.service.determinePostDirectly(id, param);
@@ -547,7 +547,7 @@ export class HelloAPIController extends GeneralWEBController {
 
         //! Get photos from "TheCatApi or TheDogApi"
         const imageUrl = await this.service.fetchRandomImageUrl(animalType);
-        _log(NS, `> ${animalType.type} image := ${imageUrl}`);
+        _log(NS, `> ${animalType.keyword} image := ${imageUrl}`);
 
         // ! prepare slack message via body.
         const message = await this.service.makeSlackBody(imageUrl);
