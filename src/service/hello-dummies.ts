@@ -12,7 +12,7 @@
  * @copyright (C) 2020 LemonCloud Co Ltd. - All Rights Reserved.
  */
 // eslint-disable-next-line @typescript-eslint/no-unused-vars
-import { $U, $T, _log, _inf, _err, AWSS3Service, loadDataYml } from 'lemon-core';
+import { $U, $T, _log, _inf, _err, AWSS3Service, GETERR } from 'lemon-core';
 import { Metadata } from 'aws-sdk/clients/s3';
 import { PutObjectResult, TagSet } from 'lemon-core/dist/cores/aws/aws-s3-service';
 import { HelloService, ImageInfo, ParamToSlack, PostResponse, RecordData } from './hello-service';
@@ -149,29 +149,29 @@ export class DummyHelloService extends HelloService {
         // package default.
         return this.packageDefaultChannel(result);
     };
-
-    public fetchRandomImageUrl = async (imageInfo: ImageInfo): Promise<string> => {
+    /**
+     * This statusCode is only in Dummy
+     */
+    public fetchRandomImageUrl = async (imageInfo: ImageInfo, statusCode?:number): Promise<string> => {
         const { keyword, imageUrl } = imageInfo;
-        if (!['https://lemon.catimg.com/dummy/AAAAAAAAA', 'https://lemon.dogimg.com/dummy/BBBBBBBB'].includes(imageUrl))
-            throw new Error(`.imageUrl[${imageUrl}] is invalid - 404 ERROR`);
-        const url = `https://cdn2.the${keyword}api.com/images/MTc5NjU2OA.jpg`;
-        return url;
+
+        const fetchResult = `https://cdn2.the${keyword}api.com/images/MTc5NjU2OA.jpg`
+        if (statusCode >= 400) throw new Error(`@imageUrl[${imageUrl}] (string) is invalid - are not supported`)
+        
+        return fetchResult;
+
     };
 
-    public asImageInfo = async (imageInfo: any): Promise<ImageInfo> => {
-        const dummy = loadDataYml('image-dummy-data.yml');
-        const keyword = $T.S(imageInfo.keyword, 'cat');
-        const _id = `TT:animal:${keyword}`;
-        const res: ImageInfo = {};
-
-        dummy.data.map((data: ImageInfo) => {
-            if (data._id === _id) {
-                res.keyword = keyword;
-                res.imageUrl = data.imageUrl;
-            }
+    public asImageInfo = async (body: ImageInfo): Promise<ImageInfo> => {
+        const keyword = $T.S(body.keyword, 'cat');
+        const animalStorage = this.$animal.storage;
+        // find in dummy-table
+        const findImageUrl = await animalStorage.read(keyword).catch(e => {
+            if (GETERR(e).startsWith('404 NOT FOUND')) throw new Error(`.keyword[${keyword}] (string) is invalid - not supported`)
+            throw e;
         });
 
-        if (!res.imageUrl) throw new Error(`.keyword[${keyword}] (string) is invalid - not supported`);
-        return res;
+        const result:ImageInfo = {keyword: findImageUrl.id, imageUrl: findImageUrl.imageUrl};
+        return result;
     };
 }

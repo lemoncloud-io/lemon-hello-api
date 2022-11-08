@@ -9,7 +9,6 @@
  */
 //NOTE - must use `lemon-model` to publish w/o `lemon-core`.
 import { CoreModel } from 'lemon-model';
-import { SlackPostBody } from 'lemon-core';
 import { keys } from 'ts-transformer-keys';
 
 /**
@@ -137,8 +136,14 @@ export interface TargetModel extends Model {
      */
     id?: string;
 }
-
+/**
+ * type: `AnimalModel`
+ * - describe the animal image resource.
+ */
 export interface AnimalModel extends Model {
+    /**
+     * target url to fetch image
+     */
     imageUrl?: string;
 }
 

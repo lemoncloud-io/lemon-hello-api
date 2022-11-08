@@ -534,7 +534,7 @@ export class HelloAPIController extends GeneralWEBController {
         if (!body) throw new Error(`@body (object|string) is required!`);
         // Verify the keyword and determine url.
         const animalType = await this.service.asImageInfo(body);
-        _log(NS, `> imageType :=`, animalType); // cat or dog
+        _log(NS, `> imageType :=`, animalType.keyword);
 
         //! determine to post directly.
         const [channel, direct] = this.service.determinePostDirectly(id, param);

@@ -13,7 +13,7 @@
  * @copyright (C) 2020 LemonCloud Co Ltd. - All Rights Reserved.
  */
 // eslint-disable-next-line @typescript-eslint/no-unused-vars
-import { $U, $T, _log, _inf, _err, loadJsonSync, GETERR, loadDataYml } from 'lemon-core';
+import { $U, $T, _log, _inf, _err, loadJsonSync, GETERR } from 'lemon-core';
 import {
     APIService,
     SlackAttachment,
@@ -822,15 +822,16 @@ export class HelloService extends CoreService<Model, ModelType> {
      */
     public asImageInfo = async (body: ImageInfo): Promise<ImageInfo> => {
         const keyword = $T.S(body?.keyword, 'cat');
-        const model = this.$animal.storage;
-        const readData = await model.read(keyword).catch(e => {
+        const animalStorage = this.$animal.storage;
+
+        const readData = await animalStorage.read(keyword).catch(e => {
             if (GETERR(e).startsWith('404 NOT FOUND'))
                 throw new Error(`.keyword[${keyword}] (string) is invalid - not supported`);
             throw e;
         });
-        
+
         const res = {
-            keyword: keyword,
+            keyword: readData.id,
             imageUrl: readData.imageUrl,
         };
         return res;
@@ -965,6 +966,10 @@ export class MyTargetManager extends MyCoreManager<TargetModel, HelloService> {
     }
 }
 
+/**
+ * class: `MyAnimalManager`
+ * - manager for animal-model.
+ */
 export class MyAnimalManager extends MyCoreManager<AnimalModel, HelloService> {
     public constructor(parent: HelloService) {
         super('animal', parent, $FIELD.animal);
