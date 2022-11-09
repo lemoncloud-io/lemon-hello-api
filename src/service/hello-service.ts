@@ -106,7 +106,6 @@ export interface PostResponse {
 export interface ImageInfo {
     keyword?: string;
     imageUrl?: string;
-    _id?: string;
 }
 
 /**
@@ -872,6 +871,20 @@ export class HelloService extends CoreService<Model, ModelType> {
                     throw new Error(`id[${keyword}] (model-id) is invalid - Does not exist in Dynamo`);
                 throw e;
             });
+    };
+
+    /**
+     * Validate body and convert to type.
+     * Determine the properties according to the http method.
+     */
+    public asCheckImageBody = (body: any, method: string): ImageInfo => {
+        const bodyInfo = typeof body !== 'string' ? body : JSON.parse(body);
+        const { keyword, imageUrl } = bodyInfo;
+
+        if (!keyword) throw new Error('.keyword (string) is required!');
+        if (method === 'PUT' && !imageUrl) throw new Error('.imageUrl (string) is required!');
+
+        return bodyInfo;
     };
 }
 

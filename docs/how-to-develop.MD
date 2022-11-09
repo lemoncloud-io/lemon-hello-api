@@ -344,7 +344,7 @@ Contribute를 위해서는 다음과 같은 Code convention을 따라야 합니�
         })
         
         // new version
-        it ('should pass hello()', async done => {
+        it ('should pass hello()', async () => {
         	...
         	// end of code
         })

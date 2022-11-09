@@ -149,7 +149,7 @@ describe('hello-service /w dummy', () => {
         expect2(await service.saveImageUrl({keyword: 'dog', imageUrl:'https://lemon.dogimg.com/dummy/BBBBBBBB'})).toEqual('TT:animal:dog');
         expect2(await service.saveImageUrl({keyword: 'cat', imageUrl:'https://lemon.catimg.com/dummy/AAAAAAAAA'})).toEqual('TT:animal:cat');
         expect2(await service.saveImageUrl({imageUrl: 'https://lemon.cowimg.com/dummy/CCCCCCCC'}).catch(GETERR)).toEqual(`@id (model-id) is required!`);
-
+        
         expect2(await service.asImageInfo({})).toEqual(catCaseExpected);
         expect2(await service.asImageInfo({ keyword: 'cat' })).toEqual(catCaseExpected);
         expect2(await service.asImageInfo({ keyword: 'dog' })).toEqual(dogCaseExpected);
@@ -161,5 +161,23 @@ describe('hello-service /w dummy', () => {
         expect2(await service.deleteImageUrl({keyword: 'cow'}).catch(GETERR)).toEqual('id[cow] (model-id) is invalid - Does not exist in Dynamo');
         expect2(await service.deleteImageUrl({keyword: 'cat'}).catch(GETERR)).toEqual('id[cat] (model-id) is invalid - Does not exist in Dynamo');
     });
+
+    it('should pass asCheckImageBody', () => {
+        const { service } = instance('dummy');
+
+        expect2(() => service.hello()).toEqual('hello-mocks-service');
+
+        expect2(() => service.asCheckImageBody({keyword:'cat'},'POST')).toEqual({keyword:'cat'})
+        expect2(() => service.asCheckImageBody({keyword:'cow'},'DELETE')).toEqual({keyword:'cow'})
+        expect2(() => service.asCheckImageBody({keyword:'dog', imageUrl:'https://lemon.dogimg.io'},'PUT')).toEqual({keyword:'dog', imageUrl:'https://lemon.dogimg.io'})
+
+        expect2(() => service.asCheckImageBody(`{"keyword":"dog", "imageUrl":"https://lemon.dogimg.io"}`, 'PUT')).toEqual({keyword:'dog', imageUrl:'https://lemon.dogimg.io'})
+        expect2(() => service.asCheckImageBody({keyword:'cat', imageUrl:'https://lemon.catimg.io'},'POST')).toEqual({keyword:'cat', imageUrl:'https://lemon.catimg.io'})
+        expect2(() => service.asCheckImageBody({keyword:'cat', imageUrl:'https://lemon.catimg.io'},'DELETE')).toEqual({keyword:'cat', imageUrl:'https://lemon.catimg.io'})
+
+        expect2(() => service.asCheckImageBody({keyword:'cat'}, 'PUT')).toEqual(`.imageUrl (string) is required!`);
+        expect2(() => service.asCheckImageBody({imageUrl:'https://lemon.dogimg.com/dummy/BBBBBBBB'}, 'PUT')).toEqual(`.keyword (string) is required!`);
+        expect2(() => service.asCheckImageBody({imageUrl:'https://lemon.dogimg.com/dummy/BBBBBBBB'}, 'POST')).toEqual(`.keyword (string) is required!`);
+    })
 });
 

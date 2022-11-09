@@ -532,8 +532,9 @@ export class HelloAPIController extends GeneralWEBController {
         param && _log(NS, `> param =`, $U.json(param));
         body && _log(NS, `> body =`, $U.json(body));
         if (!body) throw new Error(`@body (object|string) is required!`);
+        const imageBody = this.service.asCheckImageBody(body, 'POST');
         // Verify the keyword and determine url.
-        const animalType = await this.service.asImageInfo(body);
+        const animalType = await this.service.asImageInfo(imageBody);
         _log(NS, `> imageType :=`, animalType.keyword);
 
         //! determine to post directly.
@@ -573,7 +574,9 @@ export class HelloAPIController extends GeneralWEBController {
         body && _log(NS, `> body =`, $U.json(body));
         if (!body) throw new Error(`@body (object|string) is required!`);
 
-        const urlUpload = await this.service.saveImageUrl(body);
+        const imageBody = this.service.asCheckImageBody(body, 'PUT');
+
+        const urlUpload = await this.service.saveImageUrl(imageBody);
         _log(NS, '> id :=', urlUpload);
 
         const result = `${urlUpload} registration Successful.`;
@@ -590,7 +593,9 @@ export class HelloAPIController extends GeneralWEBController {
         body && _log(NS, `> body =`, $U.json(body));
         if (!body) throw new Error(`@body (object|string) is required!`);
 
-        const urlDelete = await this.service.deleteImageUrl(body);
+        const imageBody = this.service.asCheckImageBody(body, 'DELETE');
+
+        const urlDelete = await this.service.deleteImageUrl(imageBody);
         _log(NS, '> id :=', urlDelete);
 
         const result = `${urlDelete} delete Successful.`;
