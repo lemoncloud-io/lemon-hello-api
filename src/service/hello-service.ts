@@ -881,7 +881,7 @@ export class HelloService extends CoreService<Model, ModelType> {
         const bodyInfo = typeof body !== 'string' ? body : JSON.parse(body);
         const { keyword, imageUrl } = bodyInfo;
 
-        if (!keyword) throw new Error('.keyword (string) is required!');
+        if (!keyword || typeof keyword !== 'string') throw new Error('.keyword (string) is required!');
         if (method === 'PUT' && !imageUrl) throw new Error('.imageUrl (string) is required!');
 
         return bodyInfo;
