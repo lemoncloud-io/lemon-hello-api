@@ -808,7 +808,7 @@ export class HelloService extends CoreService<Model, ModelType> {
                     const body = JSON.parse(chunks.join(''));
                     const imageUrl = body[0].url;
                     if (statusCode < 400) resolve(imageUrl);
-                    else reject(new Error(`@imageUrl[${imageUrl}] (string) is invalid - ${imageUrl} are not supported`));
+                    else reject(new Error(`@imageUrl[${imageUrl}] (string) is invalid - are not supported`));
                 });
             });
             getReq.on('error', reject);
@@ -835,6 +835,43 @@ export class HelloService extends CoreService<Model, ModelType> {
             imageUrl: readData.imageUrl,
         };
         return res;
+    };
+
+    /**
+     * Save image_url to dynamoDB.
+     */
+    public saveImageUrl = async (body: ImageInfo): Promise<string> => {
+        const { keyword, imageUrl } = body;
+        const animalStorage = this.$animal.storage;
+
+        return await animalStorage
+            .readOrCreate(keyword, { imageUrl: imageUrl })
+            .then(data => {
+                return data._id;
+            })
+            .catch(e => {
+                if (GETERR(e).startsWith('404 NOT FOUND')) throw new Error(`@id (model-id) is required`);
+                throw e;
+            });
+    };
+
+    /**
+     * Delete image_url from dynamoDB via keyword
+     */
+    public deleteImageUrl = async (body: ImageInfo): Promise<string> => {
+        const keyword = body.keyword;
+        const animalStorage = this.$animal.storage;
+
+        return await animalStorage
+            .delete(keyword)
+            .then(data => {
+                return data._id;
+            })
+            .catch(e => {
+                if (GETERR(e).startsWith('404 NOT FOUND'))
+                    throw new Error(`id[${keyword}] (model-id) is invalid - Does not exist in Dynamo`);
+                throw e;
+            });
     };
 }
 
@@ -965,7 +1002,6 @@ export class MyTargetManager extends MyCoreManager<TargetModel, HelloService> {
         super('target', parent, $FIELD.target);
     }
 }
-
 /**
  * class: `MyAnimalManager`
  * - manager for animal-model.

@@ -128,14 +128,12 @@ describe('hello-service /w dummy', () => {
         expect2(await service.fetchRandomImageUrl({keyword:'cat',imageUrl:'https://lemon.catimg.com/dummy/AAAAAAAAA'})).toEqual(catCaseExpected);
         expect2(await service.fetchRandomImageUrl({keyword:'dog',imageUrl:'https://lemon.dogimg.com/dummy/BBBBBBBB'}, 200)).toEqual(dogCaseExpected);
         expect2(await service.fetchRandomImageUrl({keyword:'cow',imageUrl:'https://lemon.cowimg.com/dummy/CCCCCCCC'}, 404).catch(GETERR)).toEqual(`@imageUrl[https://lemon.cowimg.com/dummy/CCCCCCCC] (string) is invalid - are not supported`);
-        
+    
         done();
     });
     
-    it('should pass asImageInfo()', async () => {
+    it('should pass ImageUrl save, read, delete', async () => {
         const { service } = instance('dummy');
-        const storage = service.$animal.storage;
-
         const dogCaseExpected = {
             keyword: 'dog',
             imageUrl: 'https://lemon.dogimg.com/dummy/BBBBBBBB',
@@ -146,10 +144,11 @@ describe('hello-service /w dummy', () => {
         };
         
         expect2(() => service.hello()).toEqual('hello-mocks-service');
-        expect2(storage.hello()).toEqual("typed-storage-service:animal/proxy-storage-service:dummy-storage-service:dummy-table/_id")
+        expect2(() => service.$animal.storage.hello()).toEqual(`typed-storage-service:animal/proxy-storage-service:dummy-storage-service:dummy-table/_id`);
         
-        expect2(await storage.save('dog', {imageUrl: 'https://lemon.dogimg.com/dummy/BBBBBBBB'})).toMatchObject({id:'dog', _id:'TT:animal:dog'});
-        expect2(await storage.save('cat', {imageUrl: 'https://lemon.catimg.com/dummy/AAAAAAAAA'})).toMatchObject({id:'cat', _id:'TT:animal:cat'});
+        expect2(await service.saveImageUrl({keyword: 'dog', imageUrl:'https://lemon.dogimg.com/dummy/BBBBBBBB'})).toEqual('TT:animal:dog');
+        expect2(await service.saveImageUrl({keyword: 'cat', imageUrl:'https://lemon.catimg.com/dummy/AAAAAAAAA'})).toEqual('TT:animal:cat');
+        expect2(await service.saveImageUrl({imageUrl: 'https://lemon.cowimg.com/dummy/CCCCCCCC'}).catch(GETERR)).toEqual(`@id (model-id) is required!`);
 
         expect2(await service.asImageInfo({})).toEqual(catCaseExpected);
         expect2(await service.asImageInfo({ keyword: 'cat' })).toEqual(catCaseExpected);
@@ -157,7 +156,10 @@ describe('hello-service /w dummy', () => {
         expect2(await service.asImageInfo({ keyword: 'cow' }).catch(GETERR)).toEqual(`.keyword[cow] (string) is invalid - not supported`);
         expect2(await service.asImageInfo({ keyword: '' }).catch(GETERR)).toEqual(`@id (model-id) is required!`);
 
-        expect2(await storage.delete('dog')).toMatchObject({id:'dog', _id:'TT:animal:dog'});
-        expect2(await storage.delete('cat')).toMatchObject({id:'cat', _id:'TT:animal:cat'});
+        expect2(await service.deleteImageUrl({keyword: 'cat'})).toEqual('TT:animal:cat');
+        expect2(await service.deleteImageUrl({keyword: 'dog'})).toEqual('TT:animal:dog');
+        expect2(await service.deleteImageUrl({keyword: 'cow'}).catch(GETERR)).toEqual('id[cow] (model-id) is invalid - Does not exist in Dynamo');
+        expect2(await service.deleteImageUrl({keyword: 'cat'}).catch(GETERR)).toEqual('id[cat] (model-id) is invalid - Does not exist in Dynamo');
     });
 });
+

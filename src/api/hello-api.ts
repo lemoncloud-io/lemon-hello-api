@@ -562,6 +562,40 @@ export class HelloAPIController extends GeneralWEBController {
         const res = route.lastResponse;
         return res;
     };
+    /**
+     * Put animal image url to DynamoDB
+     * The image address must be valid.
+     * ..sh
+     * $ echo '{"keyword":"cat", "imageUrl":"https://api.thecatapi.com/v1/images/search"}' | http PUT ':8888/hello/0/image'
+     */
+    public putHelloImage: NextHandler = async (id: any, param: any, body: any, $ctx: any) => {
+        _log(NS, `putHelloImage()....`);
+        body && _log(NS, `> body =`, $U.json(body));
+        if (!body) throw new Error(`@body (object|string) is required!`);
+
+        const urlUpload = await this.service.saveImageUrl(body);
+        _log(NS, '> id :=', urlUpload);
+
+        const result = `${urlUpload} registration Successful.`;
+        return result;
+    };
+
+    /**
+     * Delete animal image url in DynamoDB
+     * ```sh
+     * $ echo '{"keyword":"cat"}' | http DELETE ':8888/hello/0/image'
+     */
+    public deleteHelloImage: NextHandler = async (id, param, body, $ctx) => {
+        _log(NS, `deleteHelloImage()....`);
+        body && _log(NS, `> body =`, $U.json(body));
+        if (!body) throw new Error(`@body (object|string) is required!`);
+
+        const urlDelete = await this.service.deleteImageUrl(body);
+        _log(NS, '> id :=', urlDelete);
+
+        const result = `${urlDelete} delete Successful.`;
+        return result;
+    };
 }
 
 //! export as default.
