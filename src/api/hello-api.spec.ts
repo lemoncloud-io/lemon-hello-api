@@ -89,7 +89,7 @@ describe('hello-controller', () => {
             .end(done);
     });
 
-    it('should pass postHelloImage()', async done => {
+    it('should pass postHelloImage()', async () => {
         const expected = {
             body : 'ok',
             statusCode: 200,
@@ -105,18 +105,14 @@ describe('hello-controller', () => {
             status: 200,
             text: $U.json(expected)
         });
-
-        done();
     });
 
-    it('should not pass postHelloImage()', async done => {
+    it('should not pass postHelloImage()', async () => {
         const res = await request(app)
                             .post('/hello/test/image')
                             .set('Autorization', 'Basic jest')
-                            .send({keyword:"cow"});
+                            .send({keyword:"lemon"});
 
-        expect2(res.text).toEqual('.keyword[cow] (string) is invalid - not supported');
-
-        done();
+        expect2(res.text).toEqual('.keyword[lemon] (string) is invalid - not supported');
     });
 });

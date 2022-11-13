@@ -125,10 +125,10 @@ describe('hello-service /w dummy', () => {
         const catCaseExpected = `https://cdn2.thecatapi.com/images/MTc5NjU2OA.jpg`;
         expect2(() => service.hello()).toEqual('hello-mocks-service');
         
-        expect2(await service.fetchRandomImageUrl({keyword:'cat',imageUrl:'https://lemon.catimg.com/dummy/AAAAAAAAA'})).toEqual(catCaseExpected);
-        expect2(await service.fetchRandomImageUrl({keyword:'dog',imageUrl:'https://lemon.dogimg.com/dummy/BBBBBBBB'}, 200)).toEqual(dogCaseExpected);
-        expect2(await service.fetchRandomImageUrl({keyword:'cow',imageUrl:'https://lemon.cowimg.com/dummy/CCCCCCCC'}, 404).catch(GETERR)).toEqual(`@imageUrl[https://lemon.cowimg.com/dummy/CCCCCCCC] (string) is invalid - are not supported`);
-    
+        expect2(await service.fetchRandomImageUrl({keyword:'cat',imageUrl:'https://api.thecatapi.com/dummy/AAAA'})).toEqual(catCaseExpected);
+        expect2(await service.fetchRandomImageUrl({keyword:'dog',imageUrl:'https://api.thedogapi.com/dummy/BBBB'})).toEqual(dogCaseExpected);
+        expect2(await service.fetchRandomImageUrl({keyword:'cow',imageUrl:'https://lemon.cowapi.com/dummy/CCCC'}).catch(GETERR)).toEqual(`@imageUrl[https://lemon.cowapi.com/dummy/CCCC] (string) is invalid - are not supported`);
+        expect2(await service.fetchRandomImageUrl({keyword:'dog',imageUrl:'http://api.thedogapi.com/dummy/BBBB'}).catch(GETERR)).toEqual(`@imageUrl[http://api.thedogapi.com/dummy/BBBB] (string) is invalid - are not supported`);
         done();
     });
     
@@ -136,18 +136,19 @@ describe('hello-service /w dummy', () => {
         const { service } = instance('dummy');
         const dogCaseExpected = {
             keyword: 'dog',
-            imageUrl: 'https://lemon.dogimg.com/dummy/BBBBBBBB',
+            imageUrl: 'https://lemon.dogimg.com/dummy/BBBB',
         };
         const catCaseExpected = {
             keyword: 'cat',
-            imageUrl: 'https://lemon.catimg.com/dummy/AAAAAAAAA',
+            imageUrl: 'https://lemon.catimg.com/dummy/AAAA',
         };
         
         expect2(() => service.hello()).toEqual('hello-mocks-service');
         expect2(() => service.$animal.storage.hello()).toEqual(`typed-storage-service:animal/proxy-storage-service:dummy-storage-service:dummy-table/_id`);
         
-        expect2(await service.saveImageUrl({keyword: 'dog', imageUrl:'https://lemon.dogimg.com/dummy/BBBBBBBB'})).toEqual('TT:animal:dog');
-        expect2(await service.saveImageUrl({keyword: 'cat', imageUrl:'https://lemon.catimg.com/dummy/AAAAAAAAA'})).toEqual('TT:animal:cat');
+        expect2(await service.saveImageUrl({keyword: 'cat', imageUrl:'https://lemon.catimg.com/dummy/CCCC'})).toMatchObject({msg : 'SAVED'});
+        expect2(await service.saveImageUrl({keyword: 'dog', imageUrl:'https://lemon.dogimg.com/dummy/BBBB'})).toMatchObject({msg : 'SAVED'});
+        expect2(await service.saveImageUrl({keyword: 'cat', imageUrl:'https://lemon.catimg.com/dummy/AAAA'})).toMatchObject({msg : 'UPDATED'});
         expect2(await service.saveImageUrl({imageUrl: 'https://lemon.cowimg.com/dummy/CCCCCCCC'}).catch(GETERR)).toEqual(`@id (model-id) is required!`);
         
         expect2(await service.asImageInfo({})).toEqual(catCaseExpected);
@@ -156,10 +157,10 @@ describe('hello-service /w dummy', () => {
         expect2(await service.asImageInfo({ keyword: 'cow' }).catch(GETERR)).toEqual(`.keyword[cow] (string) is invalid - not supported`);
         expect2(await service.asImageInfo({ keyword: '' }).catch(GETERR)).toEqual(`@id (model-id) is required!`);
 
-        expect2(await service.deleteImageUrl({keyword: 'cat'})).toEqual('TT:animal:cat');
-        expect2(await service.deleteImageUrl({keyword: 'dog'})).toEqual('TT:animal:dog');
-        expect2(await service.deleteImageUrl({keyword: 'cow'}).catch(GETERR)).toEqual('id[cow] (model-id) is invalid - Does not exist in Dynamo');
-        expect2(await service.deleteImageUrl({keyword: 'cat'}).catch(GETERR)).toEqual('id[cat] (model-id) is invalid - Does not exist in Dynamo');
+        expect2(await service.deleteImageUrl({keyword: 'cat'})).toMatchObject({msg : 'DELETED'});
+        expect2(await service.deleteImageUrl({keyword: 'dog'})).toMatchObject({msg : 'DELETED'});
+        expect2(await service.deleteImageUrl({keyword: 'cow'}).catch(GETERR)).toEqual({msg : "NOT FOUND", result : {_id : "TT:animal:cow"}});
+        expect2(await service.deleteImageUrl({keyword: 'cat'}).catch(GETERR)).toEqual({msg : 'NOT FOUND', result : {_id : 'TT:animal:cat'}});
     });
 
     it('should pass asCheckImageBody', () => {

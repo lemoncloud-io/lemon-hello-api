@@ -13,7 +13,7 @@
  * @copyright (C) 2020 LemonCloud Co Ltd. - All Rights Reserved.
  */
 // eslint-disable-next-line @typescript-eslint/no-unused-vars
-import { $U, $T, _log, _inf, _err, loadJsonSync, GETERR } from 'lemon-core';
+import { $U, $T, _log, _inf, _err, loadJsonSync, GETERR, CoreModel } from 'lemon-core';
 import {
     APIService,
     SlackAttachment,
@@ -106,6 +106,8 @@ export interface PostResponse {
 export interface ImageInfo {
     keyword?: string;
     imageUrl?: string;
+    msg?: string;
+    result?: CoreModel;
 }
 
 /**
@@ -839,38 +841,40 @@ export class HelloService extends CoreService<Model, ModelType> {
     /**
      * Save image_url to dynamoDB.
      */
-    public saveImageUrl = async (body: ImageInfo): Promise<string> => {
+    public saveImageUrl = async (body: ImageInfo): Promise<ImageInfo> => {
         const { keyword, imageUrl } = body;
         const animalStorage = this.$animal.storage;
-
-        return await animalStorage
-            .readOrCreate(keyword, { imageUrl: imageUrl })
-            .then(data => {
-                return data._id;
+        const res = await animalStorage
+            .read(keyword)
+            .then(async data => {
+                return { msg: 'UPDATED', result: await animalStorage.update(data.id, { imageUrl: imageUrl }) };
             })
-            .catch(e => {
-                if (GETERR(e).startsWith('404 NOT FOUND')) throw new Error(`@id (model-id) is required`);
+            .catch(async e => {
+                if (GETERR(e).startsWith('404 NOT FOUND'))
+                    return { msg: 'SAVED', result: await animalStorage.save(keyword, { imageUrl: imageUrl }) };
                 throw e;
             });
+        return res;
     };
 
     /**
      * Delete image_url from dynamoDB via keyword
      */
-    public deleteImageUrl = async (body: ImageInfo): Promise<string> => {
-        const keyword = body.keyword;
+    public deleteImageUrl = async (body: ImageInfo): Promise<ImageInfo> => {
+        const id = body.keyword;
         const animalStorage = this.$animal.storage;
 
-        return await animalStorage
-            .delete(keyword)
+        const res = await animalStorage
+            .delete(id)
             .then(data => {
-                return data._id;
+                return { msg: 'DELETED', result: data };
             })
             .catch(e => {
                 if (GETERR(e).startsWith('404 NOT FOUND'))
-                    throw new Error(`id[${keyword}] (model-id) is invalid - Does not exist in Dynamo`);
+                    return { msg: 'NOT FOUND', result: { _id: `TT:animal:${id}` } };
                 throw e;
             });
+        return res;
     };
 
     /**

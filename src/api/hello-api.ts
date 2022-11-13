@@ -576,11 +576,11 @@ export class HelloAPIController extends GeneralWEBController {
 
         const imageBody = this.service.asCheckImageBody(body, 'PUT');
 
-        const urlUpload = await this.service.saveImageUrl(imageBody);
-        _log(NS, '> id :=', urlUpload);
+        const { msg, result } = await this.service.saveImageUrl(imageBody);
+        _log(NS, '> result :=', msg);
 
-        const result = `${urlUpload} registration Successful.`;
-        return result;
+        const res = `${result._id} is ${msg}`;
+        return res;
     };
 
     /**
@@ -595,11 +595,11 @@ export class HelloAPIController extends GeneralWEBController {
 
         const imageBody = this.service.asCheckImageBody(body, 'DELETE');
 
-        const urlDelete = await this.service.deleteImageUrl(imageBody);
-        _log(NS, '> id :=', urlDelete);
+        const { msg, result } = await this.service.deleteImageUrl(imageBody);
+        _log(NS, '> result :=', msg);
 
-        const result = `${urlDelete} delete Successful.`;
-        return result;
+        const res = `${result._id} is ${msg}`;
+        return res;
     };
 }
 

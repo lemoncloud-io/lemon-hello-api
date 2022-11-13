@@ -149,29 +149,14 @@ export class DummyHelloService extends HelloService {
         // package default.
         return this.packageDefaultChannel(result);
     };
-    /**
-     * This statusCode is only in Dummy
-     */
-    public fetchRandomImageUrl = async (imageInfo: ImageInfo, statusCode?: number): Promise<string> => {
+
+    public fetchRandomImageUrl = async (imageInfo: ImageInfo): Promise<string> => {
         const { keyword, imageUrl } = imageInfo;
 
         const fetchResult = `https://cdn2.the${keyword}api.com/images/MTc5NjU2OA.jpg`;
-        if (statusCode >= 400) throw new Error(`@imageUrl[${imageUrl}] (string) is invalid - are not supported`);
+        if (!imageUrl.startsWith('https://api.the'))
+            throw new Error(`@imageUrl[${imageUrl}] (string) is invalid - are not supported`);
 
         return fetchResult;
-    };
-
-    public asImageInfo = async (body: ImageInfo): Promise<ImageInfo> => {
-        const keyword = $T.S(body.keyword, 'cat');
-        const animalStorage = this.$animal.storage;
-        // find in dummy-table
-        const findImageUrl = await animalStorage.read(keyword).catch(e => {
-            if (GETERR(e).startsWith('404 NOT FOUND'))
-                throw new Error(`.keyword[${keyword}] (string) is invalid - not supported`);
-            throw e;
-        });
-
-        const result: ImageInfo = { keyword: findImageUrl.id, imageUrl: findImageUrl.imageUrl };
-        return result;
     };
 }
