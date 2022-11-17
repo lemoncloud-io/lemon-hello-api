@@ -1,7 +1,0 @@
-# dummy data for get Image Url internal test!
-data:
-    - _id: 'TT:animal:cat'
-      imageUrl: 'https://lemon.catimg.com/dummy/AAAAAAAAA'
-
-    - _id: 'TT:animal:dog'
-      imageUrl: 'https://lemon.dogimg.com/dummy/BBBBBBBB'
