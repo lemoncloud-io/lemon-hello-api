@@ -63,7 +63,7 @@
         "plato": "plato -r -d complexity dist"
     },
     "dependencies": {
-        "lemon-core": "^3.1.2"
+        "lemon-core": "^3.2.2"
     },
     "devDependencies": {
         "@cruglobal/serverless-merge-config": "^1.1.0",
@@ -86,7 +86,7 @@
         "prettier": "^2.6.2",
         "serverless": "^3.16.0",
         "serverless-aws-documentation": "^0.8.0",
-        "serverless-offline": "^8.7.0",
+        "serverless-offline": "^12.0.4",
         "serverless-prune-plugin": "^2.0.1",
         "superagent": "^5.3.1",
         "supertest": "^4.0.2",
