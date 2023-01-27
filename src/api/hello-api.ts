@@ -11,7 +11,7 @@
  * @copyright (C) 2020 LemonCloud Co Ltd. - All Rights Reserved.
  */
 // eslint-disable-next-line @typescript-eslint/no-unused-vars
-import { $U, $T, _log, _inf, _err, SlackPostBody } from 'lemon-core';
+import { $U, $T, _log, _inf, _err, NUL404 } from 'lemon-core';
 import $engine, {
     loadJsonSync,
     AWSKMSService,
@@ -22,7 +22,9 @@ import $engine, {
     CallbackParam,
     NextHandler,
     GeneralWEBController,
+    SlackPostBody,
 } from 'lemon-core';
+import { ChannelModel } from '../service/hello-model';
 import $service, { HelloService, ParamToSlack, PostResponse, RecordData } from '../service/hello-service';
 const NS = $U.NS('hello', 'yellow'); // NAMESPACE TO BE PRINTED.
 
@@ -161,6 +163,7 @@ export class HelloAPIController extends GeneralWEBController {
      * $ echo '{"text":"hello"}' | http ':8888/hello/public/slack'
      * $ echo '{"text":"hello"}' | http ':8888/hello/alarm/slack'
      * $ cat data/slack.json | http ':8888/hello/public/slack'
+     * $ cat data/error-report.json | http ':8888/hello/public/slack'
      *
      * # use sample
      * $ cat data/error-hello.json | http ':8888/hello/public/slack'
@@ -178,27 +181,28 @@ export class HelloAPIController extends GeneralWEBController {
         body && _log(NS, `> body =`, $U.json(body));
         if (!body) throw new Error(`@body (object|string) is required!`);
 
-        //! determine to post directly.
+        // STEP.0 determine to post directly.
         const channel = id.startsWith('!') ? id.substring(1) : id;
         const hasForce = id.startsWith('!');
         const direct = !!$U.N(param.direct, param.direct === '' ? 1 : hasForce ? 1 : 0);
         _log(NS, `> direct@[${channel}] :=`, direct);
 
-        //! load target webhook via environ.
-        const endpoint = await this.service.loadSlackChannel(channel, { defName: 'public' });
+        // STEP.1 load target endpoint via storage and environ.
+        const $channel: ChannelModel = await this.service.$channel.find(channel).catch(NUL404);
+        const endpoint = $channel?.endpoint || (await this.service.loadSlackChannel(channel, { defName: 'public' }));
         if (!endpoint) throw new Error(`@id[${channel}] (channel-id) is invalid!`);
-        _log(NS, '> endpoint :=', endpoint);
+        _log(NS, '> endpoint@0 =', endpoint);
 
-        //! prepare slack message via body.
+        // STEP.2 prepare slack message via body.
         const message: SlackPostBody = typeof body !== 'string' ? body : { text: `${body}` };
         _log(NS, '> message :=', $U.json(message));
 
-        //! route message
+        // STEP.3 route message.
         const route = this.service.$routes($ctx, { direct });
         const sent = await route.route(message, channel, [], { id: channel, endpoint });
         _log(NS, `> sent =`, sent);
 
-        //! returns.
+        //* returns.
         const res = route.lastResponse;
         return res;
     };
@@ -499,7 +503,12 @@ export class HelloAPIController extends GeneralWEBController {
             return node;
         });
     };
-    public getHelloTime: NextHandler = async (id: any, param: any, body: any, ctx: any) => {
+
+    /**
+     * print the server time
+     *
+     */
+    public getHelloTime: NextHandler = async (id, param, body, ctx) => {
         _log(NS, `getHelloTime(${id})...`);
         _log(NS, `> context =`, $U.json(ctx));
 

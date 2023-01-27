@@ -316,6 +316,7 @@ export class HelloService extends CoreService<Model, ModelType> {
             hour = hour >= 24 ? hour - 24 : hour;
             const tag = MOONS[Math.floor((MOONS.length * hour) / 24)];
             const json = $U.json(saves);
+            const bucket = this.$s3s.bucket();
 
             // _log(NS, `> json =`, json);
             return this.$s3s
@@ -343,7 +344,7 @@ export class HelloService extends CoreService<Model, ModelType> {
                 .catch(e => {
                     _err(NS, 'WARN! internal.err =', e);
                     message.attachments.push({
-                        pretext: '**WARN** internal error in `lemon-hello-api`',
+                        pretext: `**WARN** internal error in \`lemon-hello-api\` to \`${bucket}\``,
                         color: 'red',
                         title: `${e.message || e.reason || e.error || e}: ${e.stack || ''}`,
                     });
@@ -722,7 +723,7 @@ export class HelloService extends CoreService<Model, ModelType> {
             public match = (body: SlackPostBody, rule: RouteRule): SlackPostBody => {
                 const pattern = `${rule?.pattern || ''}`;
                 const _test = (text: string): boolean => {
-                    if (!pattern) return false;
+                    if (!pattern || typeof text !== 'string') return false;
                     if (pattern.startsWith('#')) return text.includes(pattern);
                     if (pattern.startsWith('/') && pattern.endsWith('/')) {
                         const re = new RegExp(pattern.substring(1, pattern.length - 2), 'g');
@@ -771,7 +772,7 @@ export class HelloService extends CoreService<Model, ModelType> {
                         ...$msg,
                         channel: target?.channel || channel,
                     };
-                    if (endpoint) {
+                    if (endpoint?.startsWith('http')) {
                         const sent = await this.service.postMessage(endpoint, message).catch(e => {
                             _err(NS, `! err.send:${channel} =`, e);
                             return null;
