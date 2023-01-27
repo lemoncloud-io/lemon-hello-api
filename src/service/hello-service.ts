@@ -406,7 +406,7 @@ export class HelloService extends CoreService<Model, ModelType> {
     public buildAlarmForm = async ({ subject, data, context }: RecordData): Promise<ParamToSlack> => {
         _log(`buildAlarmForm(${subject})...`);
         data = data || {};
-        const record = $U.json(data);
+        const record = $U.json({ subject, data, context });
         _log(`> data[${subject}] =`, record);
 
         const AlarmName = data.AlarmName || '';
@@ -454,7 +454,7 @@ export class HelloService extends CoreService<Model, ModelType> {
     public buildDeliveryFailure = async ({ subject, data, context }: RecordData): Promise<ParamToSlack> => {
         _log(`buildDeliveryFailure(${subject})...`);
         data = data || {};
-        const record = $U.json(data);
+        const record = $U.json({ subject, data, context });
         _log(`> data[${subject}] =`, record);
 
         const FailName = data.EventType || '';
