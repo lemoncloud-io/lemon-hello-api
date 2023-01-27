@@ -53,12 +53,8 @@ export class ChannelAPIController extends GeneralWEBController {
         endpoint && _inf(NS, `> endpoint @env[${id}] :=`, endpoint);
 
         //! find from DB, and show in detail
-        const model = await this.service.$channel.find(id);
-        return {
-            ...model,
-            endpoint: model?.endpoint || endpoint,
-            id,
-        };
+        const model = await this.service.$channel.prepare(id, { endpoint }, true);
+        return model;
     };
 
     /**
@@ -67,7 +63,7 @@ export class ChannelAPIController extends GeneralWEBController {
      * ```sh
      * $ http PUT ':8888/channel/public' name=public
      */
-    public doPut: NextHandler = async (id, param, body, context) => {
+    public doPut: NextHandler = async (id, param, body: ChannelModel, context) => {
         _log(NS, `doPut(${id})....`);
         id = id === '0' ? '' : $T.S2(id).trim();
         if (!id) throw new Error(`@id (string) is required!`);
@@ -112,7 +108,7 @@ export class ChannelAPIController extends GeneralWEBController {
      * echo '{"pattern":"oauth-token","moveTo":"error"}' | http PUT ':8888/channel/public/rules'
      * echo '{"pattern":"error-report","copyTo":"error"}' | http PUT ':8888/channel/public/rules'
      */
-    public doPutRules: NextHandler = async (id, param, body, context) => {
+    public doPutRules: NextHandler = async (id, param, body: RouteRule | RouteRule[], context) => {
         _log(NS, `doPutRules(${id})....`);
         id = id === '0' ? '' : $T.S2(id).trim();
         if (!id) throw new Error(`@id (string) is required!`);
