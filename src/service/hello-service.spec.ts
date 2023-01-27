@@ -62,10 +62,10 @@ describe('hello-service /w dummy', () => {
         const { service } = instance('dummy');
         expect2(() => service.hello()).toEqual('hello-mocks-service');
 
-        expect2(await service.loadSlackChannel('hello', 'Hello').catch(GETERR)).toEqual(
+        expect2(await service.loadSlackChannel('hello', { defName: 'Hello' }).catch(GETERR)).toEqual(
             '@env[SLACK_HELLO] is not found!',
         );
-        expect2(await service.loadSlackChannel('hello', 'AA')).toEqual(
+        expect2(await service.loadSlackChannel('hello', { defName: 'AA' })).toEqual(
             'https://hooks.slack.com/services/AAAAAAAAA/BBBBBBBBB/CCCCCCCCCCCCCCCC',
         );
         expect2(await service.loadSlackChannel('AA', null)).toEqual(

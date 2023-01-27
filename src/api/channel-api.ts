@@ -8,7 +8,7 @@
  * @copyright (C) 2022 LemonCloud Co Ltd. - All Rights Reserved.
  */
 // eslint-disable-next-line @typescript-eslint/no-unused-vars
-import { $U, $T, _log, _inf, _err } from 'lemon-core';
+import { $U, $T, _log, _inf, _err, NUL404 } from 'lemon-core';
 import { GeneralWEBController, NextHandler } from 'lemon-core';
 import { ChannelModel, RouteRule } from '../service/hello-model';
 import $service, { HelloService } from '../service/hello-service';
@@ -46,9 +46,10 @@ export class ChannelAPIController extends GeneralWEBController {
         _log(NS, `doGet(${id})....`);
         id = id === '0' ? '' : $T.S2(id).trim();
         if (!id) throw new Error(`@id (string) is required!`);
+        const throwable = !!$T.B(param?.throw, param?.throw === '' ? 1 : 0);
 
         //! load the default endpoint from environment.
-        const endpoint = await this.service.loadSlackChannel(id);
+        const endpoint = await this.service.loadSlackChannel(id, { throwable });
         endpoint && _inf(NS, `> endpoint @env[${id}] :=`, endpoint);
 
         //! find from DB, and show in detail
@@ -79,7 +80,7 @@ export class ChannelAPIController extends GeneralWEBController {
 
         // STEP.1 find the target model (null if not found)
         const $org = await this.service.$channel.find(id);
-        _inf(NS, `> origin =`, typeof $org, $U.json($org));
+        $org && _inf(NS, `> origin =`, typeof $org, $U.json($org));
 
         // STEP.2 prepare model to update
         const model: ChannelModel = {};
@@ -107,6 +108,9 @@ export class ChannelAPIController extends GeneralWEBController {
      *```sh
      * echo '{"pattern":"hello","copyTo":"alarm","color":"red"}' | http PUT ':8888/channel/public/rules'
      * echo '{"pattern":"SNS: DeliveryFailure","moveTo":"stage"}' | http PUT ':8888/channel/public/rules'
+     * # test route to some
+     * echo '{"pattern":"oauth-token","moveTo":"error"}' | http PUT ':8888/channel/public/rules'
+     * echo '{"pattern":"error-report","copyTo":"error"}' | http PUT ':8888/channel/public/rules'
      */
     public doPutRules: NextHandler = async (id, param, body, context) => {
         _log(NS, `doPutRules(${id})....`);

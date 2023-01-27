@@ -16,13 +16,13 @@ default_env: &default_env
 # local development configuration.
 local:
   <<: *default_env
-  STAGE: 'local'
-  MY_DYNAMO_TABLE: LemonHelloTest
+  # STAGE: 'local'
+  # MY_DYNAMO_TABLE: LemonHelloTest
 
   #! override as prod environ.
-  # STAGE: '!production'
-  # MY_DYNAMO_TABLE: LemonHelloTable
-  # NS: SS
+  STAGE: '!production'
+  MY_DYNAMO_TABLE: LemonHelloTable
+  NS: SS
 
 #-----------------------------------
 # development server
@@ -37,4 +37,5 @@ prod:
   STAGE: 'production'
   NS: SS
   TS: 0
+  SLACK_PUT_S3: 1         # flag to auto save into s3 bucket if slack message.
 

@@ -16,7 +16,7 @@
  *
  * @copyright (C) lemoncloud.io 2019 - All Rights Reserved.
  */
- const CONF = (serverless) => {
+const CONF = (serverless) => {
     // console.log('serverless=', serverless);
     console.log('Loading config settings...');
     return {
@@ -26,7 +26,7 @@
             region: 'ap-northeast-2',
             env: 'lemon.yml',                                   // environment file
             securityGroupIds: ['sg-08770106971509def'],         // securityGroup : `lemon-services-api`
-            subnetIds: ['subnet-0a53bcd7f3d256ce4','subnet-0ee4d1ca5eb964fc5'],   // subnetIds in VPC
+            subnetIds: ['subnet-0a53bcd7f3d256ce4', 'subnet-0ee4d1ca5eb964fc5'],   // subnetIds in VPC
             kmsKey: '*',                                        // KMS key-id
             bucket: 'lemon-hello-www',                          // Name of S3 public bucket.
         },
@@ -103,4 +103,4 @@
 }
 
 //! export
-exports = module.exports = {CONF}
+exports = module.exports = { CONF }

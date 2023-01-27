@@ -194,12 +194,22 @@ export class HelloService extends CoreService<Model, ModelType> {
      *
      * @param name channel name (= 'public')
      * @param defName (optional) default name if not found
-     * @param prefix (optional) prefix name of target environment key.
+     * @param options.prefix (optional) prefix name of target environment key.
      * @returns URL address to post
      */
-    public loadSlackChannel = async (name: string, defName?: string, prefix = 'SLACK'): Promise<string> => {
+    public loadSlackChannel = async (
+        name: string,
+        options?: {
+            defName?: string;
+            prefix?: string;
+            /** flag to throw if not found */
+            throwable?: boolean;
+        },
+    ): Promise<string> => {
         name = name || 'public';
-        defName = defName || '';
+        const defName = options?.defName || '';
+        const prefix = options?.prefix ?? 'SLACK';
+        const throwable = options?.throwable ?? true;
 
         const DELIM = prefix ? '_' : '';
         const ENV_NAME = `${prefix}${DELIM}${name}`.toUpperCase();
@@ -211,12 +221,12 @@ export class HelloService extends CoreService<Model, ModelType> {
         // const webhook = webhook_name || webhook_default;
         const webhook = (_find(ENV_NAME) || _find(DEF_NAME) || '').trim();
         _inf(NS, `> webhook[${name}] :=`, webhook);
-        if (!webhook) throw new Error(`@env[${ENV_NAME}] is not found!`);
+        if (throwable && !webhook) throw new Error(`@env[${ENV_NAME}] is not found!`);
 
         //! decrypt if required.
         return Promise.resolve(webhook)
             .then(_ => {
-                if (!_.startsWith('http')) {
+                if (_ && !_.startsWith('http')) {
                     return this.$kms.decrypt(_).then(_ => {
                         const url = `${_}`.trim();
                         this.$channels[ENV_NAME] = url;
@@ -227,7 +237,8 @@ export class HelloService extends CoreService<Model, ModelType> {
             })
             .then(_ => {
                 if (!(_ && _.startsWith('http'))) {
-                    throw new Error(`404 NOT FOUND - Channel:${name}, Hook:${webhook?.substring(0, 100)}`);
+                    if (throwable)
+                        throw new Error(`404 NOT FOUND - Channel:${name}, Hook:${webhook?.substring(0, 100)}`);
                 }
                 return _;
             });
@@ -395,7 +406,8 @@ export class HelloService extends CoreService<Model, ModelType> {
     public buildAlarmForm = async ({ subject, data, context }: RecordData): Promise<ParamToSlack> => {
         _log(`buildAlarmForm(${subject})...`);
         data = data || {};
-        _log(`> data[${subject}] =`, $U.json(data));
+        const record = $U.json(data);
+        _log(`> data[${subject}] =`, record);
 
         const AlarmName = data.AlarmName || '';
         const AlarmDescription = data.AlarmDescription || '';
@@ -431,10 +443,7 @@ export class HelloService extends CoreService<Model, ModelType> {
         const fields = Fields;
 
         //* add original data into fields. (for later debug)
-        fields.push({
-            title: '#record',
-            value: $U.json({ subject, data, context }),
-        });
+        fields.push({ title: '#record', value: record });
 
         return this.packageDefaultChannel({ pretext, title, text, fields });
     };
@@ -445,7 +454,8 @@ export class HelloService extends CoreService<Model, ModelType> {
     public buildDeliveryFailure = async ({ subject, data, context }: RecordData): Promise<ParamToSlack> => {
         _log(`buildDeliveryFailure(${subject})...`);
         data = data || {};
-        _log(`> data[${subject}] =`, $U.json(data));
+        const record = $U.json(data);
+        _log(`> data[${subject}] =`, record);
 
         const FailName = data.EventType || '';
         const FailDescription = data.FailureMessage || '';
@@ -485,10 +495,7 @@ export class HelloService extends CoreService<Model, ModelType> {
         const message = { pretext, title, text, fields };
 
         //* add original data into fields. (for later debug)
-        message.fields.push({
-            title: '#record',
-            value: $U.json({ subject, data, context }),
-        });
+        message.fields.push({ title: '#record', value: record });
 
         //* get the endpoint-attributes
         const SNS = new AWS.SNS();
