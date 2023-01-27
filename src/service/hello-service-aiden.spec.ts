@@ -107,7 +107,7 @@ describe('hello-service /w dummy', () => {
 
         expect2(() => service.hello()).toEqual(`hello-mocks-service`);
         expect2(await service.makeSlackBody('http://lemon.io/image/1.jpg').catch(GETERR)).toEqual(
-            "@url[http://lemon.io/image/1.jpg] is invalid - not supported"
+            '@url[http://lemon.io/image/1.jpg] is invalid - not supported',
         );
         expect2(await service.makeSlackBody('https://cdn2.thecatapi.com/images/MTc5NjU2OA.jpg')).toEqual(expected);
         done();
@@ -119,13 +119,21 @@ describe('hello-service /w dummy', () => {
         const catCaseExpected = `https://cdn2.thecatapi.com/images/MTc5NjU2OA.jpg`;
         expect2(() => service.hello()).toEqual('hello-mocks-service');
 
-        expect2(await service.fetchRandomImageUrl({type:'dog',imageUrl:'https://api.thedogapi.com/v1/images/search'})).toEqual(dogCaseExpected);
-        expect2(await service.fetchRandomImageUrl({type:'cat',imageUrl:'https://api.thecatapi.com/v1/images/search'})).toEqual(catCaseExpected);
-        expect2(await service.fetchRandomImageUrl({type:'cow',imageUrl:'https://api.thecowapi.com/v1/images/search'}).catch(GETERR)).toEqual(`.imageUrl[https://api.thecowapi.com/v1/images/search] is invalid - 404 ERROR`);
+        expect2(
+            await service.fetchRandomImageUrl({ type: 'dog', imageUrl: 'https://api.thedogapi.com/v1/images/search' }),
+        ).toEqual(dogCaseExpected);
+        expect2(
+            await service.fetchRandomImageUrl({ type: 'cat', imageUrl: 'https://api.thecatapi.com/v1/images/search' }),
+        ).toEqual(catCaseExpected);
+        expect2(
+            await service
+                .fetchRandomImageUrl({ type: 'cow', imageUrl: 'https://api.thecowapi.com/v1/images/search' })
+                .catch(GETERR),
+        ).toEqual(`.imageUrl[https://api.thecowapi.com/v1/images/search] is invalid - 404 ERROR`);
 
         done();
     });
-    
+
     it('should pass asImageInfo()', done => {
         const { service } = instance('dummy');
         const dogCaseExpected = {
@@ -143,7 +151,9 @@ describe('hello-service /w dummy', () => {
         expect2(() => service.asImageInfo({ name: 'lemon' })).toEqual(catCaseExpected);
         expect2(() => service.asImageInfo({ keyword: 'cat' })).toEqual(catCaseExpected);
         expect2(() => service.asImageInfo({ keyword: 'dog' })).toEqual(dogCaseExpected);
-        expect2(() => service.asImageInfo({ keyword: 'cow' })).toEqual(`.keyword[cow] (string) is invalid - not supported`);
+        expect2(() => service.asImageInfo({ keyword: 'cow' })).toEqual(
+            `.keyword[cow] (string) is invalid - not supported`,
+        );
         expect2(() => service.asImageInfo({ keyword: '' })).toEqual('.keyword[] (string) is invalid - not supported');
         done();
     });

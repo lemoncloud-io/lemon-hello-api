@@ -532,6 +532,7 @@ export class HelloAPIController extends GeneralWEBController {
         param && _log(NS, `> param =`, $U.json(param));
         body && _log(NS, `> body =`, $U.json(body));
         if (!body) throw new Error(`@body (object|string) is required!`);
+
         // Verify the keyword and determine url.
         const animalType = this.service.asImageInfo(body);
         _log(NS, `> imageType :=`, animalType.type); // cat or dog

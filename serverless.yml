@@ -74,6 +74,12 @@ custom:
     dev: lemon-hello-www-dev
     prod: ${self:custom.CONF.${self:custom.CORE.profile}.bucket, 'lemon-hello-www'}
   #------------------------------------------------
+  # pruning old versions
+  #------------------------------------------------
+  prune:
+    automatic: true
+    number: 3
+  #------------------------------------------------
   # CORS Default (use like `cors: ${self:custom.cors, true}`)
   #------------------------------------------------
   cors:

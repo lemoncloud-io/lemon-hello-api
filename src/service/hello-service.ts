@@ -805,7 +805,8 @@ export class HelloService extends CoreService<Model, ModelType> {
                     const body = JSON.parse(chunks.join(''));
                     const imageUrl = body[0].url;
                     if (statusCode < 400) resolve(imageUrl);
-                    else reject(new Error(`@imageUrl[${imageUrl}] (string) is invalid - ${imageUrl} are not supported`));
+                    else
+                        reject(new Error(`@imageUrl[${imageUrl}] (string) is invalid - ${imageUrl} are not supported`));
                 });
             });
             getReq.on('error', reject);
@@ -819,7 +820,8 @@ export class HelloService extends CoreService<Model, ModelType> {
      */
     public asImageInfo = (body: any): ImageInfo => {
         const keyword = $T.S(body?.keyword, 'cat');
-        if (!['dog', 'cat'].includes(keyword)) throw new Error(`.keyword[${keyword}] (string) is invalid - not supported`);
+        if (!['dog', 'cat'].includes(keyword))
+            throw new Error(`.keyword[${keyword}] (string) is invalid - not supported`);
         const targetUrl = {
             type: keyword,
             imageUrl: `https://api.the${keyword}api.com/v1/images/search`,

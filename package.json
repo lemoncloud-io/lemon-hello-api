@@ -1,6 +1,6 @@
 {
     "name": "lemon-hello-api",
-    "version": "2.4.1b",
+    "version": "2.4.2",
     "description": "Simple Serverless MicroService API with `Lambda` + `API Gateway` + `Web Socket` + `SNS` + `SQS` + `KMS`",
     "main": "dist/index.js",
     "types": "dist/index.d.ts",
@@ -63,7 +63,7 @@
         "plato": "plato -r -d complexity dist"
     },
     "dependencies": {
-        "lemon-core": "^3.1.2"
+        "lemon-core": "^3.2.4"
     },
     "devDependencies": {
         "@cruglobal/serverless-merge-config": "^1.1.0",
@@ -81,18 +81,18 @@
         "eslint-config-prettier": "^8.5.0",
         "eslint-plugin-prettier": "^4.0.0",
         "jest": "^27.5.1",
-        "lint-staged": "^8.1.6",
-        "nodemon": "^1.19.0",
+        "lint-staged": "^13.1.0",
+        "nodemon": "^2.0.20",
         "prettier": "^2.6.2",
         "serverless": "^3.16.0",
         "serverless-aws-documentation": "^0.8.0",
-        "serverless-offline": "^8.7.0",
+        "serverless-offline": "^12.0.4",
         "serverless-prune-plugin": "^2.0.1",
         "superagent": "^5.3.1",
         "supertest": "^4.0.2",
         "ts-jest": "^27.1.4",
         "ts-node": "8.1.0",
-        "tsconfig-paths": "3.8.0",
+        "tsconfig-paths": "^4.1.2",
         "ttypescript": "^1.5.13",
         "typedoc": "^0.22.15",
         "typescript": "^4.6.4"
