@@ -23,7 +23,7 @@ import $engine, {
     NextHandler,
     GeneralWEBController,
 } from 'lemon-core';
-import $service, { HelloService, ParamToSlack, RecordData } from '../service/hello-service';
+import $service, { HelloService, ParamToSlack, PostResponse, RecordData } from '../service/hello-service';
 const NS = $U.NS('hello', 'yellow'); // NAMESPACE TO BE PRINTED.
 
 /**
@@ -166,12 +166,12 @@ export class HelloAPIController extends GeneralWEBController {
      * $ cat data/error-hello.json | http ':8888/hello/public/slack'
      * $ cat data/error-hello.json | http ':8888/hello/public/slack?direct' # direct to slack hook w/o filter.
      * ```
-     * @param {*} id                id of slack-channel (see environment)
+     * @param {*} id               id of slack-channel (see environment)
      * @param {*} param            (optional)
      * @param {*} body             {error?:'', message:'', data:{...}}
-     * @param {*} $ctx              context
+     * @param {*} $ctx             context
      */
-    public postHelloSlack: NextHandler = async (id: any, param: any, body: any, $ctx: any) => {
+    public postHelloSlack: NextHandler<any, PostResponse, SlackPostBody> = async (id, param, body, $ctx) => {
         _log(NS, `postHelloSlack(${id})....`);
         id = $T.S2(id).trim();
         param && _log(NS, `> param =`, $U.json(param));
@@ -190,7 +190,7 @@ export class HelloAPIController extends GeneralWEBController {
         _log(NS, '> endpoint :=', endpoint);
 
         //! prepare slack message via body.
-        const message = typeof body !== 'string' ? body : { text: `${body}` };
+        const message: SlackPostBody = typeof body !== 'string' ? body : { text: `${body}` };
         _log(NS, '> message :=', $U.json(message));
 
         //! route message

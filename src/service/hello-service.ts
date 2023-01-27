@@ -430,6 +430,12 @@ export class HelloService extends CoreService<Model, ModelType> {
         const text = this.asText(data);
         const fields = Fields;
 
+        //* add original data into fields. (for later debug)
+        fields.push({
+            title: '#record',
+            value: $U.json({ subject, data, context }),
+        });
+
         return this.packageDefaultChannel({ pretext, title, text, fields });
     };
 
@@ -478,7 +484,13 @@ export class HelloService extends CoreService<Model, ModelType> {
 
         const message = { pretext, title, text, fields };
 
-        //! get get-endpoint-attributes
+        //* add original data into fields. (for later debug)
+        message.fields.push({
+            title: '#record',
+            value: $U.json({ subject, data, context }),
+        });
+
+        //* get the endpoint-attributes
         const SNS = new AWS.SNS();
         const result = await SNS.getEndpointAttributes({ EndpointArn })
             .promise()
@@ -622,7 +634,13 @@ export class HelloService extends CoreService<Model, ModelType> {
      * @param context the current request-context.
      * @param options (optional) running options.
      */
-    public $routes = (context: NextContext, options?: { direct?: boolean }) => {
+    public $routes = (
+        context: NextContext,
+        options?: {
+            /** flag to send directly to endpoint w/o saving S3 */
+            direct?: boolean;
+        },
+    ) => {
         _log(NS, `! route.context =`, $U.json(context));
 
         //! local cache of channel-model
