@@ -25,6 +25,7 @@ import {
     CoreService,
     NextContext,
     $info,
+    NUL404,
 } from 'lemon-core';
 import { CallbackSlackData, CallbackPayload } from '../common/types';
 import { $FIELD, ChannelModel, Model, ModelType, RouteRule, TargetModel, TestModel } from './hello-model';
@@ -601,6 +602,7 @@ export class HelloService extends CoreService<Model, ModelType> {
             username = '',
         ): ParamToSlack => {
             _log(NS, `packageWithChannel(${channel})...`);
+            channel = `${channel || 'public'}`;
             color = `${color || '#FFB71B'}`;
             username = `${username || 'hello-alarm'}`;
             _log(NS, `> param[${channel}] =`, $U.json({ pretext, title, color, username }));
@@ -618,7 +620,7 @@ export class HelloService extends CoreService<Model, ModelType> {
 
             //! build body for slack, and call
             const body = { attachments: [attachment] };
-            return { channel: `${channel || ''}`, body };
+            return { channel, body };
         };
 
     /**
@@ -655,7 +657,7 @@ export class HelloService extends CoreService<Model, ModelType> {
         const channels: { [key: string]: ChannelModel } = {};
         const _channel = async (name: string): Promise<ChannelModel> => {
             if (channels[name] !== undefined) return channels[name];
-            const model = await this.$channel.find(name);
+            const model = await this.$channel.find(name).catch(NUL404);
             channels[name] = model;
             return model;
         };

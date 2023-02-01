@@ -176,16 +176,17 @@ export class HelloAPIController extends GeneralWEBController {
      */
     public postHelloSlack: NextHandler<any, PostResponse, SlackPostBody> = async (id, param, body, $ctx) => {
         _log(NS, `postHelloSlack(${id})....`);
-        id = $T.S2(id).trim();
+        id = id === '0' ? '' : $T.S2(id);
         param && _log(NS, `> param =`, $U.json(param));
         body && _log(NS, `> body =`, $U.json(body));
         if (!body) throw new Error(`@body (object|string) is required!`);
 
         // STEP.0 determine to post directly.
-        const channel = id.startsWith('!') ? id.substring(1) : id;
+        const channel = `${id.startsWith('!') ? id.substring(1) : id || 'public'}`;
         const hasForce = id.startsWith('!');
         const direct = !!$U.N(param.direct, param.direct === '' ? 1 : hasForce ? 1 : 0);
         _log(NS, `> direct@[${channel}] :=`, direct);
+        if (!channel) throw new Error(`@id (string) is required!`);
 
         // STEP.1 load target endpoint via storage and environ.
         const $channel: ChannelModel = await this.service.$channel.find(channel).catch(NUL404);
@@ -537,7 +538,7 @@ export class HelloAPIController extends GeneralWEBController {
      */
     public postHelloImage: NextHandler = async (id: any, param: any, body: any, $ctx: any) => {
         _log(NS, `postHelloImage(${id})....`);
-        id = $T.S2(id).trim();
+        id = id === '0' ? '' : $T.S2(id);
         param && _log(NS, `> param =`, $U.json(param));
         body && _log(NS, `> body =`, $U.json(body));
         if (!body) throw new Error(`@body (object|string) is required!`);
