@@ -129,6 +129,7 @@ Version History
 
 | Version   | Description
 |--         |--
+| 2.4.3     | optimized with `lemon-core#3.2.5`, and cleanup.
 | 2.4.2     | optimized with `lemon-core#3.2.4`, and cleanup.
 | 2.4.0     | use `DynamoDB` to manage route-rules.
 | 2.3.2     | optimized with `lemon-core#3.1.2`, and `nodejs16` runtime.

@@ -195,7 +195,7 @@ export class HelloAPIController extends GeneralWEBController {
         _log(NS, '> endpoint@0 =', endpoint);
 
         // STEP.2 prepare slack message via body.
-        const message: SlackPostBody = typeof body !== 'string' ? body : { text: `${body}` };
+        const message: SlackPostBody = typeof body !== 'string' ? body : { text: `${body}`, attachments: undefined };
         _log(NS, '> message :=', $U.json(message));
 
         // STEP.3 route message.

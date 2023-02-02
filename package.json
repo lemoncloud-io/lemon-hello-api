@@ -1,6 +1,6 @@
 {
     "name": "lemon-hello-api",
-    "version": "2.4.2h",
+    "version": "2.4.3",
     "description": "Simple Serverless MicroService API with `Lambda` + `API Gateway` + `Web Socket` + `SNS` + `SQS` + `KMS`",
     "main": "dist/index.js",
     "types": "dist/index.d.ts",
@@ -66,7 +66,7 @@
         "plato": "plato -r -d complexity dist"
     },
     "dependencies": {
-        "lemon-core": "^3.2.4"
+        "lemon-core": "^3.2.5"
     },
     "devDependencies": {
         "@cruglobal/serverless-merge-config": "^1.1.0",
