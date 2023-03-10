@@ -22,6 +22,12 @@ Simple Serverless MicroService API with `Lambda` + `API Gateway` + `Web Socket` 
 
 ## Usage
 
+- Setup AWS Credential
+
+    ```bash
+    $ aws configure --profile sbsi
+    ```
+
 - Fork and Customize the code, and run `npm install`
 
     ```bash
