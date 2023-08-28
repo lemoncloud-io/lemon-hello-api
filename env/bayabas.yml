@@ -1,0 +1,43 @@
+#-----------------------------------
+# profile: bayabas
+# - 23.08.25 initial deployment (bayabas.kr)
+#-----------------------------------
+# default
+default_env: &default_env
+  LS: 0                   # log silence.
+  LC: 1                   # line-coloring
+  TS: 1                   # time-stamp in line
+  NAME: 'neuro'           # profile name.
+  BACKBONE_API:  ''       # NO USE BACKBONE
+  SLACK_PUT_S3: 0         # flag to auto save into s3 bucket if slack message.
+  #TODO - slack를 사용하지 않는 경우도 있으니 어떻게 할지???
+  #TODO - kms 키 생성을 CDK로 이용하기 --> 기본키 생성으로 하면될듯 w/ alias.
+  # SLACK_PUBLIC: 'AQICAHhxKRVkfIC5Lef2s5N1tWJBQk10WwEyPbuGm8manK6BsgGEj9/fHoN17S38ta1cDE9IAAAAtDCBsQYJKoZIhvcNAQcGoIGjMIGgAgEAMIGaBgkqhkiG9w0BBwEwHgYJYIZIAWUDBAEuMBEEDL4NOTNU4QK5Zhgx1wIBEIBtAs6i5pX05jfNYXxazMjPWuSFSkQKvLQ6/mQ4mbB5U3KWwsqVPPfbILTDFScvVjnw1XZskn6Tep7IEmChGofzrrgldJrYZXl2zikUxg3wVyiUdED5m4jmc26kLGAtxPzkI6VoEu2QmgYEnLVocA=='
+
+#-----------------------------------
+# local development configuration.
+local:
+  <<: *default_env
+  # STAGE: 'local'
+  # MY_DYNAMO_TABLE: LemonHelloTest
+
+  #! override as prod environ.
+  STAGE: '!production'
+  MY_DYNAMO_TABLE: LemonHelloTable
+  NS: SS
+
+#-----------------------------------
+# development server
+dev:
+  <<: *default_env
+  STAGE: 'develop'
+
+#-----------------------------------
+# production with AWS deploy
+prod:
+  <<: *default_env
+  STAGE: 'production'
+  NS: SS
+  TS: 0
+  SLACK_PUT_S3: 1         # flag to auto save into s3 bucket if slack message.
+

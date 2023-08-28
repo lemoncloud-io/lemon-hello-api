@@ -60,6 +60,17 @@ const CONF = (serverless) => {
             kmsKey: '*',                                        // KMS key-id
             bucket: 'neuro-hello-wwww',                         // Name of S3 public bucket.
         },
+        bayabas: {
+            name: 'bayabas-app',
+            runtime: 'nodejs16.x',                              // Node is powered by the V8 JavaScript Engine (used in Chromium)
+            region: 'ap-northeast-2',
+            env: 'bayabas.yml',                                 // environment file
+            securityGroupIds: undefined,                        // securityGroupIds in VPC
+            subnetIds: undefined,                               // subnetIds in VPC
+            kmsKey: '*',                                        // KMS key-id
+            bucket: 'neurocircuit/lemon-hello-api',             // Name of S3 public bucket. (WARN! 하위 폴더는 구성안됨)
+            // bucket: 'neurocircuit-www',                         // Name of S3 public bucket.
+        },
         jober: {
             name: 'jober-app',
             runtime: 'nodejs16.x',                              // Node is powered by the V8 JavaScript Engine (used in Chromium)

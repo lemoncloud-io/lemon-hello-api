@@ -109,10 +109,11 @@ provider:
   runtime: ${self:custom.CONF.${self:custom.CORE.profile}.runtime, 'nodejs16.x'}
   region: ${self:custom.CONF.${self:custom.CORE.profile}.region, self:custom.CORE.region}      # profile의 region를 먼저 사용하고, 없으면 실행 옵션값.
 
-  # VPC Configuration for Lambda.
-  vpc:
-    securityGroupIds: ${self:custom.CONF.${self:custom.CORE.profile}.securityGroupIds}
-    subnetIds: ${self:custom.CONF.${self:custom.CORE.profile}.subnetIds}
+  #TODO - optional to use VPC.
+  # # VPC Configuration for Lambda.
+  # vpc:
+  #   securityGroupIds: ${self:custom.CONF.${self:custom.CORE.profile}.securityGroupIds}
+  #   subnetIds: ${self:custom.CONF.${self:custom.CORE.profile}.subnetIds}
 
   # Lambda function's IAM Role here
   iamRoleStatements:
@@ -385,50 +386,52 @@ resources:
       Properties:
         TopicName: '${self:custom.topicName.${self:custom.CORE.stage}}'
 
-    # -------------------------------
-    # S3 Bucket
-    # -------------------------------
-    MyS3Bucket:
-      Type: AWS::S3::Bucket
-      Properties:
-        AccessControl: PublicRead
-        BucketName: ${self:custom.bucketName.${self:custom.CORE.stage}}
-        WebsiteConfiguration:
-          IndexDocument: index.html
-        CorsConfiguration:
-            CorsRules:
-              -
-                AllowedOrigins:
-                  - '*'
-                AllowedHeaders:
-                  - '*'
-                AllowedMethods:
-                  - GET
-                  - HEAD
-                MaxAge: 3000
+    #TODO - 버킷 생성 오류로 막아둠 (230825)
+    # # -------------------------------
+    # # S3 Bucket
+    # #TODO/ERROR - Bucket cannot have ACLs set with ObjectOwnership's BucketOwnerEnforced setting (Service: Amazon S3; Status Code: 400; Error Code: InvalidBucketAclWithObjectOwnership; Request ID: 0GEPBEF6K4E1238M; S3 Extended Request ID: eHezBjVLEUlG5GogoEzsezk4iDX7KW2E4mnIG0hmWHAUPeT2vi+fGJFJvxOgfprL/CLP/4qwipmNlCXI6j+GuQ==; Proxy: null)
+    # # -------------------------------
+    # MyS3Bucket:
+    #   Type: AWS::S3::Bucket
+    #   Properties:
+    #     AccessControl: PublicRead
+    #     BucketName: ${self:custom.bucketName.${self:custom.CORE.stage}}
+    #     WebsiteConfiguration:
+    #       IndexDocument: index.html
+    #     CorsConfiguration:
+    #         CorsRules:
+    #           -
+    #             AllowedOrigins:
+    #               - '*'
+    #             AllowedHeaders:
+    #               - '*'
+    #             AllowedMethods:
+    #               - GET
+    #               - HEAD
+    #             MaxAge: 3000
 
-    # -------------------------------
-    # S3 Bucket
-    # -------------------------------
-    MyS3BucketPolicy:
-      Type: AWS::S3::BucketPolicy
-      Properties:
-        Bucket:
-          Ref: MyS3Bucket
-        PolicyDocument:
-          Statement:
-            - Sid: PublicReadGetObject
-              Effect: Allow
-              Principal: "*"
-              Action:
-                - s3:GetObject
-              Resource:
-                Fn::Join: [
-                  "", [
-                    "arn:aws:s3:::",
-                    {
-                      "Ref": "MyS3Bucket"
-                    },
-                    "/*"
-                  ]
-                ]
+    # # -------------------------------
+    # # S3 Bucket
+    # # -------------------------------
+    # MyS3BucketPolicy:
+    #   Type: AWS::S3::BucketPolicy
+    #   Properties:
+    #     Bucket:
+    #       Ref: MyS3Bucket
+    #     PolicyDocument:
+    #       Statement:
+    #         - Sid: PublicReadGetObject
+    #           Effect: Allow
+    #           Principal: "*"
+    #           Action:
+    #             - s3:GetObject
+    #           Resource:
+    #             Fn::Join: [
+    #               "", [
+    #                 "arn:aws:s3:::",
+    #                 {
+    #                   "Ref": "MyS3Bucket"
+    #                 },
+    #                 "/*"
+    #               ]
+    #             ]
