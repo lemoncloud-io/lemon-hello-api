@@ -1,0 +1,37 @@
+#-----------------------------------
+# Lemon Basic Environment Variables.
+#-----------------------------------
+# default
+default_env: &default_env
+  LS: 0                   # log silence.
+  LC: 1                   # line-coloring
+  TS: 1                   # time-stamp in line
+  NAME: 'mediagen'           # profile name.
+  SLACK_PUBLIC: 'AQICAHiaZwy6YalZX+tky/QwBtBxxtqpiNVR+X0OrEDuNZF60QE6ROQEQ6eVtHaAF8gHemjCAAAAsjCBrwYJKoZIhvcNAQcGoIGhMIGeAgEAMIGYBgkqhkiG9w0BBwEwHgYJYIZIAWUDBAEuMBEEDBLTOf4SMRRXuKlbQQIBEIBr3x5vNguul0m4PYWP8Vmuj9FeDFMimJ4LK17A0ysl93ixv4k7gxWac8iMBUP9AccTxO0rAfCqrLyDj7rA7D0U2UkCZgM+4Zm9nvxD1S9jPPlxcLdqvB77t5p2g4p5eIESKdVzT0z4YeEO1Co='
+
+#-----------------------------------
+# local development configuration.
+local:
+  <<: *default_env
+  # STAGE: 'local'
+  # MY_DYNAMO_TABLE: LemonHelloTest
+
+  #! override as prod environ.
+  STAGE: '!production'
+  MY_DYNAMO_TABLE: LemonHelloTable
+  NS: SS
+
+#-----------------------------------
+# development server
+dev:
+  <<: *default_env
+  STAGE: 'develop'
+
+#-----------------------------------
+# production with AWS deploy
+prod:
+  <<: *default_env
+  STAGE: 'production'
+  NS: SS
+  TS: 0
+
