@@ -70,6 +70,16 @@ const CONF = (serverless) => {
             kmsKey: '*',                                        // KMS key-id
             bucket: 'mediagen-hello-lemon',                     // Name of S3 public bucket.
         },
+        securenet: {
+            name: 'securenet-app',
+            runtime: 'nodejs16.x',                              // Node is powered by the V8 JavaScript Engine (used in Chromium)
+            region: 'ap-northeast-2',
+            env: 'securenet.yml',                               // environment file
+            securityGroupIds: undefined,                        // securityGroupIds in VPC
+            subnetIds: undefined,                               // subnetIds in VPC
+            kmsKey: '*',                                        // KMS key-id
+            bucket: 'securenet-hello-lemon',                    // Name of S3 public bucket.
+        },
         jober: {
             name: 'jober-app',
             runtime: 'nodejs16.x',                              // Node is powered by the V8 JavaScript Engine (used in Chromium)
