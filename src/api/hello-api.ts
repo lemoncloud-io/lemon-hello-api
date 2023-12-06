@@ -527,8 +527,8 @@ export class HelloAPIController extends GeneralWEBController {
     /**
      * Post animal image via Slack Web Hook
      * Only dog or cat picture supported
-     * echo '{"keyword":"cat"}' | http ':8888/hello/test/slack'
-     * echo '{"keyword":"dog"}' | http ':8888/hello/public/slack'
+     * echo '{"keyword":"cat"}' | http ':8888/hello/test/image'
+     * echo '{"keyword":"dog"}' | http ':8888/hello/public/image'
      *
      * ```
      * @param {*} id                id of slack-channel (see environment)
