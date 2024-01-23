@@ -18,8 +18,8 @@ devops:
     env: devops.yml # environment file
     bucketName: 'devops-eureka-codes-test' # WARN! main bucket used (create before deploy).
     identityPool: 'ap-northeast-2:71aca5df-260e-4c65-ab21-48bf1877ea13' # ade-user-pool-identity-pool
-    securityGroupIds:
-    subnetIds:
+    securityGroupIds: ''
+    subnetIds: ''
 none:
     name: none-app
     runtime: nodejs16.x

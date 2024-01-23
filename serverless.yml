@@ -110,9 +110,9 @@ provider:
   region: ${self:custom.CONF.${self:custom.CORE.profile}.region, self:custom.CORE.region}      # profile의 region를 먼저 사용하고, 없으면 실행 옵션값.
 
   # VPC Configuration for Lambda.
-  vpc:
-    securityGroupIds: ${self:custom.CONF.${self:custom.CORE.profile}.securityGroupIds}
-    subnetIds: ${self:custom.CONF.${self:custom.CORE.profile}.subnetIds}
+  # vpc:
+  #   securityGroupIds: ${self:custom.CONF.${self:custom.CORE.profile}.securityGroupIds}
+  #   subnetIds: ${self:custom.CONF.${self:custom.CORE.profile}.subnetIds}
 
   # Lambda function's IAM Role here
   iamRoleStatements:
@@ -189,8 +189,8 @@ provider:
     MY_S3_BUCKET: '${self:custom.bucketName.${self:custom.CORE.stage}}'
     MY_SQS_ENDPOINT: 'https://sqs.${self:provider.region}.amazonaws.com/${aws:accountId}/${self:custom.queueName.${self:custom.CORE.stage}}' # see `sqs-service`
     MY_SNS_ENDPOINT: 'arn:aws:sns:${self:provider.region}:${aws:accountId}:${self:custom.topicName.${self:custom.CORE.stage}}'               # see `sns-service`
-    $<<: ${file(./env/${self:custom.CONF.${self:custom.CORE.profile}.env}):${self:custom.CORE.stage}}
-
+    # $<<: ${file(./env/${self:custom.CONF.${self:custom.CORE.profile}.env}):${self:custom.CORE.stage}}
+    $<<: ${file(./env/${self:custom.CONF.env}):${self:custom.CORE.stage}}
 #------------------------------------------------
 # Functions
 #------------------------------------------------
