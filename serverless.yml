@@ -23,7 +23,7 @@ custom:
     region: ${opt:region, 'ap-northeast-2'}     # run option `--region` `-r`
     stage: ${opt:stage, 'dev'}                  # run option `--stage` `-s`
     env: ${param:env, './env/none.yml'}         # run option `--env`
-  CONF: ${file(./env/config.js):CONF}           # merge config from `config.js` by profile.
+  CONF: ${file(./env/config.yml):${self:custom.CORE.profile}}        # merge config from `config.js` by profile.
   #------------------------------------------------
   # serverless-offline
   #------------------------------------------------
