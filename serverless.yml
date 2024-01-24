@@ -1,3 +1,4 @@
+---
 #------------------------------------------------
 # Serverless Configuration.
 #------------------------------------------------
@@ -5,430 +6,429 @@ service: lemon-hello-api
 
 # You can pin your service to only deploy with a specific Serverless version
 # Check out our docs for more details
-frameworkVersion: "3"
+frameworkVersion: '3'
 
 plugins:
-  - serverless-offline
-  - serverless-aws-documentation
-  - serverless-prune-plugin
-  - '@cruglobal/serverless-merge-config'
+    - serverless-offline
+    - serverless-aws-documentation
+    - serverless-prune-plugin
+    - '@cruglobal/serverless-merge-config'
 
 #------------------------------------------------
 # Custome: 초기 환경 설정 로딩을 위한 핵심 설정.
 # - config.js 에서 profile별 core 정보를 얻음.
 #------------------------------------------------
 custom:
-  CORE:                                         # Core Configuration.
-    profile: ${param:profile, 'none'}           # run option `--profile`
-    region: ${opt:region, 'ap-northeast-2'}     # run option `--region` `-r`
-    stage: ${opt:stage, 'dev'}                  # run option `--stage` `-s`
-    env: ${param:env, './env/none.yml'}         # run option `--env`
-  CONF: ${file(./env/config.yml):${self:custom.CORE.profile}}        # merge config from `config.js` by profile.
-  #------------------------------------------------
-  # serverless-offline
-  #------------------------------------------------
-  serverless-offline:
-    port: 8888
-  #------------------------------------------------
-  # Documentation
-  #   - https://github.com/9cookies/serverless-aws-documentation
-  #------------------------------------------------
-  documentation: ${file(./swagger/documentation.yml):documentation}
-  #------------------------------------------------
-  # Dynamo: (MovesTest)
-  #------------------------------------------------
-  tableName:
-    local: LemonHelloTest
-    dev: LemonHelloTest
-    prod: LemonHelloTable
-  #------------------------------------------------
-  # SQS Queue
-  #------------------------------------------------
-  queueName:
-    local: lemon-hello-sqs-dev
-    dev: lemon-hello-sqs-dev
-    prod: lemon-hello-sqs
-  #------------------------------------------------
-  # SNS Registration
-  #------------------------------------------------
-  topicName:
-    local: lemon-hello-sns-dev
-    dev: lemon-hello-sns-dev
-    prod: lemon-hello-sns
-  topicArn:
-    Fn::Join:
-      - ''
-      - - 'arn:aws:sns:'
-        - Ref: AWS::Region
-        - ':'
-        - Ref: AWS::AccountId
-        - ':'
-        - Fn::GetAtt:
-          - MyInputTopic
-          - TopicName
-  #------------------------------------------------
-  # S3 Bucket
-  #------------------------------------------------
-  bucketName:
-    local: lemon-hello-www-dev
-    dev: lemon-hello-www-dev
-    prod: ${self:custom.CONF.${self:custom.CORE.profile}.bucket, 'lemon-hello-www'}
-  #------------------------------------------------
-  # pruning old versions
-  #------------------------------------------------
-  prune:
-    automatic: true
-    number: 3
-  #------------------------------------------------
-  # CORS Default (use like `cors: ${self:custom.cors, true}`)
-  #------------------------------------------------
-  cors:
-    origin: "*"
-    headers:
-      - Content-Type
-      - X-Amz-Date
-      - Authorization
-      - X-Api-Key
-      - X-Amz-Security-Token
-      - X-Amz-User-Agent
-      - X-Lemon-Language
-      - X-Lemon-Identity
-    allowCredentials: true
+    CORE: # Core Configuration.
+        profile: ${param:profile, 'none'} # run option `--profile`
+        region: ${opt:region, 'ap-northeast-2'} # run option `--region` `-r`
+        stage: ${opt:stage, 'dev'} # run option `--stage` `-s`
+        env: ${param:env, './env/none.yml'} # run option `--env`
+    CONF: ${file(./env/config.yml):${self:custom.CORE.profile}} # merge config from `config.js` by profile.
+    #------------------------------------------------
+    # serverless-offline
+    #------------------------------------------------
+    serverless-offline:
+        port: 8888
+    #------------------------------------------------
+    # Documentation
+    #   - https://github.com/9cookies/serverless-aws-documentation
+    #------------------------------------------------
+    documentation: ${file(./swagger/documentation.yml):documentation}
+    #------------------------------------------------
+    # Dynamo: (MovesTest)
+    #------------------------------------------------
+    tableName:
+        local: LemonHelloTest
+        dev: LemonHelloTest
+        prod: LemonHelloTable
+    #------------------------------------------------
+    # SQS Queue
+    #------------------------------------------------
+    queueName:
+        local: lemon-hello-sqs-dev
+        dev: lemon-hello-sqs-dev
+        prod: lemon-hello-sqs
+    #------------------------------------------------
+    # SNS Registration
+    #------------------------------------------------
+    topicName:
+        local: lemon-hello-sns-dev
+        dev: lemon-hello-sns-dev
+        prod: lemon-hello-sns
+    topicArn:
+        Fn::Join:
+            - ''
+            - - 'arn:aws:sns:'
+              - Ref: AWS::Region
+              - ':'
+              - Ref: AWS::AccountId
+              - ':'
+              - Fn::GetAtt:
+                    - MyInputTopic
+                    - TopicName
+    #------------------------------------------------
+    # S3 Bucket
+    #------------------------------------------------
+    bucketName:
+        local: lemon-hello-www-dev-devops
+        dev: lemon-hello-www-dev-devops
+        prod: ${self:custom.CONF.${self:custom.CORE.profile}.bucket, 'lemon-hello-www-devops'}
+    #------------------------------------------------
+    # pruning old versions
+    #------------------------------------------------
+    prune:
+        automatic: true
+        number: 3
+    #------------------------------------------------
+    # CORS Default (use like `cors: ${self:custom.cors, true}`)
+    #------------------------------------------------
+    cors:
+        origin: '*'
+        headers:
+            - Content-Type
+            - X-Amz-Date
+            - Authorization
+            - X-Api-Key
+            - X-Amz-Security-Token
+            - X-Amz-User-Agent
+            - X-Lemon-Language
+            - X-Lemon-Identity
+        allowCredentials: true
 
 #------------------------------------------------
 # Provider
 #------------------------------------------------
 provider:
-  name: aws
-  profile: ${param:profile, 'none'}
-  stage: ${opt:stage, 'dev'}
+    name: aws
+    profile: ${param:profile, 'none'}
+    stage: ${opt:stage, 'dev'}
 
-  # Lambda Runtime Environment
-  memorySize: 256
-  timeout: 30
-  runtime: ${self:custom.CONF.${self:custom.CORE.profile}.runtime, 'nodejs16.x'}
-  region: ${self:custom.CONF.${self:custom.CORE.profile}.region, self:custom.CORE.region}      # profile의 region를 먼저 사용하고, 없으면 실행 옵션값.
+    # Lambda Runtime Environment
+    memorySize: 256
+    timeout: 30
+    runtime: ${self:custom.CONF.${self:custom.CORE.profile}.runtime, 'nodejs16.x'}
+    region: ${self:custom.CONF.${self:custom.CORE.profile}.region, self:custom.CORE.region} # profile의 region를 먼저 사용하고, 없으면 실행 옵션값.
 
-  # VPC Configuration for Lambda.
-  # vpc:
-  #   securityGroupIds: ${self:custom.CONF.${self:custom.CORE.profile}.securityGroupIds}
-  #   subnetIds: ${self:custom.CONF.${self:custom.CORE.profile}.subnetIds}
+    # VPC Configuration for Lambda.
+    # vpc:
+    #   securityGroupIds: ${self:custom.CONF.${self:custom.CORE.profile}.securityGroupIds}
+    #   subnetIds: ${self:custom.CONF.${self:custom.CORE.profile}.subnetIds}
 
-  # Lambda function's IAM Role here
-  iamRoleStatements:
-    #NOTE! - remove할때 lambda ENI Interface를 제거하지 못해서 블럭당하고 있을때, EC2 콘솔에서 강제 지우기 하면 됨!.. (VPC 안쓰면 관계 없음!)
-    - Effect: Allow
-      Action:
-        - cloudwatch:PutMetricData
-        - lambda:InvokeFunction
-        - ec2:CreateNetworkInterface
-        - ec2:DescribeNetworkInterfaces
-        - ec2:AttachNetworkInterface
-        - ec2:DescribeNetworkInterfaces
-        - ec2:DeleteNetworkInterface
-        - ec2:DetachNetworkInterface
-        - ec2:ModifyNetworkInterfaceAttribute
-        - ec2:ResetNetworkInterfaceAttribute
-        - SNS:GetEndpointAttributes
-      Resource: "*"
-    # IAM/STS - For VPC, Use static ARN Name for 'lemon-hello-api'.
-    - Effect: "Allow"
-      Action:
-        - iam:GetUser
-        - sts:GetCallerIdentity
-      Resource: "*"
-    # SQS
-    - Effect: "Allow"
-      Action:
-        - sqs:SendMessage
-        - sqs:DeleteMessage
-        - sqs:ReceiveMessage
-      Resource: "arn:aws:sqs:${opt:region, self:provider.region}:*:${self:custom.queueName.${self:custom.CORE.stage}}"
-    # SNS
-    - Effect: "Allow"
-      Action:
-        - sns:Publish
-      Resource: ${self:custom.topicArn}
-    # S3
-    - Effect: "Allow"
-      Action:
-        - s3:GetObject
-        - s3:PutObject
-      Resource: "arn:aws:s3:::${self:custom.bucketName.${self:custom.CORE.stage}}/*"
-    # KMS
-    - Effect: Allow
-      Action:
-        - kms:Decrypt
-        - kms:Encrypt
-        - kms:Verify
-      Resource: "arn:aws:kms:${self:provider.region}:*:key/${self:custom.CONF.${self:custom.CORE.profile}.kmsKey, ''}"   #TODO - improve resource setting.
-    # DynamoDB (ModelTable)
-    - Effect: Allow
-      Action:
-        - dynamodb:Query
-        - dynamodb:Scan
-        - dynamodb:GetItem
-        - dynamodb:PutItem
-        - dynamodb:UpdateItem
-        - dynamodb:DeleteItem
-        - dynamodb:GetRecords
-        - dynamodb:GetShardIterator
-        - dynamodb:DescribeTable
-        - dynamodb:DescribeStream
-        - dynamodb:ListStreams
-      Resource: "arn:aws:dynamodb:${opt:region, self:provider.region}:*:table/${self:custom.tableName.${self:custom.CORE.stage}}"
+    # Lambda function's IAM Role here
+    iamRoleStatements:
+        #NOTE! - remove할때 lambda ENI Interface를 제거하지 못해서 블럭당하고 있을때, EC2 콘솔에서 강제 지우기 하면 됨!.. (VPC 안쓰면 관계 없음!)
+        - Effect: Allow
+          Action:
+              - cloudwatch:PutMetricData
+              - lambda:InvokeFunction
+              - ec2:CreateNetworkInterface
+              - ec2:DescribeNetworkInterfaces
+              - ec2:AttachNetworkInterface
+              - ec2:DescribeNetworkInterfaces
+              - ec2:DeleteNetworkInterface
+              - ec2:DetachNetworkInterface
+              - ec2:ModifyNetworkInterfaceAttribute
+              - ec2:ResetNetworkInterfaceAttribute
+              - SNS:GetEndpointAttributes
+          Resource: '*'
+        # IAM/STS - For VPC, Use static ARN Name for 'lemon-hello-api'.
+        - Effect: 'Allow'
+          Action:
+              - iam:GetUser
+              - sts:GetCallerIdentity
+          Resource: '*'
+        # SQS
+        - Effect: 'Allow'
+          Action:
+              - sqs:SendMessage
+              - sqs:DeleteMessage
+              - sqs:ReceiveMessage
+          Resource: 'arn:aws:sqs:${opt:region, self:provider.region}:*:${self:custom.queueName.${self:custom.CORE.stage}}'
+        # SNS
+        - Effect: 'Allow'
+          Action:
+              - sns:Publish
+          Resource: ${self:custom.topicArn}
+        # S3
+        - Effect: 'Allow'
+          Action:
+              - s3:GetObject
+              - s3:PutObject
+          Resource: 'arn:aws:s3:::${self:custom.bucketName.${self:custom.CORE.stage}}/*'
+        # KMS
+        - Effect: Allow
+          Action:
+              - kms:Decrypt
+              - kms:Encrypt
+              - kms:Verify
+          Resource: "arn:aws:kms:${self:provider.region}:*:key/${self:custom.CONF.${self:custom.CORE.profile}.kmsKey, ''}" #TODO - improve resource setting.
+        # DynamoDB (ModelTable)
+        - Effect: Allow
+          Action:
+              - dynamodb:Query
+              - dynamodb:Scan
+              - dynamodb:GetItem
+              - dynamodb:PutItem
+              - dynamodb:UpdateItem
+              - dynamodb:DeleteItem
+              - dynamodb:GetRecords
+              - dynamodb:GetShardIterator
+              - dynamodb:DescribeTable
+              - dynamodb:DescribeStream
+              - dynamodb:ListStreams
+          Resource: 'arn:aws:dynamodb:${opt:region, self:provider.region}:*:table/${self:custom.tableName.${self:custom.CORE.stage}}'
 
-
-  # -------------------------------------------------------
-  # you can define service wide environment variables here
-  # WARN! - 환경변수에는 object/null 으로 설정할 수 없음.
-  environment:
-    DEFAULT_REGION: '${self:provider.region}'
-    REPORT_ERROR_ARN: 'arn:aws:sns:${self:provider.region}:${aws:accountId}:lemon-hello-sns'
-    MY_DYNAMO_TABLE: '${self:custom.tableName.${self:custom.CORE.stage}}'
-    MY_S3_BUCKET: '${self:custom.bucketName.${self:custom.CORE.stage}}'
-    MY_SQS_ENDPOINT: 'https://sqs.${self:provider.region}.amazonaws.com/${aws:accountId}/${self:custom.queueName.${self:custom.CORE.stage}}' # see `sqs-service`
-    MY_SNS_ENDPOINT: 'arn:aws:sns:${self:provider.region}:${aws:accountId}:${self:custom.topicName.${self:custom.CORE.stage}}'               # see `sns-service`
-    # $<<: ${file(./env/${self:custom.CONF.${self:custom.CORE.profile}.env}):${self:custom.CORE.stage}}
-    $<<: ${file(./env/${self:custom.CONF.env}):${self:custom.CORE.stage}}
+    # -------------------------------------------------------
+    # you can define service wide environment variables here
+    # WARN! - 환경변수에는 object/null 으로 설정할 수 없음.
+    environment:
+        DEFAULT_REGION: '${self:provider.region}'
+        REPORT_ERROR_ARN: 'arn:aws:sns:${self:provider.region}:${aws:accountId}:lemon-hello-sns'
+        MY_DYNAMO_TABLE: '${self:custom.tableName.${self:custom.CORE.stage}}'
+        MY_S3_BUCKET: '${self:custom.bucketName.${self:custom.CORE.stage}}'
+        MY_SQS_ENDPOINT: 'https://sqs.${self:provider.region}.amazonaws.com/${aws:accountId}/${self:custom.queueName.${self:custom.CORE.stage}}' # see `sqs-service`
+        MY_SNS_ENDPOINT: 'arn:aws:sns:${self:provider.region}:${aws:accountId}:${self:custom.topicName.${self:custom.CORE.stage}}' # see `sns-service`
+        # $<<: ${file(./env/${self:custom.CONF.${self:custom.CORE.profile}.env}):${self:custom.CORE.stage}}
+        $<<: ${file(./env/${self:custom.CONF.env}):${self:custom.CORE.stage}}
 #------------------------------------------------
 # Functions
 #------------------------------------------------
 functions:
-  #INFO - use seperated function for so many dynamo-stream.
-  backend:
-    handler: handler.lambda     # use core `lambda-handler`.
-    timeout: 300                # max timeout. (= 5 min)
-    events:
-      # -------------------------------------------------------
-      # Shared DynamoStream Service.
-      - stream:
-          type: dynamodb
-          batchSize: 1
-          startingPosition: LATEST
-          arn:
-            Fn::GetAtt:
-              - MyTable
-              - StreamArn
-      # -------------------------------------------------------
-      # Shared SNS Service.
-      - sns: 'arn:aws:sns:${self:provider.region}:${aws:accountId}:${self:custom.topicName.${self:custom.CORE.stage}}'
-      # -------------------------------------------------------
-      # Shared SQS Service.
-      - sqs:
-          arn:
-            Fn::GetAtt:
-              - MyQueue
-              - Arn
-          batchSize: 1              # the maximum number of SQS messages that AWS will send to your Lambda function on a single trigger. (default: 10)
-  #WARN - must use `lambda` as name for `lemon-protocol`.
-  lambda:
-    handler: handler.lambda     # use core `lambda-handler`.
-    timeout: 30                 # max timeout(30s) by API Gateway.
-    events:
-      # -------------------------------------------------------
-      # REST API : /
-      - http:
-          path: /
-          method: get
-          cors: ${self:custom.cors, true}
-          documentation:
-            summary: "show service name and version"
-      - http:
-          path: /
-          method: post
-          cors: ${self:custom.cors, true}
-      # -------------------------------------------------------
-      # REST API : /hello
-      - http:
-          path: /hello
-          method: get
-          cors: ${self:custom.cors, true}
-          # authorizer: aws_iam
-      - http:
-          path: /hello/{id}
-          method: get
-          cors: ${self:custom.cors, true}
-          # authorizer: aws_iam
-      - http:
-          path: /hello/{id}/{cmd}
-          method: get
-          cors: ${self:custom.cors, true}
-          # authorizer: aws_iam
-      - http:
-          path: /hello/{id}
-          method: put
-          cors: ${self:custom.cors, true}
-          authorizer: aws_iam
-      - http:
-          path: /hello/subscribe
-          method: post
-          cors: ${self:custom.cors, true}
-      - http:
-          path: /hello/{id}
-          method: post
-          cors: ${self:custom.cors, true}
-          authorizer: aws_iam
-      - http:
-          path: /hello/{id}/{cmd}
-          method: post
-          cors: ${self:custom.cors, true}
-          authorizer: aws_iam
-      - http:
-          path: /hello/{id}
-          method: delete
-          cors: ${self:custom.cors, true}
-          authorizer: aws_iam
-      # -------------------------------------------------------
-      # REST API : General Controller. (authed)
-      - http:
-          path: /{type}
-          method: get
-          cors: ${self:custom.cors, true}
-          authorizer: aws_iam
-      - http:
-          path: /{type}/{id}
-          method: get
-          cors: ${self:custom.cors, true}
-          authorizer: aws_iam
-      - http:
-          path: /{type}/{id}/{cmd}
-          method: get
-          cors: ${self:custom.cors, true}
-          authorizer: aws_iam
-      - http:
-          path: /{type}/{id}
-          method: put
-          cors: ${self:custom.cors, true}
-          authorizer: aws_iam
-      - http:
-          path: /{type}/{id}/{cmd}
-          method: put
-          cors: ${self:custom.cors, true}
-          authorizer: aws_iam
-      - http:
-          path: /{type}/{id}
-          method: post
-          cors: ${self:custom.cors, true}
-          authorizer: aws_iam
-      - http:
-          path: /{type}/{id}/{cmd}
-          method: post
-          cors: ${self:custom.cors, true}
-          authorizer: aws_iam
-      - http:
-          path: /{type}/{id}
-          method: delete
-          cors: ${self:custom.cors, true}
-          authorizer: aws_iam
-      - http:
-          path: /{type}/{id}/{cmd}
-          method: delete
-          cors: ${self:custom.cors, true}
-          authorizer: aws_iam
+    #INFO - use seperated function for so many dynamo-stream.
+    backend:
+        handler: handler.lambda # use core `lambda-handler`.
+        timeout: 300 # max timeout. (= 5 min)
+        events:
+            # -------------------------------------------------------
+            # Shared DynamoStream Service.
+            - stream:
+                  type: dynamodb
+                  batchSize: 1
+                  startingPosition: LATEST
+                  arn:
+                      Fn::GetAtt:
+                          - MyTable
+                          - StreamArn
+            # -------------------------------------------------------
+            # Shared SNS Service.
+            - sns: 'arn:aws:sns:${self:provider.region}:${aws:accountId}:${self:custom.topicName.${self:custom.CORE.stage}}'
+            # -------------------------------------------------------
+            # Shared SQS Service.
+            - sqs:
+                  arn:
+                      Fn::GetAtt:
+                          - MyQueue
+                          - Arn
+                  batchSize: 1 # the maximum number of SQS messages that AWS will send to your Lambda function on a single trigger. (default: 10)
+    #WARN - must use `lambda` as name for `lemon-protocol`.
+    lambda:
+        handler: handler.lambda # use core `lambda-handler`.
+        timeout: 30 # max timeout(30s) by API Gateway.
+        events:
+            # -------------------------------------------------------
+            # REST API : /
+            - http:
+                  path: /
+                  method: get
+                  cors: ${self:custom.cors, true}
+                  documentation:
+                      summary: 'show service name and version'
+            - http:
+                  path: /
+                  method: post
+                  cors: ${self:custom.cors, true}
+            # -------------------------------------------------------
+            # REST API : /hello
+            - http:
+                  path: /hello
+                  method: get
+                  cors: ${self:custom.cors, true}
+                  # authorizer: aws_iam
+            - http:
+                  path: /hello/{id}
+                  method: get
+                  cors: ${self:custom.cors, true}
+                  # authorizer: aws_iam
+            - http:
+                  path: /hello/{id}/{cmd}
+                  method: get
+                  cors: ${self:custom.cors, true}
+                  # authorizer: aws_iam
+            - http:
+                  path: /hello/{id}
+                  method: put
+                  cors: ${self:custom.cors, true}
+                  authorizer: aws_iam
+            - http:
+                  path: /hello/subscribe
+                  method: post
+                  cors: ${self:custom.cors, true}
+            - http:
+                  path: /hello/{id}
+                  method: post
+                  cors: ${self:custom.cors, true}
+                  authorizer: aws_iam
+            - http:
+                  path: /hello/{id}/{cmd}
+                  method: post
+                  cors: ${self:custom.cors, true}
+                  authorizer: aws_iam
+            - http:
+                  path: /hello/{id}
+                  method: delete
+                  cors: ${self:custom.cors, true}
+                  authorizer: aws_iam
+            # -------------------------------------------------------
+            # REST API : General Controller. (authed)
+            - http:
+                  path: /{type}
+                  method: get
+                  cors: ${self:custom.cors, true}
+                  authorizer: aws_iam
+            - http:
+                  path: /{type}/{id}
+                  method: get
+                  cors: ${self:custom.cors, true}
+                  authorizer: aws_iam
+            - http:
+                  path: /{type}/{id}/{cmd}
+                  method: get
+                  cors: ${self:custom.cors, true}
+                  authorizer: aws_iam
+            - http:
+                  path: /{type}/{id}
+                  method: put
+                  cors: ${self:custom.cors, true}
+                  authorizer: aws_iam
+            - http:
+                  path: /{type}/{id}/{cmd}
+                  method: put
+                  cors: ${self:custom.cors, true}
+                  authorizer: aws_iam
+            - http:
+                  path: /{type}/{id}
+                  method: post
+                  cors: ${self:custom.cors, true}
+                  authorizer: aws_iam
+            - http:
+                  path: /{type}/{id}/{cmd}
+                  method: post
+                  cors: ${self:custom.cors, true}
+                  authorizer: aws_iam
+            - http:
+                  path: /{type}/{id}
+                  method: delete
+                  cors: ${self:custom.cors, true}
+                  authorizer: aws_iam
+            - http:
+                  path: /{type}/{id}/{cmd}
+                  method: delete
+                  cors: ${self:custom.cors, true}
+                  authorizer: aws_iam
 
 #--------------------------------------------------------------
 # ! INCLUDE ONLY DISTRIBUTIONS !
 #--------------------------------------------------------------
 package:
-  exclude:
-    - ./**
-    - '!node_modules/**'
-  include:
-    - handler.js
-    - package.json
-    - dist/**
-    - data/**
-  excludeDevDependencies: true
+    exclude:
+        - ./**
+        - '!node_modules/**'
+    include:
+        - handler.js
+        - package.json
+        - dist/**
+        - data/**
+    excludeDevDependencies: true
 
 #==============================================================
 # Resources
 #--------------------------------------------------------------
 resources:
-  Resources:
-    # -------------------------------
-    # Dynamo Table
-    # -------------------------------
-    MyTable:
-      Type: 'AWS::DynamoDB::Table'
-      Properties:
-        TableName: '${self:custom.tableName.${self:custom.CORE.stage}}'
-        AttributeDefinitions:
-          - AttributeName: '_id'
-            AttributeType: S
-        KeySchema:
-          - AttributeName: '_id'
-            KeyType: HASH
-        BillingMode: PAY_PER_REQUEST
-        StreamSpecification:
-          StreamViewType: "NEW_AND_OLD_IMAGES"
+    Resources:
+        # -------------------------------
+        # Dynamo Table
+        # -------------------------------
+        MyTable:
+            Type: 'AWS::DynamoDB::Table'
+            Properties:
+                TableName: '${self:custom.tableName.${self:custom.CORE.stage}}'
+                AttributeDefinitions:
+                    - AttributeName: '_id'
+                      AttributeType: S
+                KeySchema:
+                    - AttributeName: '_id'
+                      KeyType: HASH
+                BillingMode: PAY_PER_REQUEST
+                StreamSpecification:
+                    StreamViewType: 'NEW_AND_OLD_IMAGES'
 
-    # -------------------------------
-    # SQS Queue
-    # -------------------------------
-    MyQueue:
-      Type: 'AWS::SQS::Queue'
-      # https://docs.aws.amazon.com/ko_kr/AWSSimpleQueueService/latest/APIReference/API_SetQueueAttributes.html
-      Properties:
-        QueueName: '${self:custom.queueName.${self:custom.CORE.stage}}'
-        MessageRetentionPeriod: 1800      # 30 mins
-        VisibilityTimeout: 300            # 5 mins
-        MaximumMessageSize: 4096          # 4 Kb
-        DelaySeconds: 3                   # 3 seconds
-        ReceiveMessageWaitTimeSeconds: 20 # 20 seconds
+        # -------------------------------
+        # SQS Queue
+        # -------------------------------
+        MyQueue:
+            Type: 'AWS::SQS::Queue'
+            # https://docs.aws.amazon.com/ko_kr/AWSSimpleQueueService/latest/APIReference/API_SetQueueAttributes.html
+            Properties:
+                QueueName: '${self:custom.queueName.${self:custom.CORE.stage}}'
+                MessageRetentionPeriod: 1800 # 30 mins
+                VisibilityTimeout: 300 # 5 mins
+                MaximumMessageSize: 4096 # 4 Kb
+                DelaySeconds: 3 # 3 seconds
+                ReceiveMessageWaitTimeSeconds: 20 # 20 seconds
 
-    # -------------------------------
-    # This SNS Topic
-    # -------------------------------
-    MyInputTopic:
-      Type: 'AWS::SNS::Topic'
-      Properties:
-        TopicName: '${self:custom.topicName.${self:custom.CORE.stage}}'
+        # -------------------------------
+        # This SNS Topic
+        # -------------------------------
+        MyInputTopic:
+            Type: 'AWS::SNS::Topic'
+            Properties:
+                TopicName: '${self:custom.topicName.${self:custom.CORE.stage}}'
 
-    # -------------------------------
-    # S3 Bucket
-    # -------------------------------
-    MyS3Bucket:
-      Type: AWS::S3::Bucket
-      Properties:
-        AccessControl: PublicRead
-        BucketName: ${self:custom.bucketName.${self:custom.CORE.stage}}
-        WebsiteConfiguration:
-          IndexDocument: index.html
-        CorsConfiguration:
-            CorsRules:
-              -
-                AllowedOrigins:
-                  - '*'
-                AllowedHeaders:
-                  - '*'
-                AllowedMethods:
-                  - GET
-                  - HEAD
-                MaxAge: 3000
+        # -------------------------------
+        # S3 Bucket
+        # -------------------------------
+        MyS3Bucket:
+            Type: AWS::S3::Bucket
+            Properties:
+                # https://repost.aws/questions/QUDTHhDeyASUiEiGsZNC4PVQ/aws-s3-bucket-cannot-have-acls-set-with-objectownership-s-bucketownerenforced-setting
+                # AccessControl: PublicRead
+                BucketName: ${self:custom.bucketName.${self:custom.CORE.stage}}
+                WebsiteConfiguration:
+                    IndexDocument: index.html
+                CorsConfiguration:
+                    CorsRules:
+                        - AllowedOrigins:
+                              - '*'
+                          AllowedHeaders:
+                              - '*'
+                          AllowedMethods:
+                              - GET
+                              - HEAD
+                          MaxAge: 3000
+                # https://repost.aws/knowledge-center/cloudformation-objectownership-acl-error
+                # Bucket cannot have ACLs set with ObjectOwnership's BucketOwnerEnforced setting
+                # Bucket cannot have public ACLs set with BlockPublicAccess enabled
+                PublicAccessBlockConfiguration:
+                    BlockPublicAcls: false
+                OwnershipControls:
+                    Rules:
+                        - ObjectOwnership: ObjectWriter
 
-    # -------------------------------
-    # S3 Bucket
-    # -------------------------------
-    MyS3BucketPolicy:
-      Type: AWS::S3::BucketPolicy
-      Properties:
-        Bucket:
-          Ref: MyS3Bucket
-        PolicyDocument:
-          Statement:
-            - Sid: PublicReadGetObject
-              Effect: Allow
-              Principal: "*"
-              Action:
-                - s3:GetObject
-              Resource:
-                Fn::Join: [
-                  "", [
-                    "arn:aws:s3:::",
-                    {
-                      "Ref": "MyS3Bucket"
-                    },
-                    "/*"
-                  ]
-                ]
+        # -------------------------------
+        # S3 Bucket
+        # -------------------------------
+        MyS3BucketPolicy:
+            Type: AWS::S3::BucketPolicy
+            Properties:
+                Bucket:
+                    Ref: MyS3Bucket
+                PolicyDocument:
+                    Statement:
+                        - Sid: PublicReadGetObject
+                          Effect: Allow
+                          Principal: '*'
+                          Action:
+                              - s3:GetObject
+                          Resource:
+                              Fn::Join: ['', ['arn:aws:s3:::', { 'Ref': 'MyS3Bucket' }, '/*']]

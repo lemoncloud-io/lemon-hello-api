@@ -28,6 +28,7 @@
         "express.adam": "ENV=adam STAGE=local npm run start",
         "!deploy": "----- deploy to AWS by serverless -----",
         "deploy.lemon": "npm run build && sls deploy --param='profile=lemon'  --stage dev",
+        "deploy.devops": "npm run build && sls deploy --param='profile=devops'  --stage dev",
         "deploy.lemon.prod": "npm run build && sls deploy --param='profile=lemon'  --stage prod",
         "deploy.jober": "npm run build && sls deploy --param='profile=jober' --stage prod",
         "deploy.neuro": "npm run build && sls deploy --param='profile=neuro' --stage prod",
