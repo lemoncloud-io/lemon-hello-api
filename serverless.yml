@@ -407,6 +407,7 @@ resources:
                               - HEAD
                           MaxAge: 3000
                 # https://repost.aws/knowledge-center/cloudformation-objectownership-acl-error
+                # https://stackoverflow.com/questions/76097031/aws-s3-bucket-cannot-have-acls-set-with-objectownerships-bucketownerenforced-s
                 # Bucket cannot have ACLs set with ObjectOwnership's BucketOwnerEnforced setting
                 # Bucket cannot have public ACLs set with BlockPublicAccess enabled
                 PublicAccessBlockConfiguration:
