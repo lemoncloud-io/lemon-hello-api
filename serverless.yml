@@ -391,7 +391,6 @@ resources:
     MyS3Bucket:
       Type: AWS::S3::Bucket
       Properties:
-        AccessControl: PublicRead
         BucketName: ${self:custom.bucketName.${self:custom.CORE.stage}}
         WebsiteConfiguration:
           IndexDocument: index.html
