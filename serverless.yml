@@ -70,9 +70,9 @@ custom:
   # S3 Bucket
   #------------------------------------------------
   bucketName:
-    local: lemon-hello-www-dev-ian
-    dev: lemon-hello-www-dev-ian
-    prod: ${self:custom.CONF.${self:custom.CORE.profile}.bucket, 'lemon-hello-www-ian'}
+    local: lemon-hello-www-dev
+    dev: lemon-hello-www-dev
+    prod: ${self:custom.CONF.${self:custom.CORE.profile}.bucket, 'lemon-hello-www'}
   #------------------------------------------------
   # pruning old versions
   #------------------------------------------------
@@ -391,7 +391,6 @@ resources:
     MyS3Bucket:
       Type: AWS::S3::Bucket
       Properties:
-        AccessControl: PublicRead
         BucketName: ${self:custom.bucketName.${self:custom.CORE.stage}}
         WebsiteConfiguration:
           IndexDocument: index.html
