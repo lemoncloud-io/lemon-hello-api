@@ -35,6 +35,8 @@ prod:
   <<: *default_env
   STAGE: 'production'
   NS: SS
-  TS: 0
+  TS: 0                   # no timestamp (use cloud-watch)
+  LC: 0                   # no line-coloring
+  LS: 1                   # log silence (nothing to log!)
   SLACK_PUT_S3: 1         # flag to auto save into s3 bucket if slack message.
 
