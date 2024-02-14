@@ -68,7 +68,7 @@
         "plato": "plato -r -d complexity dist"
     },
     "dependencies": {
-        "lemon-core": "^3.2.5",
+        "lemon-core": "^3.2.7",
         "ts-transformer-keys": "^0.4.3",
         "ttypescript": "^1.5.15",
         "typescript": "^4.6.4",
