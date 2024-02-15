@@ -65,14 +65,11 @@
         "test:watch.ssocio": "ENV=ssocio npm run test:watch",
         "test.lemon": "ENV=lemon STAGE=local npm test",
         "!plato": "----- analysis code complexity -----",
-        "plato": "plato -r -d complexity dist"
+        "plato": "plato -r -d complexity dist",
+        "eureka-dependencies": "npm ci --only=prod && npm install typescript@4.6.4 ttypescript@1.5.15 tsconfig-paths@4.1.2 ts-transformer-keys@0.4.3"
     },
     "dependencies": {
-        "lemon-core": "^3.2.7",
-        "ts-transformer-keys": "^0.4.3",
-        "ttypescript": "^1.5.15",
-        "typescript": "^4.6.4",
-        "tsconfig-paths": "^4.1.2"
+        "lemon-core": "^3.2.7"
     },
     "devDependencies": {
         "@cruglobal/serverless-merge-config": "^1.1.0",
