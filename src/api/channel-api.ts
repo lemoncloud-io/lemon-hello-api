@@ -107,6 +107,7 @@ export class ChannelAPIController extends GeneralWEBController {
      * # test route to some
      * echo '{"pattern":"oauth-token","moveTo":"error"}' | http PUT ':8888/channel/public/rules'
      * echo '{"pattern":"error-report","copyTo":"error"}' | http PUT ':8888/channel/public/rules'
+     * echo '{"pattern":"error-report","copyTo":"ssocio2-error"}' | http PUT ':8888/channel/ssocio/rules'
      */
     public doPutRules: NextHandler = async (id, param, body: RouteRule | RouteRule[], context) => {
         _log(NS, `doPutRules(${id})....`);
