@@ -168,6 +168,8 @@ export class HelloAPIController extends GeneralWEBController {
      * # use sample
      * $ cat data/error-hello.json | http ':8888/hello/public/slack'
      * $ cat data/error-hello.json | http ':8888/hello/public/slack?direct' # direct to slack hook w/o filter.
+     *
+     * $ cat data/error-hello.json | http --auth-type aws4 --auth profile=securenet POST 'https://kewad9a8c5.execute-api.ap-northeast-2.amazonaws.com/prod/hello/public/slack?direct'
      * ```
      * @param {*} id               id of slack-channel (see environment)
      * @param {*} param            (optional)
@@ -184,7 +186,7 @@ export class HelloAPIController extends GeneralWEBController {
         // STEP.0 determine to post directly.
         const channel = `${id.startsWith('!') ? id.substring(1) : id || 'public'}`;
         const hasForce = id.startsWith('!');
-        const direct = !!$U.N(param.direct, param.direct === '' ? 1 : hasForce ? 1 : 0);
+        const direct = !!$U.N(param?.direct, param?.direct === '' ? 1 : hasForce ? 1 : 0);
         _log(NS, `> direct@[${channel}] :=`, direct);
         if (!channel) throw new Error(`@id (string) is required!`);
 
