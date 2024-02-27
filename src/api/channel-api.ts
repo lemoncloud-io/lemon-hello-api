@@ -43,7 +43,7 @@ export class ChannelAPIController extends GeneralWEBController {
      * $ http ':8888/channel/todaq'
      *
      * # test kms + dynamo
-     * http --auth-type aws4 --auth profile=securenet 'https://kewad9a8c5.execute-api.ap-northeast-2.amazonaws.com/prod/channel/public'
+     * $ http --auth-type aws4 --auth profile=securenet 'https://kewad9a8c5.execute-api.ap-northeast-2.amazonaws.com/prod/channel/public'
      */
     public doGet: NextHandler = async (id, param, body, context) => {
         _log(NS, `doGet(${id})....`);
