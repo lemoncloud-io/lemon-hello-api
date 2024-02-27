@@ -169,7 +169,10 @@ export class HelloAPIController extends GeneralWEBController {
      * $ cat data/error-hello.json | http ':8888/hello/public/slack'
      * $ cat data/error-hello.json | http ':8888/hello/public/slack?direct' # direct to slack hook w/o filter.
      *
+     * # test of http to outside
      * $ cat data/error-hello.json | http --auth-type aws4 --auth profile=securenet POST 'https://kewad9a8c5.execute-api.ap-northeast-2.amazonaws.com/prod/hello/public/slack?direct'
+     * # test of error-report w/ sns
+     * $ cat data/error-hello.json | http --auth-type aws4 --auth profile=securenet POST 'https://kewad9a8c5.execute-api.ap-northeast-2.amazonaws.com/prod/hello/0'
      * ```
      * @param {*} id               id of slack-channel (see environment)
      * @param {*} param            (optional)

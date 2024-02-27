@@ -109,10 +109,11 @@ provider:
   runtime: ${self:custom.CONF.${self:custom.CORE.profile}.runtime, 'nodejs16.x'}
   region: ${self:custom.CONF.${self:custom.CORE.profile}.region, self:custom.CORE.region}      # profile의 region를 먼저 사용하고, 없으면 실행 옵션값.
 
-  # VPC Configuration for Lambda.
-  vpc:
-    securityGroupIds: ${self:custom.CONF.${self:custom.CORE.profile}.securityGroupIds}
-    subnetIds: ${self:custom.CONF.${self:custom.CORE.profile}.subnetIds}
+  # WARN! VPC 없이 실행해보기..... (중요! VPC이용시 slack-hook 접속시 NAT 구성이 필요함 + VPC Endpoint)
+  # # VPC Configuration for Lambda.
+  # vpc:
+  #   securityGroupIds: ${self:custom.CONF.${self:custom.CORE.profile}.securityGroupIds}
+  #   subnetIds: ${self:custom.CONF.${self:custom.CORE.profile}.subnetIds}
 
   # Lambda function's IAM Role here
   iamRoleStatements:

@@ -75,6 +75,7 @@ const CONF = (serverless) => {
             runtime: 'nodejs16.x',                              // Node is powered by the V8 JavaScript Engine (used in Chromium)
             region: 'ap-northeast-2',
             env: 'securenet.yml',                               // environment file
+            // if use sg, then need of VPC endpoints like execute-api, sns, sqs, kms, dynamo, lambda
             securityGroupIds: ['sg-02e027483a5170ac0'],         // securityGroupIds `lemon-services-api`
             subnetIds: ['subnet-079c03645eea08ef9','subnet-033ae02c19314dc30'], // subnetIds `public-2a/2b`
             kmsKey: '*',                                        // KMS key-id
