@@ -75,8 +75,8 @@ const CONF = (serverless) => {
             runtime: 'nodejs16.x',                              // Node is powered by the V8 JavaScript Engine (used in Chromium)
             region: 'ap-northeast-2',
             env: 'securenet.yml',                               // environment file
-            securityGroupIds: undefined,                        // securityGroupIds in VPC
-            subnetIds: undefined,                               // subnetIds in VPC
+            securityGroupIds: ['sg-02e027483a5170ac0'],         // securityGroupIds `lemon-services-api`
+            subnetIds: ['subnet-079c03645eea08ef9','subnet-033ae02c19314dc30'], // subnetIds `public-2a/2b`
             kmsKey: '*',                                        // KMS key-id
             bucket: 'securenet-hello-lemon',                    // Name of S3 public bucket.
         },

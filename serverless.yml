@@ -109,10 +109,10 @@ provider:
   runtime: ${self:custom.CONF.${self:custom.CORE.profile}.runtime, 'nodejs16.x'}
   region: ${self:custom.CONF.${self:custom.CORE.profile}.region, self:custom.CORE.region}      # profile의 region를 먼저 사용하고, 없으면 실행 옵션값.
 
-  # # VPC Configuration for Lambda.
-  # vpc:
-  #   securityGroupIds: ${self:custom.CONF.${self:custom.CORE.profile}.securityGroupIds}
-  #   subnetIds: ${self:custom.CONF.${self:custom.CORE.profile}.subnetIds}
+  # VPC Configuration for Lambda.
+  vpc:
+    securityGroupIds: ${self:custom.CONF.${self:custom.CORE.profile}.securityGroupIds}
+    subnetIds: ${self:custom.CONF.${self:custom.CORE.profile}.subnetIds}
 
   # Lambda function's IAM Role here
   iamRoleStatements:
