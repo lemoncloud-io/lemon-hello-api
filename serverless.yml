@@ -23,7 +23,7 @@ custom:
     region: ${opt:region, 'ap-northeast-2'}     # run option `--region` `-r`
     stage: ${opt:stage, 'dev'}                  # run option `--stage` `-s`
     env: ${param:env, './env/none.yml'}         # run option `--env`
-  CONF: ${file(./env/config.js):CONF}           # merge config from `config.js` by profile.
+  CONF: ${file(./env/config.yml):${self:custom.CORE.profile}}          # merge config from `config.js` by profile.
   #------------------------------------------------
   # serverless-offline
   #------------------------------------------------
@@ -110,9 +110,9 @@ provider:
   region: ${self:custom.CONF.${self:custom.CORE.profile}.region, self:custom.CORE.region}      # profile의 region를 먼저 사용하고, 없으면 실행 옵션값.
 
   # VPC Configuration for Lambda.
-  vpc:
-    securityGroupIds: ${self:custom.CONF.${self:custom.CORE.profile}.securityGroupIds}
-    subnetIds: ${self:custom.CONF.${self:custom.CORE.profile}.subnetIds}
+#   vpc:
+#     securityGroupIds: ${self:custom.CONF.${self:custom.CORE.profile}.securityGroupIds}
+#     subnetIds: ${self:custom.CONF.${self:custom.CORE.profile}.subnetIds}
 
   # Lambda function's IAM Role here
   iamRoleStatements:
@@ -189,7 +189,7 @@ provider:
     MY_S3_BUCKET: '${self:custom.bucketName.${self:custom.CORE.stage}}'
     MY_SQS_ENDPOINT: 'https://sqs.${self:provider.region}.amazonaws.com/${aws:accountId}/${self:custom.queueName.${self:custom.CORE.stage}}' # see `sqs-service`
     MY_SNS_ENDPOINT: 'arn:aws:sns:${self:provider.region}:${aws:accountId}:${self:custom.topicName.${self:custom.CORE.stage}}'               # see `sns-service`
-    $<<: ${file(./env/${self:custom.CONF.${self:custom.CORE.profile}.env}):${self:custom.CORE.stage}}
+    $<<: ${file(./env/${self:custom.CONF.env}):${self:custom.CORE.stage}}
 
 #------------------------------------------------
 # Functions
@@ -391,7 +391,6 @@ resources:
     MyS3Bucket:
       Type: AWS::S3::Bucket
       Properties:
-        AccessControl: PublicRead
         BucketName: ${self:custom.bucketName.${self:custom.CORE.stage}}
         WebsiteConfiguration:
           IndexDocument: index.html
@@ -406,6 +405,11 @@ resources:
                   - GET
                   - HEAD
                 MaxAge: 3000
+        PublicAccessBlockConfiguration:
+          BlockPublicAcls: false
+        OwnershipControls:
+          Rules:
+            - ObjectOwnership: ObjectWriter
 
     # -------------------------------
     # S3 Bucket

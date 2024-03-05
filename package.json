@@ -28,6 +28,8 @@
         "express.adam": "ENV=adam STAGE=local npm run start",
         "!deploy": "----- deploy to AWS by serverless -----",
         "deploy.lemon": "npm run build && sls deploy --param='profile=lemon'  --stage dev",
+        "deploy.devops": "npm run build && sls deploy --param='profile=devops'  --stage dev",
+        "deploy.ian": "npm run build && sls deploy --param='profile=ian'  --stage dev",
         "deploy.lemon.prod": "npm run build && sls deploy --param='profile=lemon'  --stage prod",
         "deploy.jober": "npm run build && sls deploy --param='profile=jober' --stage prod",
         "deploy.neuro": "npm run build && sls deploy --param='profile=neuro' --stage prod",
@@ -66,7 +68,7 @@
         "plato": "plato -r -d complexity dist"
     },
     "dependencies": {
-        "lemon-core": "^3.2.5"
+        "lemon-core": "^3.2.7"
     },
     "devDependencies": {
         "@cruglobal/serverless-merge-config": "^1.1.0",
@@ -95,10 +97,7 @@
         "supertest": "^4.0.2",
         "ts-jest": "^27.1.4",
         "ts-node": "8.1.0",
-        "tsconfig-paths": "^4.1.2",
-        "ttypescript": "^1.5.15",
-        "typedoc": "^0.22.15",
-        "typescript": "^4.6.4"
+        "typedoc": "^0.22.15"
     },
     "private": false,
     "author": "Steve Jung <steve@lemoncloud.io> (https://lemoncloud.io)",
