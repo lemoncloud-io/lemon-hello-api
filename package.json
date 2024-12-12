@@ -1,6 +1,6 @@
 {
     "name": "lemon-hello-api",
-    "version": "2.24.1015",
+    "version": "2.24.1015a",
     "description": "Simple Serverless MicroService API with `Lambda` + `API Gateway` + `Web Socket` + `SNS` + `SQS` + `KMS`",
     "main": "dist/index.js",
     "types": "dist/index.d.ts",
@@ -41,6 +41,7 @@
         "deploy.mediagen": "npm run build && sls deploy --param='profile=mediagen' --stage prod",
         "deploy.securenet": "npm run build && sls deploy --param='profile=securenet' --stage prod",
         "deploy.alarmo": "npm run build && sls deploy --param='profile=alarmo' --stage prod",
+        "deploy.growing": "npm run build && sls deploy --param='profile=growing' --stage prod",
         "!info": "------- print sls infor by profile -----",
         "info": "sls info --stage prod",
         "info.lemon": "sls info --param='profile=lemon'  --stage prod",
@@ -65,6 +66,7 @@
         "logs.securenet": "sls logs --param='profile=securenet'  --stage prod -t --startTime 5m -f lambda",
         "logs.lemon.prod": "sls logs --param='profile=lemon'  --stage prod -t --startTime 5m -f backend",
         "logs.alarmo": "sls logs --param='profile=alarmo'  --stage prod -t --startTime 5m -f backend",
+        "logs.growing": "sls logs --param='profile=growing'  --stage prod -t --startTime 5m -f backend",
         "!remove": "----- sls remove by profile -----",
         "remove": "sls remove --stage prod",
         "remove.lemon": "sls remove --param='profile=lemon'  --stage prod",
