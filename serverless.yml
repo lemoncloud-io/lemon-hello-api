@@ -11,6 +11,7 @@ plugins:
   - serverless-offline
   - serverless-aws-documentation
   - serverless-prune-plugin
+  - serverless-plugin-log-retention
   - '@cruglobal/serverless-merge-config'
 
 #------------------------------------------------
@@ -80,6 +81,10 @@ custom:
   prune:
     automatic: true
     number: 3
+  #------------------------------------------------
+  # retention of cloudwatch logs. (see serverless-plugin-log-retention)
+  #------------------------------------------------
+  logRetentionInDays: 14 # default for all functions
   #------------------------------------------------
   # CORS Default (use like `cors: ${self:custom.cors, true}`)
   #------------------------------------------------

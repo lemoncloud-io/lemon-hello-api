@@ -1,6 +1,6 @@
 {
     "name": "lemon-hello-api",
-    "version": "2.24.1015b",
+    "version": "2.24.1212",
     "description": "Simple Serverless MicroService API with `Lambda` + `API Gateway` + `Web Socket` + `SNS` + `SQS` + `KMS`",
     "main": "dist/index.js",
     "types": "dist/index.d.ts",
@@ -104,6 +104,7 @@
         "serverless": "^3.16.0",
         "serverless-aws-documentation": "^0.8.0",
         "serverless-offline": "^12.0.4",
+        "serverless-plugin-log-retention": "^2.0.0",
         "serverless-prune-plugin": "^2.0.1",
         "superagent": "^5.3.1",
         "supertest": "^4.0.2",
