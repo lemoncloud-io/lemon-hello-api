@@ -39,9 +39,9 @@ custom:
   # Dynamo: (MovesTest)
   #------------------------------------------------
   tableName:
-    local: lemon-hello-table-dev
-    dev: lemon-hello-table-dev
-    prod: lemon-hello-table
+    local: LemonHelloTest
+    dev: LemonHelloTest
+    prod: LemonHelloTable
   #------------------------------------------------
   # SQS Queue
   #------------------------------------------------
