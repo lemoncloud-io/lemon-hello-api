@@ -14,11 +14,11 @@ default_env: &default_env
 local:
   <<: *default_env
   # STAGE: 'local'
-  # MY_DYNAMO_TABLE: LemonHelloTest
+  # MY_DYNAMO_TABLE: lemon-hello-table-dev      # use `serverless-v2.yml`` config
 
   #! override as prod environ.
   STAGE: '!production'
-  MY_DYNAMO_TABLE: LemonHelloTable
+  MY_DYNAMO_TABLE: lemon-hello-table            # use `serverless-v2.yml`` config
   NS: SS
 
 #-----------------------------------
