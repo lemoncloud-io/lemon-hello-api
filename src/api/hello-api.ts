@@ -91,6 +91,11 @@ export class HelloAPIController extends GeneralWEBController {
     public getHello: NextHandler = async (id, param, body, context) => {
         _log(NS, `getHello(${id})...`);
         _log(NS, `> context =`, $U.json(context));
+
+        //* decode by `id`
+        if (id == 'test-sns-err') return this.getHelloTestSnsErr(id, param, body, context);
+        if (id == 'test-sns-arn') return this.getHelloTestSnsArn(id, param, body, context);
+
         //WARN! - DO NOT CHANGE BELOW DUE TO `lemon-core` TESTING.
         const i = $U.N(id, 0);
         const val = this.NODES[i];

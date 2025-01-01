@@ -1,0 +1,37 @@
+#-----------------------------------
+# Lemon Basic Environment Variables.
+#-----------------------------------
+# default
+default_env: &default_env
+  LS: 0                   # log silence.
+  LC: 1                   # line-coloring
+  TS: 1                   # time-stamp in line
+  NAME: 'growing'          # profile name.
+  SLACK_PUBLIC: 'AQICAHgfk57hn5hqPpDP6EpM5RMIKsUU2FhFoR6MlZNekgQpTgEnnEFcoTrXkyck/0RVsYj3AAAAsDCBrQYJKoZIhvcNAQcGoIGfMIGcAgEAMIGWBgkqhkiG9w0BBwEwHgYJYIZIAWUDBAEuMBEEDDmopyxTQFjLZ2JR6wIBEIBp+sUgnMTo1RXKmgXWVH/7VRkh4K8biHRrtMGqHLCOdG5apadN/mzDTJmOGGKP9sBLfWVN8HxyrZBJ3hRLnbG4jhU8L04EpIt8FaNEQiifkgkyRANCz2WfGYkKXz02xdlMglDG4zLv3Lvc'
+
+#-----------------------------------
+# local development configuration.
+local:
+  <<: *default_env
+  # STAGE: 'local'
+  # MY_DYNAMO_TABLE: lemon-hello-table-dev      # use `serverless-v2.yml`` config
+
+  #! override as prod environ.
+  STAGE: '!production'
+  MY_DYNAMO_TABLE: lemon-hello-table            # use `serverless-v2.yml`` config
+  NS: SS
+
+#-----------------------------------
+# development server
+dev:
+  <<: *default_env
+  STAGE: 'develop'
+
+#-----------------------------------
+# production with AWS deploy
+prod:
+  <<: *default_env
+  STAGE: 'production'
+  NS: SS
+  TS: 0
+
