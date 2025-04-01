@@ -5,7 +5,7 @@
  */
 
 import { loadProfile } from 'lemon-core/dist/environ';
-import { GETERR, expect2, loadJsonSync, SlackPostBody, NextContext } from 'lemon-core';
+import { GETERR, expect2, loadJsonSync } from 'lemon-core';
 import { HelloService } from './hello-service';
 import { DummyHelloService } from './hello-dummies';
 import request from 'supertest';

@@ -8,8 +8,7 @@
  * @copyright (C) 2022 LemonCloud Co Ltd. - All Rights Reserved.
  */
 // eslint-disable-next-line @typescript-eslint/no-unused-vars
-import { $U, $T, _log, _inf, _err, NUL404 } from 'lemon-core';
-import { GeneralWEBController, NextHandler } from 'lemon-core';
+import { $U, $T, _log, _inf, _err, GeneralWEBController, NextHandler } from 'lemon-core';
 import { ChannelModel, RouteRule } from '../service/hello-model';
 import $service, { HelloService } from '../service/hello-service';
 const NS = $U.NS('channel', 'yellow'); // NAMESPACE TO BE PRINTED.

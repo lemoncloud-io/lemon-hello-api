@@ -9,7 +9,6 @@
  */
 //NOTE - must use `lemon-model` to publish w/o `lemon-core`.
 import { CoreModel } from 'lemon-model';
-import { SlackPostBody } from 'lemon-core';
 import { keys } from 'ts-transformer-keys';
 
 /**

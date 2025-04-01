@@ -12,7 +12,7 @@
  * @copyright (C) 2020 LemonCloud Co Ltd. - All Rights Reserved.
  */
 // eslint-disable-next-line @typescript-eslint/no-unused-vars
-import { $U, $T, _log, _inf, _err, AWSS3Service } from 'lemon-core';
+import { $U, _log, _inf, _err, AWSS3Service } from 'lemon-core';
 import { Metadata } from 'aws-sdk/clients/s3';
 import { PutObjectResult, TagSet } from 'lemon-core/dist/cores/aws/aws-s3-service';
 import { HelloService, ImageInfo, ParamToSlack, PostResponse, RecordData } from './hello-service';

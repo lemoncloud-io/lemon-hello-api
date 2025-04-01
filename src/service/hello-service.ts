@@ -13,7 +13,7 @@
  * @copyright (C) 2020 LemonCloud Co Ltd. - All Rights Reserved.
  */
 // eslint-disable-next-line @typescript-eslint/no-unused-vars
-import { $U, $T, _log, _inf, _err, loadJsonSync } from 'lemon-core';
+import { $U, $T, _log, _inf, _err, $info, loadJsonSync } from 'lemon-core';
 import {
     APIService,
     SlackAttachment,
@@ -24,7 +24,6 @@ import {
     CoreManager,
     CoreService,
     NextContext,
-    $info,
     NUL404,
 } from 'lemon-core';
 import { CallbackSlackData, CallbackPayload } from '../common/types';
@@ -746,6 +745,7 @@ export class HelloService extends CoreService<Model, ModelType> {
                         (N?.text && _test(N.text)) ||
                         (N?.title && _test(N.title)) ||
                         (N?.pretext && _test(N.pretext)) ||
+                        (N?.footer && _test(N.footer)) ||
                         false
                     ) {
                         if (rule.color) {
@@ -781,7 +781,7 @@ export class HelloService extends CoreService<Model, ModelType> {
                         channel: target?.channel || channel,
                     };
                     if (endpoint?.startsWith('http')) {
-                        const sent = await this.service.postMessage(endpoint, message).catch(e => {
+                        const sent = await this.service.postMessage(endpoint, message).catch<PostResponse>(e => {
                             _err(NS, `! err.send:${channel} =`, e);
                             return null;
                         });

@@ -11,8 +11,8 @@
  * @copyright (C) 2020 LemonCloud Co Ltd. - All Rights Reserved.
  */
 // eslint-disable-next-line @typescript-eslint/no-unused-vars
-import { $U, $T, _log, _inf, _err, NUL404 } from 'lemon-core';
-import $engine, {
+import $cores, { $U, $T, _log, _inf, _err, NUL404 } from 'lemon-core';
+import {
     loadJsonSync,
     AWSKMSService,
     AWSSNSService,
@@ -56,8 +56,8 @@ export class HelloAPIController extends GeneralWEBController {
         this.$s3s = $s3s || new AWSS3Service();
 
         //! attach sns listener
-        $engine.cores.lambda.sns.addListener(this.postHelloEvent);
-        $engine.cores.lambda.notification.addListener(this.postHelloNotification);
+        $cores.cores.lambda.sns.addListener(this.postHelloEvent);
+        $cores.cores.lambda.notification.addListener(this.postHelloNotification);
     }
 
     /**
@@ -362,7 +362,7 @@ export class HelloAPIController extends GeneralWEBController {
                 return Promise.reject(new Error('.Records[0].Sns.Subject is required!'));
 
             //! call handler.
-            return $engine.cores.lambda.sns.handle(event, null);
+            return $cores.cores.lambda.sns.handle(event, null);
         };
 
         //! decode by ID
@@ -474,7 +474,7 @@ export class HelloAPIController extends GeneralWEBController {
     public getHelloTestExecute: NextHandler = async (id, param, body, $ctx) => {
         const serviceName = $U.env('LEMON_QUEUE', 'lemon-hello-api');
         _log(NS, `getHelloExecuteQueue(${id}, ${serviceName})...`);
-        const $proto: ProtocolService = $engine.cores.protocol.service;
+        const $proto: ProtocolService = $cores.cores.protocol.service;
         const $param = $proto.fromURL($ctx, `api://${serviceName}/hello/${id}`, param, null);
         return $proto.execute($param);
     };
@@ -488,7 +488,7 @@ export class HelloAPIController extends GeneralWEBController {
     public getHelloTestEnqueue: NextHandler = async (id, param, body, $ctx) => {
         const serviceName = $U.env('LEMON_QUEUE', 'lemon-hello-api');
         _log(NS, `getHelloTestEnqueue(${id}, ${serviceName})...`);
-        const $proto: ProtocolService = $engine.cores.protocol.service;
+        const $proto: ProtocolService = $cores.cores.protocol.service;
         //! execute the target api via SQS
         const $param = $proto.fromURL($ctx, `api://${serviceName}/hello/${id}`, param, null);
         //! post result to slack channel
