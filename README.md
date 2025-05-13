@@ -1,6 +1,7 @@
 # eureka-hello-api
 
-Simple MicroService over Serverless Cloud. Nothing to manage at all, just run and go.
+Simple MicroService over Serverless Cloud with [lemon-core](https://github.com/lemoncloud-io/lemon-core).
+Nothing to manage at all, just run and go.
 
 ## Description
 
@@ -12,9 +13,9 @@ Simple MicroService over Serverless Cloud. Nothing to manage at all, just run an
 - Pre requirements (or installations) before starting.
 
     1. [aws-cli](https://docs.aws.amazon.com/cli/latest/userguide/getting-started-install.html) with api-key
-    1. [git](https://git-scm.com/book/en/v2/Getting-Started-Installing-Git)
-    2. [nodejs18](https://nodejs.org/en/blog/release/v18.12.0)
-    3. (optional) [httpie](https://httpie.io/docs/cli/installation)
+    2. [git](https://git-scm.com/book/en/v2/Getting-Started-Installing-Git)
+    3. [nodejs18](https://nodejs.org/en/blog/release/v18.12.0)
+    4. (optional) [httpie](https://httpie.io/docs/cli/installation)
 
 - Fork(or clone), develop and deploy the serverless api.
 
@@ -48,12 +49,13 @@ Simple MicroService over Serverless Cloud. Nothing to manage at all, just run an
 
 [MIT](http://opensource.org/licenses/MIT)
 
-
 ------------------
+
 ## VERSION INFO ##
 
 Version History
 
 | Version   | Description
 |--         |--
+| 0.24.511  | optimized with `lemon-core#3.2.15`.
 | 0.24.1127 | initial version with `lemon-core#3.2.10`.
