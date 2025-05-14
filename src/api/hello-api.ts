@@ -11,6 +11,7 @@
 import { $T, $U, _log, NextHandler, GeneralWEBController } from 'lemon-core';
 import { Model, TestModel } from '../service/hello-model';
 import { HelloService } from '../service/hello-service';
+import { ALBNextHandler } from 'lemon-core/dist/cores/lambda/lambda-alb-handler';
 const NS = $U.NS('hello', 'yellow'); // NAMESPACE TO BE PRINTED.
 
 /**
@@ -50,7 +51,8 @@ export class HelloAPIController extends GeneralWEBController {
      * $ http ':8000/hello'
      */
     public doList: NextHandler = async (id, param, body, context) => {
-        _log(NS, `doList(${id})....`);
+        const errScope = `doList(${this.type()}/${id ?? ''})`;
+        _log(NS, `${errScope} ...`);
         const name = $U.env('NAME'); // read via process.env
         const list = this.BUFF?.map((N, i) => this.modelAsView({ id: `${i}`, name: N.name }));
         return { name, list };
@@ -63,7 +65,8 @@ export class HelloAPIController extends GeneralWEBController {
      * $ http ':8000/hello/0'
      */
     public getHello: NextHandler = async (id, param, body, context) => {
-        _log(NS, `getHello(${id})...`);
+        const errScope = `getHello(${this.type()}/${id ?? ''})`;
+        _log(NS, `${errScope} ...`);
         const i = $U.N(id, 0);
         const val = this.BUFF[i];
         if (val === undefined) throw new Error(`404 NOT FOUND - id:${id}`);
@@ -77,7 +80,8 @@ export class HelloAPIController extends GeneralWEBController {
      * $ echo '{"name":1}' | http PUT ':8000/hello/1'
      */
     public putHello: NextHandler = async (id, param, body, context) => {
-        _log(NS, `do_put_hello(${id})....`);
+        const errScope = `putHello(${this.type()}/${id ?? ''})`;
+        _log(NS, `${errScope} ...`);
         const node = await this.getHello(id, null, null, context);
         const i = $U.N(node?.id, 0);
         this.BUFF[i] = { ...node, ...body };
@@ -92,6 +96,7 @@ export class HelloAPIController extends GeneralWEBController {
      */
     public doPost: NextHandler = async (id, param, body, context) => {
         const errScope = `doPost(${this.type()}/${id ?? ''})`;
+        _log(NS, `${errScope} ...`);
         if (id == 'echo') return this.doPostEcho('0', param, body, context);
 
         //* append into array.
@@ -115,7 +120,7 @@ export class HelloAPIController extends GeneralWEBController {
      */
     public doPostEcho: NextHandler = async (id, param, body, context) => {
         const errScope = `doPostEcho(${this.type()}/${id ?? ''})`;
-        _log(NS, errScope);
+        _log(NS, `${errScope} ...`);
         return { id, cmd: 'echo', param, body, context };
     };
 
@@ -126,13 +131,26 @@ export class HelloAPIController extends GeneralWEBController {
      * $ http DELETE ':8000/hello/1'
      */
     public deleteHello: NextHandler = async (id, param, body, context) => {
-        _log(NS, `do_delete_hello(${id})....`);
+        const errScope = `deleteHello(${this.type()}/${id ?? ''})`;
+        _log(NS, `${errScope} ...`);
 
         // find, and delete by index
         const node = await this.getHello(id, null, null, context);
         const i = $U.N(node?.id, 0);
         delete this.BUFF[i];
         return this.modelAsView(node);
+    };
+
+    /**
+     * for ALB (Application Load Balancer)
+     */
+    public doALB: ALBNextHandler = async (id, thiz, body, context) => {
+        const errScope = `doALB(${this.type()}/${id ?? ''})`;
+        _log(NS, `${errScope} ...`);
+        const method = body?.httpMethod ?? 'GET';
+        const path = body?.path ?? '/';
+        const userAgent = context?.userAgent ?? 'Unknown';
+        return thiz.buildResponse(200, `${method} ${path}\n${userAgent}`, { origin: null, credentials: null });
     };
 }
 

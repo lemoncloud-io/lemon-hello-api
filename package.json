@@ -1,6 +1,6 @@
 {
     "name": "eureka-hello-api",
-    "version": "0.25.511",
+    "version": "0.25.512",
     "description": "Simplified Boilerplate of Serverless API",
     "main": "dist/index.js",
     "types": "dist/index.d.ts",
@@ -43,7 +43,7 @@
         "plato": "plato -r -d complexity dist"
     },
     "dependencies": {
-        "lemon-core": "^3.2.15"
+        "lemon-core": "^3.2.16"
     },
     "devDependencies": {
         "@cruglobal/serverless-merge-config": "^1.1.0",
