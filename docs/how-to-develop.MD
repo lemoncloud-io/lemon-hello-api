@@ -241,7 +241,7 @@ Contribute를 위해서는 다음과 같은 Code convention을 따라야 합니�
             
             ```tsx
             // hello-service.spec.ts
-            //! create service instance.
+            //* create service instance.
             export const instance = (type = 'dummy', current?: number) => {
                 current = current ?? new Date().getTime();
                 const service: DummyHelloService = type == 'dummy' ? new DummyHelloService() : new HelloService();

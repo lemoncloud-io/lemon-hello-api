@@ -22,16 +22,16 @@ require('source-map-support').install();
 // COMMON ENVIRONMENT LOADER
 const $env = process.env || {}; // NOTE! - serverless may initialize environment with opt.
 
-//! SETUP TIMEZONE @2019/03/14
+//* SETUP TIMEZONE @2019/03/14
 $env.TZ = 'Asia/Seoul';
 
-//! TARGET SOURCE FOLDER.
+//* TARGET SOURCE FOLDER.
 const SRC = $env.SRC || './dist/';
 
-//! load configuration.
+//* load configuration.
 const engine = require(`${SRC}index`).engine;
 const $engine = engine();
 if (!$engine || !$engine.lambda) throw new Error('.lambda is required! check lemon-core#2.0.0.');
 
-//! export as serverless handlers.
+//* export as serverless handlers.
 module.exports = $engine;

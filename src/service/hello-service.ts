@@ -29,7 +29,7 @@ import {
 import { CallbackSlackData, CallbackPayload } from '../common/types';
 import { $FIELD, ChannelModel, Model, ModelType, RouteRule, TargetModel, TestModel } from './hello-model';
 
-//! import dependency
+//* import dependency
 import https from 'https';
 import AWS from 'aws-sdk';
 import url from 'url';
@@ -223,7 +223,7 @@ export class HelloService extends CoreService<Model, ModelType> {
         _inf(NS, `> webhook[${name}] :=`, webhook);
         if (throwable && !webhook) throw new Error(`@env[${ENV_NAME}] is not found!`);
 
-        //! decrypt if required.
+        //* decrypt if required.
         return Promise.resolve(webhook)
             .then(_ => {
                 if (_ && !_.startsWith('http')) {
@@ -281,7 +281,7 @@ export class HelloService extends CoreService<Model, ModelType> {
         const isSlackPostBody = (message: any): message is SlackPostBody =>
             Array.isArray(attachments) && attachments.length > 0;
 
-        //! if put to s3, then filter attachments
+        //* if put to s3, then filter attachments
         if (isUseS3 && isSlackPostBody(message)) {
             const attachment = attachments[0];
             const pretext = $T.S(attachment.pretext, '');
@@ -292,7 +292,7 @@ export class HelloService extends CoreService<Model, ModelType> {
             _log(NS, `> title[${pretext}] =`, title);
             const saves = { ...message };
             saves.attachments = attachments.map((N: any) => {
-                //! convert internal data.
+                //* convert internal data.
                 N = { ...N }; // copy.
                 const text = typeof N.text === 'string' ? N.text : `${N.text || ''}`;
                 try {
@@ -305,7 +305,7 @@ export class HelloService extends CoreService<Model, ModelType> {
                 return N;
             });
 
-            //! choose the icon.
+            //* choose the icon.
             // eslint-disable-next-line prettier/prettier
             const MOONS =
                 ':new_moon:,:waxing_crescent_moon:,:first_quarter_moon:,:moon:,:full_moon:,:waning_gibbous_moon:,:last_quarter_moon:,:waning_crescent_moon:'.split(
@@ -418,7 +418,7 @@ export class HelloService extends CoreService<Model, ModelType> {
         const AlarmName = data.AlarmName || '';
         const AlarmDescription = data.AlarmDescription || '';
 
-        //!  build fields.
+        //*  build fields.
         const Fields: any[] = [];
         const pop_to_fields = (param: string, short = true) => {
             short = short === undefined ? true : short;
@@ -467,7 +467,7 @@ export class HelloService extends CoreService<Model, ModelType> {
         const FailDescription = data.FailureMessage || '';
         const EndpointArn = data.EndpointArn || '';
 
-        //!  build fields.
+        //*  build fields.
         const Fields: any[] = [];
         const pop_to_fields = (param: string, short = true) => {
             short = short === undefined ? true : short;
@@ -539,11 +539,13 @@ export class HelloService extends CoreService<Model, ModelType> {
         const _find = (name: string, def = ''): string =>
             $mail?.headers?.find((N: any) => N.name?.toLowerCase() === name)?.value || def;
 
-        if (!$mail?.source) throw new Error(`@mail.source is required!`);
+        if (!$mail?.source) throw new Error(`@mail.source (string) is required!`);
         // if ($mail?.source) throw new Error(`@source[${$mail.source}] is invalid!`);
 
-        const pretext = `SES: ${subject} from \`${$mail?.source ?? ''}\``;
-        const title = `${_find('subject', 'no subject')}`;
+        const frm = _find('from', $mail?.source || '-');
+        const _to = _find('to', 'no recipient');
+        const pretext = `[\`${$data?.eventType ?? '-'}\`] ${subject} from \`${frm}\``;
+        const title = `SES: ${_find('subject', 'no subject')} To \`${_to}\``;
         const text = $U.json({ subject, $data, context });
         const fields: any[] = [];
 
@@ -559,7 +561,7 @@ export class HelloService extends CoreService<Model, ModelType> {
         data = data || {};
         subject = `${subject || ''}`;
 
-        //! get error reason.
+        //* get error reason.
         const channel = subject.indexOf('/')
             ? subject.split('/', 2)[1]
             : (data.data && data.data.channel) || data.channel;
@@ -583,7 +585,7 @@ export class HelloService extends CoreService<Model, ModelType> {
         const $body: CallbackPayload = data || {};
         _log(`> data[${subject}] =`, $U.json($body));
 
-        //! restrieve service & cmd
+        //* restrieve service & cmd
         const $data: CallbackSlackData = $body.data || {};
         const channel = subject.indexOf('/') > 0 ? subject.split('/', 2)[1] : $data && $data.channel;
         const service = ($body && $body.service) || '';
@@ -602,12 +604,12 @@ export class HelloService extends CoreService<Model, ModelType> {
         subject = `${subject || ''}`;
         _log(NS, `> raw-data[${subject}] =`, $U.json($data));
 
-        //! extract data.
+        //* extract data.
         const channel = subject.indexOf('/') > 0 ? subject.split('/', 2)[1] : $data.channel || '';
         const service = `${$data.service || ''}`;
         const body = $data.body;
 
-        //! add additional attachment about caller context
+        //* add additional attachment about caller context
         if (!channel.startsWith('!') && context && body?.attachments && Array.isArray(body?.attachments)) {
             body.attachments.push({
                 pretext: service,
@@ -620,7 +622,7 @@ export class HelloService extends CoreService<Model, ModelType> {
             });
         }
 
-        //! returns.
+        //* returns.
         return { channel, body };
     };
 
@@ -644,7 +646,7 @@ export class HelloService extends CoreService<Model, ModelType> {
             _log(NS, `> param[${channel}] =`, $U.json({ pretext, title, color, username }));
             const { service, version, stage } = $info();
 
-            //! build attachment.
+            //* build attachment.
             const ts = Math.floor(new Date().getTime() / 1000);
             const fields2 = fields.map((field, i) =>
                 typeof field === 'string'
@@ -654,7 +656,7 @@ export class HelloService extends CoreService<Model, ModelType> {
             const footer = `${service}/${stage}#${version}`;
             const attachment = { username, color, pretext, title, text, ts, fields: fields2, footer };
 
-            //! build body for slack, and call
+            //* build body for slack, and call
             const body = { attachments: [attachment] };
             return { channel, body };
         };
@@ -689,7 +691,7 @@ export class HelloService extends CoreService<Model, ModelType> {
     ) => {
         _log(NS, `! route.context =`, $U.json(context));
 
-        //! local cache of channel-model
+        //* local cache of channel-model
         const channels: { [key: string]: ChannelModel } = {};
         const _channel = async (name: string): Promise<ChannelModel> => {
             if (channels[name] !== undefined) return channels[name];
@@ -697,7 +699,7 @@ export class HelloService extends CoreService<Model, ModelType> {
             channels[name] = model;
             return model;
         };
-        //! main handler...
+        //* main handler...
         return new (class {
             public constructor(protected service: HelloService) {}
             /** say hello */
@@ -717,12 +719,12 @@ export class HelloService extends CoreService<Model, ModelType> {
                 parent = parent ? parent : await _channel(channel);
                 _log(NS, `>> route(${channel})`);
 
-                //! check of end-of-routing
+                //* check of end-of-routing
                 if (paths?.includes(channel)) {
                     return this.send(body, channel, parent);
                 }
 
-                //! apply rules.
+                //* apply rules.
                 let sent = 0;
                 const $ch = await _channel(channel);
                 const rules = $ch?.rules || [];
@@ -747,13 +749,13 @@ export class HelloService extends CoreService<Model, ModelType> {
                     }
                 }
 
-                //! send via this channel.
+                //* send via this channel.
                 if (channel && !paths.includes(channel)) {
                     paths.push(channel);
                     sent += await this.route(body, channel, [...paths], parent);
                 }
 
-                //! returns.
+                //* returns.
                 return sent;
             };
 
@@ -767,7 +769,7 @@ export class HelloService extends CoreService<Model, ModelType> {
                         const re = new RegExp(pattern.substring(1, pattern.length - 2), 'g');
                         return re.test(text);
                     }
-                    //! default is word matching
+                    //* default is word matching
                     if (text.includes(pattern)) return true;
                     return text.split(' ').includes(pattern);
                 };
@@ -1023,5 +1025,5 @@ export class MyTargetManager extends MyCoreManager<TargetModel, HelloService> {
     }
 }
 
-//! export default
+//* export default
 export default new HelloService();

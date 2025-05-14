@@ -18,7 +18,7 @@
 require('source-map-support').install();
 import environ from 'lemon-core/dist/environ';
 
-//! override environment with yml (only for local)
+//* override environment with yml (only for local)
 const $env = environ(process);
 process.env = $env;
 
@@ -31,7 +31,7 @@ import { buildExpress } from 'lemon-core';
 import $core from 'lemon-core';
 export const { app, createServer } = buildExpress($engine, $web);
 
-//! dynamic loading credentials by profile. (search PROFILE -> NAME)
+//* dynamic loading credentials by profile. (search PROFILE -> NAME)
 export const credentials = async (name?: string) => {
     _log(NS, `credentials(${name})..`);
     const NAME = name || ($engine.environ('NAME', '') as string);
@@ -39,13 +39,13 @@ export const credentials = async (name?: string) => {
     return $core.tools.credentials(profile);
 };
 
-//! load yml data via './data/<file>.yml'
+//* load yml data via './data/<file>.yml'
 export const loadDataYml = (file: string) => {
     _log(NS, `loadDataYml(${name})..`);
     return $core.tools.loadDataYml(file, 'data');
 };
 
-//! customize createServer().
+//* customize createServer().
 const _createServer = () => {
     //NOTE - `app` is ready during default initializer.
 
@@ -66,9 +66,9 @@ const _createServer = () => {
         res.status(200).json({ method, headers, body, param });
     });
 
-    //! create-server....
+    //* create-server....
     return createServer();
 };
 
-//! default exports.
+//* default exports.
 export default { app, createServer: _createServer };

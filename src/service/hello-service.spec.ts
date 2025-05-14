@@ -12,12 +12,12 @@
  * @copyright (C) 2020 LemonCloud Co Ltd. - All Rights Reserved.
  */
 import { loadProfile } from 'lemon-core/dist/environ';
-import { GETERR, expect2, loadJsonSync, NextContext, SlackPostBody, $U } from 'lemon-core';
+import { GETERR, expect2, loadJsonSync, NextContext, SlackPostBody, $U, $info } from 'lemon-core';
 import { HelloService, RecordData } from './hello-service';
 import { DummyHelloService } from './hello-dummies';
 import { Model, ModelType, TestModel } from './hello-model';
 
-//! create service instance.
+//* create service instance.
 export const instance = (type = 'dummy', current?: number) => {
     current = current ?? new Date().getTime();
     const service: DummyHelloService = type == 'dummy' ? new DummyHelloService() : new HelloService();
@@ -25,7 +25,7 @@ export const instance = (type = 'dummy', current?: number) => {
     return { service, current };
 };
 
-//! main test body.
+//* main test body.
 describe('hello-service /w dummy', () => {
     const PROFILE = loadProfile(process); // override process.env.
     PROFILE && console.info(`! PROFILE =`, PROFILE);
@@ -151,7 +151,7 @@ describe('hello-service /w dummy', () => {
             ),
         ).toEqual(result);
 
-        //! test of mail boundced
+        //* test of mail boundced
         const sesBounced = {
             notificationType: 'Bounce',
             bounce: {
@@ -194,7 +194,7 @@ describe('hello-service /w dummy', () => {
         result.body.attachments[0].color = '#FFB71B';
         expect2(() => fx(sesBounced, color)).toEqual(result);
 
-        //! from redis
+        //* from redis
         const redisEvent = {
             subject: '',
             data: {
@@ -610,6 +610,7 @@ describe('hello-service /w dummy', () => {
 
     it('should pass buildSESEmailEvent()', async () => {
         const { service } = instance('dummy');
+        const { version } = $info();
         expect2(() => service.hello()).toEqual('hello-mocks-service');
         const data = loadJsonSync('data/aws-ses-data.json');
         expect2(() => data?.mail?.destination).toEqual(['steve@lemon.cloud']);
@@ -619,14 +620,14 @@ describe('hello-service /w dummy', () => {
             body: {
                 attachments: [
                     {
-                        color: '#FFB71B',
-                        fields: [],
-                        footer: 'lemon-hello-api/local#2.25.331',
-                        pretext: 'SES: test from `noreply@lemon.cloud`',
+                        footer: `lemon-hello-api/local#${version}`,
+                        pretext: '[`Click`] test from `EurekaCodes <noreply@lemon.cloud>`',
+                        title: 'SES: SteveJ님 EurekaCodes에 초대되었습니다. To `SteveJ <steve@lemon.cloud>`',
                         text: expect.any(String),
-                        title: 'SteveJ님 EurekaCodes에 초대되었습니다.',
-                        ts: expect.any(Number),
                         username: 'hello-alarm',
+                        fields: [],
+                        color: '#FFB71B',
+                        ts: expect.any(Number),
                     },
                 ],
             },
@@ -700,7 +701,7 @@ describe('hello-service /w dummy', () => {
 });
 
 describe('model-manager in service', () => {
-    //! test service w/ dummy data
+    //* test service w/ dummy data
     it('should pass test-manager w/ storage', async () => {
         const { service, current } = instance('dummy');
         const _ts = (type: ModelType): Model => ({
@@ -711,7 +712,7 @@ describe('model-manager in service', () => {
             deletedAt: 0,
         });
 
-        //! test service marking
+        //* test service marking
         expect2(service.hello()).toEqual('hello-mocks-service');
         const FIELDS =
             'name,test,stereo,ns,type,sid,uid,gid,lock,next,meta,createdAt,updatedAt,deletedAt,error,id'.split(',');
@@ -720,7 +721,7 @@ describe('model-manager in service', () => {
         );
         expect2(() => service.$test.FIELDS).toEqual([...FIELDS]);
 
-        //! test MyCoreManager of handling name.
+        //* test MyCoreManager of handling name.
         if (1) {
             const $test = service.$test;
 
@@ -734,7 +735,7 @@ describe('model-manager in service', () => {
             expect2(() => $test.validateName(2 as any)).toEqual(true);
             expect2(() => $test.validateName('abc')).toEqual(true);
 
-            //! check w/ lookup
+            //* check w/ lookup
             expect2(await $test.$unique.updateLookup({ id: 'XYZ' }, 'X').catch(GETERR)).toEqual({
                 ..._ts('test'),
                 _id: 'TT:test:XYZ',
@@ -745,7 +746,7 @@ describe('model-manager in service', () => {
             expect2(() => $test.asIdByName('a')).toEqual('#name/a');
             expect2(() => $test.asIdByName(null)).toEqual('#name/');
 
-            //! readByName
+            //* readByName
             expect2(await $test.findByName(undefined).catch(GETERR)).toEqual('@name (string) is required!');
             expect2(await $test.findByName(null).catch(GETERR)).toEqual('@name (string) is required!');
             expect2(await $test.findByName('').catch(GETERR)).toEqual('@name (string) is required!');
@@ -755,7 +756,7 @@ describe('model-manager in service', () => {
             expect2(await $test.findByName(123 as any).catch(GETERR)).toEqual('@name (string) is required!');
             expect2(await $test.findByName({} as any).catch(GETERR)).toEqual('@name (string) is required!');
 
-            //! updateName(model) with name 'abc'
+            //* updateName(model) with name 'abc'
             const model: TestModel = { id: 't01', name: 'test' };
             expect2(await $test.storage.read(model.id).catch(GETERR)).toEqual('404 NOT FOUND - _id:TT:test:t01');
             expect2(await $test.storage.read($test.asIdByName('abc')).catch(GETERR)).toEqual(
@@ -774,7 +775,7 @@ describe('model-manager in service', () => {
             expect2(await $test.storage.read($test.asIdByName('abc')), '!createdAt,!updatedAt,!deletedAt').toEqual({ _id:'TT:test:#name/abc', id:'#name/abc', name:'abc', ns:'TT', meta:'t01', type:'test', stereo:'#' });
             expect2(await $test.findByName('abc').catch(GETERR), '_id,id,name').toEqual({ _id: "TT:test:t01", id:'t01', name: "abc" });
 
-            //! updateName(model2) with same name 'abc'
+            //* updateName(model2) with same name 'abc'
             const model2: TestModel = { id:'t02', name:'Test' };
             expect2(await $test.storage.read(model2.id).catch(GETERR)).toEqual('404 NOT FOUND - _id:TT:test:t02');
             expect2(await $test.updateName(model2, undefined).catch(GETERR)).toEqual('@name () is not valid!');

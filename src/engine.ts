@@ -20,7 +20,7 @@ import { $engine } from 'lemon-core';
 import $hello from './api/hello-api'; //NOTE - it should be `NextDecoder`.
 import $channel from './api/channel-api'; //NOTE - it should be `NextDecoder`.
 
-//! import the default core services.
+//* import the default core services.
 import $core from 'lemon-core';
 
 const $lambda = $core.cores.lambda;
@@ -28,13 +28,13 @@ const $web = $lambda.web;
 const $sqs = $lambda.sqs;
 const $sns = $lambda.sns;
 
-//! register sub handlers, and listeners.
+//* register sub handlers, and listeners.
 $web.addController($hello);
 $web.addController($channel);
 
-//! export with used cores services.
+//* export with used cores services.
 export { $lambda, $web, $sqs, $sns };
 
-//! default exports with lambda handler.
+//* default exports with lambda handler.
 const lambda = async (e: any, c: any) => $lambda.lambda.handle(e, c);
 export default { $engine, lambda };

@@ -152,7 +152,7 @@ export const filterFields = (fields: string[], base: string[] = []) =>
             [...base],
         );
 
-//! extended fields set of sub-class.
+//* extended fields set of sub-class.
 export const $FIELD = {
     test: filterFields(keys<TestModel>()),
     channel: filterFields(keys<ChannelModel>()),

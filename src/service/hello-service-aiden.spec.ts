@@ -11,7 +11,7 @@ import { DummyHelloService } from './hello-dummies';
 import request from 'supertest';
 import { app } from '../express';
 
-//! create service instance.
+//* create service instance.
 export const instance = (type = 'dummy', current?: number) => {
     current = current ?? new Date().getTime();
     const service: DummyHelloService = type == 'dummy' ? new DummyHelloService() : new HelloService();

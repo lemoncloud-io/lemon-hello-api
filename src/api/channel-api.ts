@@ -50,11 +50,11 @@ export class ChannelAPIController extends GeneralWEBController {
         if (!id) throw new Error(`@id (string) is required!`);
         const throwable = !!$T.B(param?.throw, param?.throw === '' ? 1 : 0);
 
-        //! load the default endpoint from environment.
+        //* load the default endpoint from environment.
         const endpoint = await this.service.loadSlackChannel(id, { throwable });
         endpoint && _inf(NS, `> endpoint @env[${id}] :=`, endpoint);
 
-        //! find from DB, and show in detail
+        //* find from DB, and show in detail
         const model = await this.service.$channel.prepare(id, { endpoint }, true);
         return model;
     };
@@ -96,7 +96,7 @@ export class ChannelAPIController extends GeneralWEBController {
             return { ...$org, ...saved, id };
         }
 
-        //! returns.
+        //* returns.
         return { ...$org, id };
     };
 
@@ -129,10 +129,10 @@ export class ChannelAPIController extends GeneralWEBController {
         const updated = await this.service.$channel.update(id, { rules });
         _inf(NS, `> updated =`, $U.json(updated));
 
-        //! returns.
+        //* returns.
         return updated;
     };
 }
 
-//! export as default.
+//* export as default.
 export default new ChannelAPIController();

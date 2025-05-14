@@ -95,7 +95,7 @@ export class DummyHelloService extends HelloService {
         const FailDescription = data.FailureMessage || '';
         const EndpointArn = data.EndpointArn || '';
 
-        //!  build fields.
+        //*  build fields.
         const Fields: any[] = [];
         const pop_to_fields = (param: string, short = true) => {
             short = short === undefined ? true : short;
@@ -128,7 +128,7 @@ export class DummyHelloService extends HelloService {
 
         const message = { pretext, title, text, fields };
 
-        //! get get-endpoint-attributes
+        //* get get-endpoint-attributes
         const result = await Promise.resolve({ EndpointArn })
             .then(_ => {
                 _log(NS, '> EndpointAttributes=', _);
