@@ -1,0 +1,81 @@
+{
+    "eventType": "Click",
+    "mail": {
+        "timestamp": "2025-05-13T05:51:37.150Z",
+        "source": "noreply@lemon.cloud",
+        "sendingAccountId": "085403634746",
+        "messageId": "010c0196c832d6be-d40a1764-cb8a-4191-8874-912f0d710fb4-000000",
+        "destination": [
+            "steve@lemon.cloud"
+        ],
+        "headersTruncated": false,
+        "headers": [
+            {
+                "name": "From",
+                "value": "EurekaCodes <noreply@lemon.cloud>"
+            },
+            {
+                "name": "To",
+                "value": "SteveJ <steve@lemon.cloud>"
+            },
+            {
+                "name": "Subject",
+                "value": "SteveJ님 EurekaCodes에 초대되었습니다."
+            },
+            {
+                "name": "Message-ID",
+                "value": "<2f140a27-bbb7-2543-30f8-c5f7554eefc5@lemon.cloud>"
+            },
+            {
+                "name": "Date",
+                "value": "Tue, 13 May 2025 05:51:37 +0000"
+            },
+            {
+                "name": "MIME-Version",
+                "value": "1.0"
+            },
+            {
+                "name": "Content-Type",
+                "value": "multipart/alternative; boundary=\"--_NmP-475ec935674aed91-Part_1\""
+            }
+        ],
+        "commonHeaders": {
+            "from": [
+                "EurekaCodes <noreply@lemon.cloud>"
+            ],
+            "date": "Tue, 13 May 2025 05:51:37 +0000",
+            "to": [
+                "\"SteveJ\" <steve@lemon.cloud>"
+            ],
+            "messageId": "010c0196c832d6be-d40a1764-cb8a-4191-8874-912f0d710fb4-000000",
+            "subject": "SteveJ님 EurekaCodes에 초대되었습니다."
+        },
+        "tags": {
+            "ses:source-tls-version": [
+                "TLSv1.3"
+            ],
+            "ses:operation": [
+                "SendRawEmail"
+            ],
+            "ses:configuration-set": [
+                "my-first-configuration-set"
+            ],
+            "ses:source-ip": [
+                "43.0.0.68"
+            ],
+            "ses:from-domain": [
+                "lemoncloud.io"
+            ],
+            "ses:caller-identity": [
+                "codes-email-api-dev-ap-northeast-2-lambdaRole"
+            ]
+        }
+    },
+    "click": {
+        "timestamp": "2025-05-14T05:17:00.565Z",
+        "ipAddress": "180.0.0.120",
+        "userAgent": "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/135.0.0.0 Safari/537.36",
+        "link": "https://console-dev.eureka.codes/",
+        "linkTags": null
+    }
+}

@@ -405,8 +405,12 @@ export class HelloService extends CoreService<Model, ModelType> {
     /**
      * build simple form for alarm
      */
-    public buildAlarmForm = async ({ subject, data, context }: RecordData): Promise<ParamToSlack> => {
+    public buildAlarmForm = async (
+        { subject, data, context }: RecordData,
+        options?: { hasRecord?: boolean },
+    ): Promise<ParamToSlack> => {
         _log(`buildAlarmForm(${subject})...`);
+        const hasRecord = options?.hasRecord ?? true;
         data = data || {};
         const record = $U.json({ subject, data, context });
         _log(`> data[${subject}] =`, record);
@@ -445,7 +449,7 @@ export class HelloService extends CoreService<Model, ModelType> {
         const fields = Fields;
 
         //* add original data into fields. (for later debug)
-        fields.push({ title: '#record', value: record });
+        if (hasRecord) fields.push({ title: '#record', value: record });
 
         return this.packageDefaultChannel({ pretext, title, text, fields });
     };
@@ -518,6 +522,33 @@ export class HelloService extends CoreService<Model, ModelType> {
 
         // package default.
         return this.packageDefaultChannel(result);
+    };
+
+    /**
+     * SES Email Event Notification.
+     */
+    public buildSESEmailEvent = async ({
+        subject,
+        data,
+        context,
+    }: RecordData<{ data?: string }>): Promise<ParamToSlack> => {
+        _log(`buildSESEmailEvent(${subject})...`);
+
+        const $data = typeof data?.data === 'string' ? JSON.parse(data.data) : data.data || {};
+        const $mail = $data?.mail || {};
+        const _find = (name: string, def = ''): string =>
+            $mail?.headers?.find((N: any) => N.name?.toLowerCase() === name)?.value || def;
+
+        if (!$mail?.source) throw new Error(`@mail.source is required!`);
+        // if ($mail?.source) throw new Error(`@source[${$mail.source}] is invalid!`);
+
+        const pretext = `SES: ${subject} from \`${$mail?.source ?? ''}\``;
+        const title = `${_find('subject', 'no subject')}`;
+        const text = $U.json({ subject, $data, context });
+        const fields: any[] = [];
+
+        const message = { pretext, title, text, fields };
+        return this.packageDefaultChannel(message);
     };
 
     /**

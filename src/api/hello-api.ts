@@ -46,7 +46,7 @@ export class HelloAPIController extends GeneralWEBController {
         super('hello');
         _log(NS, `HelloAPIController()...`);
 
-        //! shared memory.
+        //* shared memory.
         //WARN! - `serverless offline`는 상태를 유지하지 않으므로, NODES값들이 실행때마다 리셋이될 수 있음.
         //NOTE - DO NOT CHANGE THE VALUE DUE TO API-TEST FROM OTHERS!
         this.NODES = [{ name: 'lemon' }, { name: 'cloud' }];
@@ -55,7 +55,7 @@ export class HelloAPIController extends GeneralWEBController {
         this.$sns = $sns || new AWSSNSService();
         this.$s3s = $s3s || new AWSS3Service();
 
-        //! attach sns listener
+        //* attach sns listener
         $cores.cores.lambda.sns.addListener(this.postHelloEvent);
         $cores.cores.lambda.notification.addListener(this.postHelloNotification);
     }
@@ -112,7 +112,7 @@ export class HelloAPIController extends GeneralWEBController {
     public getHelloHello: NextHandler = async (id, param, body, context) => {
         _log(NS, `getHelloHello(${id})...`);
         _log(NS, `> context =`, $U.json(context));
-        //! tricky way to pass test.
+        //* tricky way to pass test.
         return { id, hello: this.hello(), context: { ...context, ...param } };
     };
 
@@ -240,7 +240,7 @@ export class HelloAPIController extends GeneralWEBController {
      */
     public postHelloEvent: NextHandler = async (id, $param, $body, $ctx) => {
         _inf(NS, `postHelloEvent(${id})....`);
-        //! extract the 1st key name of object.
+        //* extract the 1st key name of object.
         const _1st = (o: any) => {
             if (o && typeof o == 'object') {
                 const keys = Object.keys(o);
@@ -259,13 +259,15 @@ export class HelloAPIController extends GeneralWEBController {
                 title: subject || `Unknown event/${id}`,
             });
 
-        //! decode next-chain.
+        //* decode next-chain.
         const transform: (d: RecordData) => Promise<ParamToSlack> | ParamToSlack = !subject
             ? noop
             : subject.startsWith('ALARM:')
             ? this.service.buildAlarmForm
             : subject.startsWith('DeliveryFailure')
             ? this.service.buildDeliveryFailure
+            : subject.startsWith('Amazon SES Email')
+            ? this.service.buildSESEmailEvent
             : subject === 'error' || subject.startsWith('error/')
             ? this.service.buildErrorForm
             : subject === 'callback' || subject.startsWith('callback/')
@@ -274,7 +276,7 @@ export class HelloAPIController extends GeneralWEBController {
             ? this.service.buildCommonSlackForm
             : noop;
 
-        //! transform to slack-body..
+        //* transform to slack-body..
         const { channel, body } = await Promise.resolve(transform({ subject, data: $body, context: $ctx }));
         _log(NS, `> body[<${typeof channel}>${channel}] =`, $U.json(body));
         return this.postHelloSlack(channel, { ...$param }, body, $ctx);
@@ -328,14 +330,14 @@ export class HelloAPIController extends GeneralWEBController {
     public getHelloTestSns: NextHandler = async (ID, $param, $body, $ctx) => {
         _log(NS, `getHelloTestSns(${ID})....`);
 
-        //! build event body, then start promised
+        //* build event body, then start promised
         const build_event_chain = (subject: string, data: any) => {
-            //! clear internals
+            //* clear internals
             data = Object.keys(data).reduce((N: any, key) => {
                 if (!key.startsWith('!')) N[key] = data[key];
                 return N;
             }, {});
-            //! prepare event body.
+            //* prepare event body.
             const event = {
                 Records: [
                     {
@@ -349,10 +351,10 @@ export class HelloAPIController extends GeneralWEBController {
             return Promise.resolve(event);
         };
 
-        //! call sns handler.
+        //* call sns handler.
         const local_chain_handle_sns = (event: any) => {
             // if (event) return event;
-            //! validate event
+            //* validate event
             event = event || {};
             if (!event.Records || !Array.isArray(event.Records))
                 return Promise.reject(new Error('.Records[] is required!'));
@@ -361,11 +363,11 @@ export class HelloAPIController extends GeneralWEBController {
             if (!event.Records[0].Sns.Subject || !event.Records[0].Sns.Message)
                 return Promise.reject(new Error('.Records[0].Sns.Subject is required!'));
 
-            //! call handler.
+            //* call handler.
             return $cores.cores.lambda.sns.handle(event, null);
         };
 
-        //! decode by ID
+        //* decode by ID
         return (() => {
             if (ID == 'alarm') {
                 const data = loadJsonSync('data/alarm.json');
@@ -489,11 +491,11 @@ export class HelloAPIController extends GeneralWEBController {
         const serviceName = $U.env('LEMON_QUEUE', 'lemon-hello-api');
         _log(NS, `getHelloTestEnqueue(${id}, ${serviceName})...`);
         const $proto: ProtocolService = $cores.cores.protocol.service;
-        //! execute the target api via SQS
+        //* execute the target api via SQS
         const $param = $proto.fromURL($ctx, `api://${serviceName}/hello/${id}`, param, null);
-        //! post result to slack channel
+        //* post result to slack channel
         const $callback: CallbackParam = { type: 'hello', id: 'public', cmd: 'slack' };
-        //! start `protocol` w/ enqueue.
+        //* start `protocol` w/ enqueue.
         return $proto.enqueue($param, $callback);
     };
 
@@ -557,16 +559,16 @@ export class HelloAPIController extends GeneralWEBController {
         const animalType = this.service.asImageInfo(body);
         _log(NS, `> imageType :=`, animalType.type); // cat or dog
 
-        //! determine to post directly.
+        //* determine to post directly.
         const [channel, direct] = this.service.determinePostDirectly(id, param);
         _log(NS, `> direct@[${channel}] :=`, direct);
 
-        //! load target webhook via environ.
+        //* load target webhook via environ.
         const endpoint = await this.service.loadSlackChannel(channel, { defName: 'public' });
         if (!endpoint) throw new Error(`@id[${channel}] (channel-id) is invalid!`);
         _log(NS, '> endpoint :=', endpoint);
 
-        //! Get photos from "TheCatApi or TheDogApi"
+        //* Get photos from "TheCatApi or TheDogApi"
         const imageUrl = await this.service.fetchRandomImageUrl(animalType);
         _log(NS, `> ${animalType.type} image := ${imageUrl}`);
 
@@ -585,5 +587,5 @@ export class HelloAPIController extends GeneralWEBController {
     };
 }
 
-//! export as default.
+//* export as default.
 export default new HelloAPIController();

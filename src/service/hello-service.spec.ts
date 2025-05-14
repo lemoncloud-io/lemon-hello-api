@@ -12,8 +12,8 @@
  * @copyright (C) 2020 LemonCloud Co Ltd. - All Rights Reserved.
  */
 import { loadProfile } from 'lemon-core/dist/environ';
-import { GETERR, expect2, loadJsonSync, NextContext, SlackPostBody } from 'lemon-core';
-import { HelloService } from './hello-service';
+import { GETERR, expect2, loadJsonSync, NextContext, SlackPostBody, $U } from 'lemon-core';
+import { HelloService, RecordData } from './hello-service';
 import { DummyHelloService } from './hello-dummies';
 import { Model, ModelType, TestModel } from './hello-model';
 
@@ -245,28 +245,34 @@ describe('hello-service /w dummy', () => {
     it('should pass buildAlarmForm()', async () => {
         const { service } = instance('dummy');
         expect2(() => service.hello()).toEqual('hello-mocks-service');
-        const result = {
+        const result: { body: SlackPostBody | any; channel?: string } = {
             body: {
                 attachments: [
                     {
                         color: '#FFB71B',
-                        fields: [] as any,
+                        fields: [
+                            {
+                                title: '#record',
+                                value: '{"data":{}}',
+                            },
+                        ],
                         pretext: 'Alarm: ',
                         text: '',
                         title: '',
                         ts: Math.floor(new Date().getTime() / 1000),
-                        username: 'hello-alarm',
+                        username: 'hello-alarm' as any,
                         footer,
                     },
                 ],
             },
-            channel: '',
+            channel: 'public',
         };
         expect2(await service.buildAlarmForm({})).toEqual(result);
 
         result.body.attachments[0].fields = [
             { short: false, title: 'AlarmName', value: 'hello error' },
             { short: true, title: 'AlarmDescription', value: 'error test msg' },
+            { title: '#record', value: '{"data":{"AlarmName":"hello error","AlarmDescription":"error test msg"}}' },
         ];
         result.body.attachments[0].pretext = 'Alarm: hello error';
         result.body.attachments[0].title = 'error test msg';
@@ -278,6 +284,10 @@ describe('hello-service /w dummy', () => {
             { short: false, title: 'AlarmName', value: 'hello error' },
             { short: true, title: 'AlarmDescription', value: 'error test msg' },
             { short: true, title: 'AWSAccountId', value: '123-123' },
+            {
+                title: '#record',
+                value: '{"data":{"AlarmName":"hello error","AlarmDescription":"error test msg","AWSAccountId":"123-123"}}',
+            },
         ];
         expect2(
             await service.buildAlarmForm({
@@ -292,14 +302,17 @@ describe('hello-service /w dummy', () => {
             { short: true, title: 'NewStateValue', value: 'draft' },
         ];
         expect2(
-            await service.buildAlarmForm({
-                data: {
-                    AlarmName: 'hello error',
-                    AlarmDescription: 'error test msg',
-                    AWSAccountId: '123-123',
-                    NewStateValue: 'draft',
+            await service.buildAlarmForm(
+                {
+                    data: {
+                        AlarmName: 'hello error',
+                        AlarmDescription: 'error test msg',
+                        AWSAccountId: '123-123',
+                        NewStateValue: 'draft',
+                    },
                 },
-            }),
+                { hasRecord: false },
+            ),
         ).toEqual(result);
 
         result.body.attachments[0].fields = [
@@ -310,15 +323,18 @@ describe('hello-service /w dummy', () => {
             { short: false, title: 'NewStateReason', value: '404' },
         ];
         expect2(
-            await service.buildAlarmForm({
-                data: {
-                    AlarmName: 'hello error',
-                    AlarmDescription: 'error test msg',
-                    AWSAccountId: '123-123',
-                    NewStateValue: 'draft',
-                    NewStateReason: '404',
+            await service.buildAlarmForm(
+                {
+                    data: {
+                        AlarmName: 'hello error',
+                        AlarmDescription: 'error test msg',
+                        AWSAccountId: '123-123',
+                        NewStateValue: 'draft',
+                        NewStateReason: '404',
+                    },
                 },
-            }),
+                { hasRecord: false },
+            ),
         ).toEqual(result);
 
         const now = Math.floor(new Date().getTime() / 1000);
@@ -331,16 +347,19 @@ describe('hello-service /w dummy', () => {
             { short: true, title: 'StateChangeTime', value: now },
         ];
         expect2(
-            await service.buildAlarmForm({
-                data: {
-                    AlarmName: 'hello error',
-                    AlarmDescription: 'error test msg',
-                    AWSAccountId: '123-123',
-                    NewStateValue: 'draft',
-                    NewStateReason: '404',
-                    StateChangeTime: now,
+            await service.buildAlarmForm(
+                {
+                    data: {
+                        AlarmName: 'hello error',
+                        AlarmDescription: 'error test msg',
+                        AWSAccountId: '123-123',
+                        NewStateValue: 'draft',
+                        NewStateReason: '404',
+                        StateChangeTime: now,
+                    },
                 },
-            }),
+                { hasRecord: false },
+            ),
         ).toEqual(result);
 
         result.body.attachments[0].fields = [
@@ -353,17 +372,20 @@ describe('hello-service /w dummy', () => {
             { short: true, title: 'Region', value: 'asia-2' },
         ];
         expect2(
-            await service.buildAlarmForm({
-                data: {
-                    AlarmName: 'hello error',
-                    AlarmDescription: 'error test msg',
-                    AWSAccountId: '123-123',
-                    NewStateValue: 'draft',
-                    NewStateReason: '404',
-                    StateChangeTime: now,
-                    Region: 'asia-2',
+            await service.buildAlarmForm(
+                {
+                    data: {
+                        AlarmName: 'hello error',
+                        AlarmDescription: 'error test msg',
+                        AWSAccountId: '123-123',
+                        NewStateValue: 'draft',
+                        NewStateReason: '404',
+                        StateChangeTime: now,
+                        Region: 'asia-2',
+                    },
                 },
-            }),
+                { hasRecord: false },
+            ),
         ).toEqual(result);
 
         result.body.attachments[0].fields = [
@@ -378,19 +400,22 @@ describe('hello-service /w dummy', () => {
             { short: false, title: 'Trigger', value: 'off' },
         ];
         expect2(
-            await service.buildAlarmForm({
-                data: {
-                    AlarmName: 'hello error',
-                    AlarmDescription: 'error test msg',
-                    AWSAccountId: '123-123',
-                    NewStateValue: 'draft',
-                    NewStateReason: '404',
-                    StateChangeTime: now,
-                    Region: 'asia-2',
-                    OldStateValue: 'pending',
-                    Trigger: 'off',
+            await service.buildAlarmForm(
+                {
+                    data: {
+                        AlarmName: 'hello error',
+                        AlarmDescription: 'error test msg',
+                        AWSAccountId: '123-123',
+                        NewStateValue: 'draft',
+                        NewStateReason: '404',
+                        StateChangeTime: now,
+                        Region: 'asia-2',
+                        OldStateValue: 'pending',
+                        Trigger: 'off',
+                    },
                 },
-            }),
+                { hasRecord: false },
+            ),
         ).toEqual(result);
     });
 
@@ -417,7 +442,7 @@ describe('hello-service /w dummy', () => {
                     },
                 ],
             },
-            channel: '',
+            channel: 'public',
         };
         expect2(await service.buildDeliveryFailure({ data: {} })).toEqual(result);
 
@@ -568,7 +593,7 @@ describe('hello-service /w dummy', () => {
                     },
                 ],
             },
-            channel: '',
+            channel: 'public',
         };
         expect2(await service.buildErrorForm({ data: {} })).toEqual(result);
 
@@ -581,6 +606,32 @@ describe('hello-service /w dummy', () => {
             result,
         );
         /* eslint-enable prettier/prettier */
+    });
+
+    it('should pass buildSESEmailEvent()', async () => {
+        const { service } = instance('dummy');
+        expect2(() => service.hello()).toEqual('hello-mocks-service');
+        const data = loadJsonSync('data/aws-ses-data.json');
+        expect2(() => data?.mail?.destination).toEqual(['steve@lemon.cloud']);
+
+        const event: RecordData = { subject: 'test', data: { data: $U.json(data) }, context: {} };
+        expect2(await service.buildSESEmailEvent(event).catch(GETERR)).toEqual({
+            body: {
+                attachments: [
+                    {
+                        color: '#FFB71B',
+                        fields: [],
+                        footer: 'lemon-hello-api/local#2.25.331',
+                        pretext: 'SES: test from `noreply@lemon.cloud`',
+                        text: expect.any(String),
+                        title: 'SteveJ님 EurekaCodes에 초대되었습니다.',
+                        ts: expect.any(Number),
+                        username: 'hello-alarm',
+                    },
+                ],
+            },
+            channel: 'public',
+        });
     });
 
     it('should pass buildCallbackForm()', async () => {
@@ -603,7 +654,7 @@ describe('hello-service /w dummy', () => {
                     },
                 ],
             },
-            channel: '',
+            channel: 'public',
         };
         expect2(service.buildCallbackForm({ data: {} })).toEqual(result);
 
