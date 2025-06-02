@@ -8,7 +8,7 @@
  *
  * @copyright (C) lemoncloud.io 2024 - All Rights Reserved. (https://eureka.codes)
  */
-import { $T, $U, _log, NextHandler, GeneralWEBController } from 'lemon-core';
+import { $T, $U, _log, NextHandler, GeneralWEBController, NextContext } from 'lemon-core';
 import { Model, TestModel } from '../service/hello-model';
 import { HelloService } from '../service/hello-service';
 import { ALBNextHandler } from 'lemon-core/dist/cores/lambda/lambda-alb-handler';
@@ -118,9 +118,17 @@ export class HelloAPIController extends GeneralWEBController {
      * ```sh
      * $ http POST :8000/hello/0/echo name=hello
      */
-    public doPostEcho: NextHandler = async (id, param, body, context) => {
+    public doPostEcho: NextHandler = async (id, param, body, $ctx) => {
         const errScope = `doPostEcho(${this.type()}/${id ?? ''})`;
         _log(NS, `${errScope} ...`);
+        const context = $T.onlyDefined<NextContext>({
+            domain: $ctx?.domain,
+            clientIp: $ctx?.clientIp,
+            userAgent: $ctx?.userAgent,
+            authorization: $ctx?.authorization,
+            referer: $ctx?.referer,
+            cookie: $ctx?.cookie,
+        });
         return { id, cmd: 'echo', param, body, context };
     };
 
