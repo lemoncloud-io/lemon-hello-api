@@ -9,7 +9,7 @@
  * @copyright (C) lemoncloud.io 2024 - All Rights Reserved. (https://eureka.codes)
  */
 import { loadProfile } from 'lemon-core/dist/environ';
-import { GETERR, expect2 } from 'lemon-core';
+import { GETERR, asyncCredentials, createHttpWebProxy, expect2 } from 'lemon-core';
 
 //* import main models and service.
 import { Model, ModelType, TestModel } from './hello-model';
@@ -101,5 +101,102 @@ describe('model-manager in service', () => {
             );
             expect2(await $test.findByName('abc').catch(GETERR)).toEqual('404 NOT FOUND - test:name/abc');
         }
+    });
+
+    it('should pass v4 test w/ createHttpSearchProxy()', async () => {
+        jest.setTimeout(30000);
+
+        // 1) AWS 자격 증명 가져오기
+        const creds = await asyncCredentials('lemon');
+
+        // 2) createHttpWebProxy 인스턴스 생성
+        const name = 'HelloAPI';
+        const apiId = '7s91yrozci';
+        const region = 'ap-northeast-2';
+        const stage = 'dev';
+        const endpoint = `https://${apiId}.execute-api.${region}.amazonaws.com/${stage}`;
+        const headers = { 'Content-Type': 'application/json' };
+        const proxy = createHttpWebProxy(name, endpoint, headers);
+
+        //* STEP 1: DynamoDB에 "원본" 데이터 Save → 검증
+        //    POST /hello/<id>/dynamo
+        const id = '100001';
+        const initialData = { name: 'original' };
+
+        const resSave: any = await proxy.doProxy('POST', 'hello', `${id}/dynamo`, undefined, initialData, {
+            awsCredentials: creds,
+        });
+        // 응답 예시: { res: { _id: '100001', name: 'original' } }
+        expect2(resSave).toEqual({ res: { _id: id, ...initialData } });
+
+        //* STEP 2: DynamoDB에서 방금 저장한 값 Read → 검증
+        //    GET /hello/<id>/dynamo
+        const resRead1: any = await proxy.doProxy('GET', 'hello', `${id}/dynamo`, undefined, undefined, {
+            awsCredentials: creds,
+        });
+        expect2(resRead1).toEqual({ res: { _id: id, ...initialData } });
+
+        //* STEP 3: SQS로 “dynamo 업데이트” 메시지 발행
+        //    POST /hello/<id>/sqs
+        //    body: { service, stage, type, mode, id, cmd, body: { name: 'from-sqs' } }
+        const sqsPayload = {
+            service: 'eureka-hello-api',
+            stage: 'dev',
+            type: 'hello',
+            mode: 'POST',
+            id,
+            cmd: 'dynamo',
+            body: { name: 'from-sqs' },
+        };
+
+        const resSqs: any = await proxy.doProxy('POST', 'hello', `${id}/sqs`, undefined, sqsPayload, {
+            awsCredentials: creds,
+        });
+        // 반환 예시: { messageId: 'abcdef-...' }
+        expect2(resSqs).toHaveProperty('messageId');
+
+        //* STEP 4: SQS 구독자가 메시지를 받아서 Dynamo 업데이트 처리될 때까지 잠시 대기
+        await new Promise(r => setTimeout(r, 5000));
+
+        //* STEP 5: DynamoDB에서 “SQS를 통해 업데이트된 값” Read → 검증
+        //    GET /hello/<id>/dynamo
+        const resRead2: any = await proxy.doProxy('GET', 'hello', `${id}/dynamo`, undefined, undefined, {
+            awsCredentials: creds,
+        });
+        expect2(resRead2).toEqual({ res: { _id: id, name: 'from-sqs' } });
+
+        //* STEP 6: SNS로 “dynamo 업데이트” 메시지 발행
+        //    POST /hello/<id>/sns
+        //    body: { target, subject, payload: { service, stage, type, mode, id, cmd, body: { name: 'from-sns' } } }
+        const snsPayload = {
+            service: 'eureka-hello-api',
+            stage: 'dev',
+            type: 'hello',
+            mode: 'POST',
+            id,
+            cmd: 'dynamo',
+            body: { name: 'from-sns' },
+        };
+        const snsRequestBody = {
+            target: 'eureka-hello-sns-dev',
+            subject: 'save-to-dynamo',
+            payload: snsPayload,
+        };
+
+        const resSns: any = await proxy.doProxy('POST', 'hello', `${id}/sns`, undefined, snsRequestBody, {
+            awsCredentials: creds,
+        });
+        // 반환 예시: { messageId: 'uvwxyz-...' }
+        expect2(resSns).toHaveProperty('messageId');
+
+        //* STEP 7: SNS 구독자가 메시지를 받아서 Dynamo 업데이트 처리될 때까지 잠시 대기
+        await new Promise(r => setTimeout(r, 5000));
+
+        //* STEP 8: DynamoDB에서 “SNS를 통해 업데이트된 값” 최종 Read → 검증
+        //     GET /hello/<id>/dynamo
+        const resRead3: any = await proxy.doProxy('GET', 'hello', `${id}/dynamo`, undefined, undefined, {
+            awsCredentials: creds,
+        });
+        expect2(resRead3).toEqual({ res: { _id: id, name: 'from-sns' } });
     });
 });
