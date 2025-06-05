@@ -101,16 +101,19 @@ export class MyTestManager extends MyCoreManager<TestModel, HelloService> {
     public readonly $sns: AWSSNSService;
 
     public constructor(parent: HelloService) {
-        super('test', parent, ['_id']);
+        super('test', parent, $FIELD.test, 'name');
+
         const option: DynamoOption = {
-            tableName: $U.env('MY_DYNAMO_TABLE'),
+            tableName: $U.env('MY_DYNAMO_TABLE', 'eureka-hello-table-dev'),
             idName: $U.env('ID_NAME', '_id'),
         };
-        this.$dynamo = new DynamoService(option);
-        this.$sqs = new AWSSQSService(
+        const sqsEndpoint = $U.env(
+            'SQS_ENDPOINT',
             'https://sqs.ap-northeast-2.amazonaws.com/085403634746/eureka-hello-sqs-dev',
-            'ap-northeast-2',
         );
+
+        this.$dynamo = new DynamoService(option);
+        this.$sqs = new AWSSQSService(sqsEndpoint, 'ap-northeast-2');
         this.$sns = new AWSSNSService();
     }
 

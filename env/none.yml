@@ -14,6 +14,7 @@ local:
   <<: *default_env
   STAGE: 'local'
   MY_DYNAMO_TABLE: eureka-hello-table-dev
+  SQS_ENDPOINT: 'https://sqs.ap-northeast-2.amazonaws.com/085403634746/eureka-hello-sqs-dev'
 
 #-----------------------------------
 # development server
