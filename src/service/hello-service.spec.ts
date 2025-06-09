@@ -9,7 +9,7 @@
  * @copyright (C) lemoncloud.io 2024 - All Rights Reserved. (https://eureka.codes)
  */
 import { loadProfile } from 'lemon-core/dist/environ';
-import { GETERR, asyncCredentials, createHttpWebProxy, expect2 } from 'lemon-core';
+import { $ES6, GETERR, asyncCredentials, expect2 } from 'lemon-core';
 
 //* import main models and service.
 import { Model, ModelType, TestModel } from './hello-model';
@@ -115,25 +115,25 @@ describe('model-manager in service', () => {
         const region = 'ap-northeast-2';
         const stage = 'dev';
         const endpoint = `https://${apiId}.execute-api.${region}.amazonaws.com/${stage}`;
-        const headers = { 'Content-Type': 'application/json' };
-        const proxy = createHttpWebProxy(name, endpoint, headers);
+        const $X = $ES6.$X;
+        const proxy = $X.createHttpSearchProxy(endpoint, {
+            name,
+            credentials: creds as any,
+            region,
+        });
 
         //* STEP 1: DynamoDB에 "원본" 데이터 Save → 검증
         //    POST /hello/<id>/dynamo
         const id = '100001';
         const initialData = { name: 'original' };
 
-        const resSave: any = await proxy.doProxy('POST', 'hello', `${id}/dynamo`, undefined, initialData, {
-            awsCredentials: creds,
-        });
+        const resSave: any = await proxy.doProxy('POST', 'hello', `${id}/dynamo`, undefined, initialData);
         // 응답 예시: { res: { _id: '100001', name: 'original' } }
         expect2(resSave).toEqual({ res: { _id: id, ...initialData } });
 
         //* STEP 2: DynamoDB에서 방금 저장한 값 Read → 검증
         //    GET /hello/<id>/dynamo
-        const resRead1: any = await proxy.doProxy('GET', 'hello', `${id}/dynamo`, undefined, undefined, {
-            awsCredentials: creds,
-        });
+        const resRead1: any = await proxy.doProxy('GET', 'hello', `${id}/dynamo`);
         expect2(resRead1).toEqual({ res: { _id: id, ...initialData } });
 
         //* STEP 3: SQS로 “dynamo 업데이트” 메시지 발행
@@ -149,9 +149,7 @@ describe('model-manager in service', () => {
             body: { name: 'from-sqs' },
         };
 
-        const resSqs: any = await proxy.doProxy('POST', 'hello', `${id}/sqs`, undefined, sqsPayload, {
-            awsCredentials: creds,
-        });
+        const resSqs: any = await proxy.doProxy('POST', 'hello', `${id}/sqs`, undefined, sqsPayload);
         // 반환 예시: { messageId: 'abcdef-...' }
         expect2(resSqs).toHaveProperty('messageId');
 
@@ -160,9 +158,7 @@ describe('model-manager in service', () => {
 
         //* STEP 5: DynamoDB에서 “SQS를 통해 업데이트된 값” Read → 검증
         //    GET /hello/<id>/dynamo
-        const resRead2: any = await proxy.doProxy('GET', 'hello', `${id}/dynamo`, undefined, undefined, {
-            awsCredentials: creds,
-        });
+        const resRead2: any = await proxy.doProxy('GET', 'hello', `${id}/dynamo`);
         expect2(resRead2).toEqual({ res: { _id: id, name: 'from-sqs' } });
 
         //* STEP 6: SNS로 “dynamo 업데이트” 메시지 발행
@@ -177,15 +173,8 @@ describe('model-manager in service', () => {
             cmd: 'dynamo',
             body: { name: 'from-sns' },
         };
-        const snsRequestBody = {
-            target: 'eureka-hello-sns-dev',
-            subject: 'save-to-dynamo',
-            payload: snsPayload,
-        };
 
-        const resSns: any = await proxy.doProxy('POST', 'hello', `${id}/sns`, undefined, snsRequestBody, {
-            awsCredentials: creds,
-        });
+        const resSns: any = await proxy.doProxy('POST', 'hello', `${id}/sns`, undefined, snsPayload);
         // 반환 예시: { messageId: 'uvwxyz-...' }
         expect2(resSns).toHaveProperty('messageId');
 
@@ -194,9 +183,7 @@ describe('model-manager in service', () => {
 
         //* STEP 8: DynamoDB에서 “SNS를 통해 업데이트된 값” 최종 Read → 검증
         //     GET /hello/<id>/dynamo
-        const resRead3: any = await proxy.doProxy('GET', 'hello', `${id}/dynamo`, undefined, undefined, {
-            awsCredentials: creds,
-        });
+        const resRead3: any = await proxy.doProxy('GET', 'hello', `${id}/dynamo`);
         expect2(resRead3).toEqual({ res: { _id: id, name: 'from-sns' } });
     });
 });

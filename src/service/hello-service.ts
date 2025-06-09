@@ -8,10 +8,10 @@
  *
  * @copyright (C) lemoncloud.io 2024 - All Rights Reserved. (https://eureka.codes)
  */
-import { $U, _log, CoreManager, CoreService, $T, ProtocolParam, NextContext, STAGE, NextMode } from 'lemon-core';
-import { AWSSNSService, AWSSQSService, DynamoOption, DynamoService, GeneralItem, $protocol } from 'lemon-core';
+import { $U, _log, CoreManager, CoreService, $T, NextContext } from 'lemon-core';
+import { DynamoOption, DynamoService, GeneralItem, $protocol } from 'lemon-core';
 import { $FIELD, Model, ModelType, TestModel } from './hello-model';
-import { SnsPayload, MessagePayload } from './types';
+import { MessagePayload } from './types';
 
 const NS = $U.NS('hello', 'blue'); // NAMESPACE TO BE PRINTED.
 
@@ -97,8 +97,6 @@ export class MyCoreManager<T extends Model, S extends CoreService<T, ModelType>>
  */
 export class MyTestManager extends MyCoreManager<TestModel, HelloService> {
     public readonly $dynamo: DynamoService<GeneralItem>;
-    public readonly $sqs: AWSSQSService;
-    public readonly $sns: AWSSNSService;
 
     public constructor(parent: HelloService) {
         super('test', parent, $FIELD.test, 'name');
@@ -107,14 +105,8 @@ export class MyTestManager extends MyCoreManager<TestModel, HelloService> {
             tableName: $U.env('MY_DYNAMO_TABLE', 'eureka-hello-table-dev'),
             idName: $U.env('ID_NAME', '_id'),
         };
-        const sqsEndpoint = $U.env(
-            'SQS_ENDPOINT',
-            'https://sqs.ap-northeast-2.amazonaws.com/085403634746/eureka-hello-sqs-dev',
-        );
 
         this.$dynamo = new DynamoService(option);
-        this.$sqs = new AWSSQSService(sqsEndpoint, 'ap-northeast-2');
-        this.$sns = new AWSSNSService();
     }
 
     // 시나리오 만들어서 더미랑 테스트 통과
@@ -141,92 +133,78 @@ export class MyTestManager extends MyCoreManager<TestModel, HelloService> {
         const res = await this.$dynamo.readItem(id);
         return { res };
     };
+
     /**
-     * Send data to SQS
+     * Send data to SQS using protocolService.enqueue()
      */
     public sendToSqs = async (params: MessagePayload, context: NextContext) => {
         const errScope = `sendToSqs(${params?.type}/${params?.id}/${params?.cmd})`;
         _log(NS, `${errScope} ...`);
 
-        const service = params?.service ?? 'eureka-hello-api';
-        const stage: STAGE = (params?.stage as STAGE) ?? 'dev';
-        const type = params?.type ?? 'hello';
-        const id = params?.id ?? '0';
-        const mode: NextMode = (params?.mode as NextMode) ?? 'POST';
-        const cmd = params?.cmd ?? undefined;
-        const queryParam = params?.param ?? undefined;
-        const requestBody = params?.body ?? undefined;
+        // validation
+        if (!params?.service) throw new Error(`@params.service is required - ${errScope}`);
+        if (!params?.type) throw new Error(`@params.type is required - ${errScope}`);
 
-        if (!service) throw new Error(`@params.service is required - ${errScope}`);
-        if (!type) throw new Error(`@params.type is required - ${errScope}`);
-        if (!mode) throw new Error(`@params.mode is required - ${errScope}`);
+        // 1) target/protocol 생성
+        const target = this.buildTarget(params);
 
-        // 1) build ProtocolParam
-        const protocolParam: ProtocolParam = {
-            service,
-            stage,
-            type,
-            mode,
-            id,
-            cmd,
-            param: $T.onlyDefined(queryParam),
-            body: $T.onlyDefined(requestBody),
-            context,
-        };
+        // 2) protocol 객체 생성
+        const prot = $protocol(context, target, { isProd: false });
 
-        // 2) build MessageAttributes
-        const attrs: { [key: string]: string | number } = {
-            Subject: 'x-protocol-service',
-            accountId: context.accountId || '',
-            requestId: context.requestId || '',
-        };
-
-        // 3) send message to SQS
-        const messageId = await this.$sqs.sendMessage(protocolParam, attrs);
+        // 3) enqueue 호출 (SQS 발송)
+        const messageId = await prot.enqueue(
+            $T.onlyDefined(params), // param
+            $T.onlyDefined(params.body), // body
+            params?.mode, // mode
+            undefined, // callback
+            undefined, // delaySeconds
+        );
 
         return { messageId };
     };
 
     /**
-     * Send data to SNS
+     * Send data to SNS using protocolService.notify()
      */
-    public sendToSns = async (params: SnsPayload, context: NextContext): Promise<{ messageId: string }> => {
-        const errScope = `sendToSns(${params.payload.type}/${params.payload.id}/${params.payload.cmd})`;
+    public sendToSns = async (params: MessagePayload, context: NextContext): Promise<{ messageId: string }> => {
+        const errScope = `sendToSns(${params?.type}/${params?.id}/${params?.cmd})`;
         _log(NS, `${errScope} ...`);
 
-        // 2) build ProtocolParam
-        const protocolParam: ProtocolParam = {
-            service: params?.payload?.service ?? 'eureka-hello-api',
-            stage: (params?.payload?.stage as STAGE) ?? 'dev',
-            type: params?.payload?.type ?? 'hello',
-            mode: (params?.payload?.mode as NextMode) ?? 'POST',
-            id: params?.payload?.id ?? '0',
-            cmd: params?.payload?.cmd ?? undefined,
-            param: $T.onlyDefined(params?.payload?.param),
-            body: $T.onlyDefined(params?.payload?.body),
-            context,
-        };
+        // validation
+        if (!params?.service) throw new Error(`@params.service is required - ${errScope}`);
+        if (!params?.type) throw new Error(`@params.type is required - ${errScope}`);
 
-        if (!protocolParam.service) throw new Error(`@params.service is required - ${errScope}`);
-        if (!protocolParam.type) throw new Error(`@params.type is required - ${errScope}`);
-        if (!protocolParam.mode) throw new Error(`@params.mode is required - ${errScope}`);
+        // 1) target/protocol 생성
+        const target = this.buildTarget(params);
 
-        // 3) build $protocol
+        // 2) protocol 객체 생성
+        const prot = $protocol(context, target, { isProd: false });
+
+        // 3) notify 호출 (SNS 발송)
+        const messageId = await prot.notify(
+            $T.onlyDefined(params.param), // param
+            $T.onlyDefined(params.body), // body
+            params?.mode, // mode
+            undefined, // callback
+        );
+
+        return { messageId };
+    };
+
+    /**
+     * Build target string with params
+     */
+    public buildTarget = (params: MessagePayload) => {
+        const errScope = `buildTarget(${params?.type}/${params?.id}/${params?.cmd})`;
         const _S2 = (name: string, required = true) => {
-            const s = $T.S2((protocolParam as any)?.[name]);
+            const s = $T.S2((params as any)?.[name]);
             if (!s && required) throw new Error(`@request.${name} (string) is required - ${errScope}`);
             return s;
         };
         const [service, type, _id, cmd] = [_S2('service'), _S2('type'), _S2('id'), _S2('cmd', false)];
         const path = `/${type}/${_id}` + (cmd ? `/${cmd}` : '');
         const target = `//${service}${path}`;
-        const prot = $protocol(context, target, { isProd: false });
-
-        // 4) notify
-        const messageId = await prot.notify(undefined, protocolParam?.body, protocolParam?.mode);
-        // const messageId = await this.$sns.publish(target, subject, payload);
-
-        return { messageId };
+        return target;
     };
 }
 

@@ -14,6 +14,8 @@
  * @origin      `@lemoncloud/codes-goods-api/modules/resource`
  */
 
+import { NextMode, STAGE } from 'lemon-core';
+
 /**
  * Payload for request (SQS/SNS 공용)
  */
@@ -21,11 +23,11 @@ export interface MessagePayload {
     /** target service, ex) 'eureka-hello-api' */
     service: string;
     /** stage, ex) 'dev' */
-    stage: string;
+    stage: STAGE;
     /** type of model, ex) 'hello' */
     type: string;
     /** mode, ex) 'POST' */
-    mode: string;
+    mode: NextMode;
     /** id of model, ex) '100001' */
     id: string;
     /** command, ex) 'save' */

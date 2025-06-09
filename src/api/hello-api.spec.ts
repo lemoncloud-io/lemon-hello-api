@@ -92,32 +92,32 @@ describe('hello-controller', () => {
             res: { _id: id, name: 'from-sqs' },
         });
 
-        // // 4. Publish to SNS
-        // const snsPayload = {
-        //     service: 'eureka-hello-api',
-        //     stage: 'dev',
-        //     type: 'hello',
-        //     mode: 'POST',
-        //     id,
-        //     cmd: 'dynamo',
-        //     body: { name: 'from-sns' },
-        // };
-        // const snsRequestBody = {
-        //     target: 'eureka-hello-sns-dev',
-        //     subject: 'save-to-dynamo',
-        //     payload: snsPayload,
-        // };
-        // const resSns = await request(app).post(`/hello/${id}/sns`).send(snsRequestBody);
-        // expect2(resSns.status).toEqual(200);
-        // expect2(resSns.body).toHaveProperty('messageId');
+        // 4. Publish to SNS
+        const snsPayload = {
+            service: 'eureka-hello-api',
+            stage: 'dev',
+            type: 'hello',
+            mode: 'POST',
+            id,
+            cmd: 'dynamo',
+            body: { name: 'from-sns' },
+        };
+        const snsRequestBody = {
+            target: 'eureka-hello-sns-dev',
+            subject: 'save-to-dynamo',
+            payload: snsPayload,
+        };
+        const resSns = await request(app).post(`/hello/${id}/sns`).send(snsRequestBody);
+        expect2(resSns.status).toEqual(200);
+        expect2(resSns.body).toHaveProperty('messageId');
 
-        // // 4-1. Wait for SNS subscriber
-        // await new Promise(resolve => setTimeout(resolve, 2000));
+        // 4-1. Wait for SNS subscriber
+        await new Promise(resolve => setTimeout(resolve, 2000));
 
-        // const resFinal = await request(app).get(`/hello/${id}/dynamo`);
-        // expect2(resFinal.status).toEqual(200);
-        // expect2(JSON.parse(resFinal.text)).toEqual({
-        //     res: { id, name: 'from-sns' },
-        // });
+        const resFinal = await request(app).get(`/hello/${id}/dynamo`);
+        expect2(resFinal.status).toEqual(200);
+        expect2(JSON.parse(resFinal.text)).toEqual({
+            res: { id, name: 'from-sns' },
+        });
     });
 });

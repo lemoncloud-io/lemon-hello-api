@@ -205,7 +205,7 @@ export class HelloAPIController extends GeneralWEBController {
     public doPostSns: NextHandler = async (id, param, body: PostSnsBody, context) => {
         const errScope = `doPostSns(${this.type()}/${id ?? ''})`;
         _log(NS, `${errScope} ...`);
-        return this.service.$test.sendToSns(body as SnsPayload, context);
+        return this.service.$test.sendToSns(body as MessagePayload, context);
     };
 }
 
