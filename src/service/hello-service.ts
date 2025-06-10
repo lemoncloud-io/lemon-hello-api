@@ -9,7 +9,7 @@
  * @copyright (C) lemoncloud.io 2024 - All Rights Reserved. (https://eureka.codes)
  */
 import { $U, _log, CoreManager, CoreService, $T, NextContext } from 'lemon-core';
-import { DynamoOption, DynamoService, GeneralItem, $protocol } from 'lemon-core';
+import { GeneralItem, $protocol } from 'lemon-core';
 import { $FIELD, Model, ModelType, TestModel } from './hello-model';
 import { MessagePayload } from './types';
 
@@ -96,41 +96,21 @@ export class MyCoreManager<T extends Model, S extends CoreService<T, ModelType>>
  * - manager for test-model.
  */
 export class MyTestManager extends MyCoreManager<TestModel, HelloService> {
-    public readonly $dynamo: DynamoService<GeneralItem>;
-
     public constructor(parent: HelloService) {
         super('test', parent, $FIELD.test, 'name');
-
-        const option: DynamoOption = {
-            tableName: $U.env('MY_DYNAMO_TABLE', 'eureka-hello-table-dev'),
-            idName: $U.env('ID_NAME', '_id'),
-        };
-
-        this.$dynamo = new DynamoService(option);
     }
-
-    // 시나리오 만들어서 더미랑 테스트 통과
-    // 외부 api 호춡에서 찔러서 코드가 실행되어야함
-    // 쪼개고 쓰기
-    // 테스트 컨셉 + 시나리오
-    // creatHttp 이용
-    public doTest = async (id: string, data: GeneralItem) => {
-        const model = await this.$dynamo.saveItem(id, data);
-        const getModel = await this.$dynamo.readItem(id);
-        return { model, getModel };
-    };
     /**
      * Save data into DynamoDB
      */
     public saveToDynamo = async (id: string, data: GeneralItem) => {
-        const res = await this.$dynamo.saveItem(id, data);
+        const res = await this.save(id, data);
         return { res };
     };
     /**
      * Read data from DynamoDB
      */
     public readFromDynamo = async (id: string) => {
-        const res = await this.$dynamo.readItem(id);
+        const res = await this.getModelById(id);
         return { res };
     };
 
@@ -142,14 +122,14 @@ export class MyTestManager extends MyCoreManager<TestModel, HelloService> {
         _log(NS, `${errScope} ...`);
 
         // validation
-        if (!params?.service) throw new Error(`@params.service is required - ${errScope}`);
-        if (!params?.type) throw new Error(`@params.type is required - ${errScope}`);
+        if (!params?.service) throw new Error(`.service (string) is requried - ${errScope}`);
+        if (!params?.type) throw new Error(`.type is required - ${errScope}`);
 
         // 1) target/protocol 생성
         const target = this.buildTarget(params);
 
         // 2) protocol 객체 생성
-        const prot = $protocol(context, target, { isProd: false });
+        const prot = $protocol(context, target);
 
         // 3) enqueue 호출 (SQS 발송)
         const messageId = await prot.enqueue(
@@ -171,14 +151,14 @@ export class MyTestManager extends MyCoreManager<TestModel, HelloService> {
         _log(NS, `${errScope} ...`);
 
         // validation
-        if (!params?.service) throw new Error(`@params.service is required - ${errScope}`);
-        if (!params?.type) throw new Error(`@params.type is required - ${errScope}`);
+        if (!params?.service) throw new Error(`.service is required - ${errScope}`);
+        if (!params?.type) throw new Error(`.type is required - ${errScope}`);
 
         // 1) target/protocol 생성
         const target = this.buildTarget(params);
 
         // 2) protocol 객체 생성
-        const prot = $protocol(context, target, { isProd: false });
+        const prot = $protocol(context, target);
 
         // 3) notify 호출 (SNS 발송)
         const messageId = await prot.notify(
@@ -198,7 +178,7 @@ export class MyTestManager extends MyCoreManager<TestModel, HelloService> {
         const errScope = `buildTarget(${params?.type}/${params?.id}/${params?.cmd})`;
         const _S2 = (name: string, required = true) => {
             const s = $T.S2((params as any)?.[name]);
-            if (!s && required) throw new Error(`@request.${name} (string) is required - ${errScope}`);
+            if (!s && required) throw new Error(`.${name} (string) is required - ${errScope}`);
             return s;
         };
         const [service, type, _id, cmd] = [_S2('service'), _S2('type'), _S2('id'), _S2('cmd', false)];
