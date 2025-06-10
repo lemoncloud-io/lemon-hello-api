@@ -32,7 +32,7 @@ export const credentials = async (name?: string) => {
     _log(NS, `credentials(${name})..`);
     const NAME = name || ($engine.environ('NAME', '') as string);
     const profile = $engine.environ('PROFILE', NAME) as string;
-    return $cores.tools.credentials(profile);
+    return $cores.tools.asyncCredentials(profile);
 };
 
 //* load yml data via './data/<file>.yml'

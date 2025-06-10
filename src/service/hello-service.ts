@@ -8,8 +8,11 @@
  *
  * @copyright (C) lemoncloud.io 2024 - All Rights Reserved. (https://eureka.codes)
  */
-import { $U, _log, CoreManager, CoreService } from 'lemon-core';
+import { $U, _log, CoreManager, CoreService, $T, NextContext } from 'lemon-core';
+import { GeneralItem, $protocol } from 'lemon-core';
 import { $FIELD, Model, ModelType, TestModel } from './hello-model';
+import { MessagePayload } from './types';
+
 const NS = $U.NS('hello', 'blue'); // NAMESPACE TO BE PRINTED.
 
 /**
@@ -96,6 +99,93 @@ export class MyTestManager extends MyCoreManager<TestModel, HelloService> {
     public constructor(parent: HelloService) {
         super('test', parent, $FIELD.test, 'name');
     }
+    /**
+     * Save data into DynamoDB
+     */
+    public saveToDynamo = async (id: string, data: GeneralItem) => {
+        const res = await this.save(id, data);
+        return { res };
+    };
+    /**
+     * Read data from DynamoDB
+     */
+    public readFromDynamo = async (id: string) => {
+        const res = await this.getModelById(id);
+        return { res };
+    };
+
+    /**
+     * Send data to SQS using protocolService.enqueue()
+     */
+    public sendToSqs = async (params: MessagePayload, context: NextContext) => {
+        const errScope = `sendToSqs(${params?.type}/${params?.id}/${params?.cmd})`;
+        _log(NS, `${errScope} ...`);
+
+        // validation
+        if (!params?.service) throw new Error(`.service (string) is requried - ${errScope}`);
+        if (!params?.type) throw new Error(`.type is required - ${errScope}`);
+
+        // 1) target/protocol 생성
+        const target = this.buildTarget(params);
+
+        // 2) protocol 객체 생성
+        const prot = $protocol(context, target);
+
+        // 3) enqueue 호출 (SQS 발송)
+        const messageId = await prot.enqueue(
+            $T.onlyDefined(params), // param
+            $T.onlyDefined(params.body), // body
+            params?.mode, // mode
+            undefined, // callback
+            undefined, // delaySeconds
+        );
+
+        return { messageId };
+    };
+
+    /**
+     * Send data to SNS using protocolService.notify()
+     */
+    public sendToSns = async (params: MessagePayload, context: NextContext): Promise<{ messageId: string }> => {
+        const errScope = `sendToSns(${params?.type}/${params?.id}/${params?.cmd})`;
+        _log(NS, `${errScope} ...`);
+
+        // validation
+        if (!params?.service) throw new Error(`.service is required - ${errScope}`);
+        if (!params?.type) throw new Error(`.type is required - ${errScope}`);
+
+        // 1) target/protocol 생성
+        const target = this.buildTarget(params);
+
+        // 2) protocol 객체 생성
+        const prot = $protocol(context, target);
+
+        // 3) notify 호출 (SNS 발송)
+        const messageId = await prot.notify(
+            $T.onlyDefined(params.param), // param
+            $T.onlyDefined(params.body), // body
+            params?.mode, // mode
+            undefined, // callback
+        );
+
+        return { messageId };
+    };
+
+    /**
+     * Build target string with params
+     */
+    public buildTarget = (params: MessagePayload) => {
+        const errScope = `buildTarget(${params?.type}/${params?.id}/${params?.cmd})`;
+        const _S2 = (name: string, required = true) => {
+            const s = $T.S2((params as any)?.[name]);
+            if (!s && required) throw new Error(`.${name} (string) is required - ${errScope}`);
+            return s;
+        };
+        const [service, type, _id, cmd] = [_S2('service'), _S2('type'), _S2('id'), _S2('cmd', false)];
+        const path = `/${type}/${_id}` + (cmd ? `/${cmd}` : '');
+        const target = `//${service}${path}`;
+        return target;
+    };
 }
 
 //*export default

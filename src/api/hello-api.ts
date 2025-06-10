@@ -12,6 +12,7 @@ import { $T, $U, _log, NextHandler, GeneralWEBController, NextContext } from 'le
 import { Model, TestModel } from '../service/hello-model';
 import { HelloService } from '../service/hello-service';
 import { ALBNextHandler } from 'lemon-core/dist/cores/lambda/lambda-alb-handler';
+import { PostSnsBody, PostSqsBody, MessagePayload, SnsPayload } from '../service/views';
 const NS = $U.NS('hello', 'yellow'); // NAMESPACE TO BE PRINTED.
 
 /**
@@ -32,6 +33,9 @@ export class HelloAPIController extends GeneralWEBController {
     public constructor(readonly service?: HelloService) {
         super('hello');
         _log(NS, `HelloAPIController()...`);
+
+        const tableName = $U.env('MY_DYNAMO_TABLE');
+        this.service = service ?? new HelloService(tableName);
     }
 
     /**
@@ -159,6 +163,57 @@ export class HelloAPIController extends GeneralWEBController {
         const path = body?.path ?? '/';
         const userAgent = context?.userAgent ?? 'Unknown';
         return thiz.buildResponse(200, `${method} ${path}\n${userAgent}`, { origin: null, credentials: null });
+    };
+
+    /**
+     * Save data into DynamoDB
+     *
+     * ```sh
+     * $ http POST :8000/hello/100001/dynamo body='{"name":"test"}'
+     */
+    public doPostDynamo: NextHandler = async (id, param, body, context) => {
+        const errScope = `doPostDynamo(${this.type()}/${id ?? ''})`;
+        _log(NS, `${errScope} ...`);
+        if (!id) throw new Error(`@id (string) is required - ${errScope}`);
+        return this.service.$test.saveToDynamo(id, body);
+    };
+    /**
+     * Read data from DynamoDB
+     *
+     * ```sh
+     * $ http GET :8000/hello/0/dynamo
+     */
+    public doGetDynamo: NextHandler = async (id, param, body, context) => {
+        const errScope = `doGetDynamo(${this.type()}/${id ?? ''})`;
+        _log(NS, `${errScope} ...`);
+        return this.service.$test.readFromDynamo(id);
+    };
+    /**
+     * Send data to SQS
+     *
+     * ```sh
+     * $ http POST :8000/hello/0/sqs \  
+        service=eureka-hello-api \
+        type=hello \
+        id=10001 \
+        cmd=dynamo \
+        body:='{"name": "from-sqs22"}'
+     */
+    public doPostSqs: NextHandler = async (id, param, body: PostSqsBody, context) => {
+        const errScope = `doPostSqs(${this.type()}/${id ?? ''})`;
+        _log(NS, `${errScope} ...`);
+        return this.service.$test.sendToSqs(body as MessagePayload, context);
+    };
+    /**
+     * Send data to SNS
+     *
+     * ```sh
+     * $ http POST :8000/hello/0/sns
+     */
+    public doPostSns: NextHandler = async (id, param, body: PostSnsBody, context) => {
+        const errScope = `doPostSns(${this.type()}/${id ?? ''})`;
+        _log(NS, `${errScope} ...`);
+        return this.service.$test.sendToSns(body as MessagePayload, context);
     };
 }
 
