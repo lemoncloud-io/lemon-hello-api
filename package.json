@@ -43,6 +43,7 @@
         "deploy.securenet": "npm run build && sls deploy --param='profile=securenet' --stage prod",
         "deploy.alarmo": "npm run build && sls deploy --param='profile=alarmo' --stage prod",
         "deploy.growing": "npm run build && sls deploy --param='profile=growing' --stage prod --config serverless-v2.yml",
+        "deploy.epyt": "npm run build && sls deploy --param='profile=epyt' --stage prod --config serverless-v2.yml",
         "!info": "------- print sls infor by profile -----",
         "info": "sls info --stage prod",
         "info.lemon": "sls info --param='profile=lemon'  --stage prod",
