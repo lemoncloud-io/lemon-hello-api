@@ -8,7 +8,7 @@
  * @copyright (C) 2022 LemonCloud Co Ltd. - All Rights Reserved.
  */
 // eslint-disable-next-line @typescript-eslint/no-unused-vars
-import { $U, $T, _log, _inf, _err, GeneralWEBController, NextHandler } from 'lemon-core';
+import { $U, $T, _log, _inf, _err, GeneralWEBController, NextHandler, NUL404 } from 'lemon-core';
 import { ChannelModel, RouteRule } from '../service/hello-model';
 import $service, { HelloService } from '../service/hello-service';
 const NS = $U.NS('channel', 'yellow'); // NAMESPACE TO BE PRINTED.
@@ -34,6 +34,16 @@ export class ChannelAPIController extends GeneralWEBController {
      */
     public hello = () => `channel-api-controller:${this.type()}`;
 
+    /** hide the origin */
+    public asView = (model: ChannelModel, options?: { isLocal?: boolean }) => {
+        const isLocal = options?.isLocal ?? false;
+        const endpoint = (model?.endpoint || '')
+            .split('/')
+            .map((s, i) => (isLocal ? s : i === 5 ? `**********` : s))
+            .join('/');
+        return { ...model, endpoint };
+    };
+
     /**
      * get model by id
      *
@@ -49,26 +59,31 @@ export class ChannelAPIController extends GeneralWEBController {
         id = id === '0' ? '' : $T.S2(id).trim();
         if (!id) throw new Error(`@id (string) is required!`);
         const throwable = !!$T.B(param?.throw, param?.throw === '' ? 1 : 0);
+        const isLocal = context?.domain === 'local' || context?.domain === 'localhost';
+
+        const $org = await this.service.$channel.find(id).catch(NUL404);
+        $org && _log(NS, `> origin =`, typeof $org, $U.json($org));
 
         //* load the default endpoint from environment.
-        const endpoint = await this.service.loadSlackChannel(id, { throwable });
-        endpoint && _inf(NS, `> endpoint @env[${id}] :=`, endpoint);
+        const _default = await this.service.loadSlackChannel(id, { throwable });
+        _default && _inf(NS, `> endpoint @env[${id}] :=`, _default);
 
         //* find from DB, and show in detail
-        const model = await this.service.$channel.prepare(id, { endpoint }, true);
-        return model;
+        const model = await this.service.$channel.prepare(id, { endpoint: _default }, true);
+        return this.asView(model, { isLocal });
     };
 
     /**
      * update model by id
      *
      * ```sh
-     * $ http PUT ':8888/channel/public' name=public
+     * $ http PUT ':8888/channel/public' name=public endpoint=
      */
     public doPut: NextHandler = async (id, param, body: ChannelModel, context) => {
         _log(NS, `doPut(${id})....`);
         id = id === '0' ? '' : $T.S2(id).trim();
         if (!id) throw new Error(`@id (string) is required!`);
+        const isLocal = context?.domain === 'local' || context?.domain === 'localhost';
 
         // STEP.0 validate parameters.
         const name = body?.name !== undefined ? $T.S2(body.name, '', ' ').trim() : undefined;
@@ -81,23 +96,25 @@ export class ChannelAPIController extends GeneralWEBController {
         $org && _inf(NS, `> origin =`, typeof $org, $U.json($org));
 
         // STEP.2 prepare model to update
-        const model: ChannelModel = {};
-        if (name !== undefined) model.name = name;
-        if (useS3 !== undefined) model.useS3 = useS3;
-        if (channel !== undefined) model.channel = channel;
-        if (endpoint !== undefined) model.endpoint = endpoint;
-
-        // STEP.3 update.
-        if (Object.keys(model).length > 0) {
-            const saved = $org
-                ? await this.service.$channel.update(id, model)
-                : await this.service.$channel.save(id, model);
-            _inf(NS, `> updated =`, $U.json(saved));
-            return { ...$org, ...saved, id };
-        }
-
-        //* returns.
-        return { ...$org, id };
+        const _save = async () => {
+            const model: ChannelModel = {};
+            if (name !== undefined) model.name = name;
+            if (useS3 !== undefined) model.useS3 = useS3;
+            if (channel !== undefined) model.channel = channel;
+            if (endpoint !== undefined) model.endpoint = endpoint;
+            // STEP.3 update.
+            if (Object.keys(model).length > 0) {
+                const saved = $org
+                    ? await this.service.$channel.update(id, model)
+                    : await this.service.$channel.save(id, model);
+                _inf(NS, `> updated =`, $U.json(saved));
+                return { ...$org, ...saved, id };
+            }
+            //* returns.
+            return { ...$org, id };
+        };
+        const model = await _save();
+        return this.asView(model, { isLocal });
     };
 
     /**
@@ -116,21 +133,22 @@ export class ChannelAPIController extends GeneralWEBController {
         id = id === '0' ? '' : $T.S2(id).trim();
         if (!id) throw new Error(`@id (string) is required!`);
         if (typeof body !== 'object' || !body) throw new Error(`@body (object) is required`);
+        const isLocal = context?.domain === 'local' || context?.domain === 'localhost';
 
         // STEP.0 validate parameters.
         const list = Array.isArray(body) ? body.map<RouteRule>(N => ({ ...N })) : [body];
         const rules0 = list.map(N => this.service.$channel.asRule(N)).filter(N => !!N);
 
         // STEP.1 find(or prepare) model.
-        const model = await this.service.$channel.prepare(id, { rules: [] }, true);
+        const $org = await this.service.$channel.prepare(id, { rules: [] }, true);
 
         // STEP.2 and update.
-        const rules = [...(model.rules || []), ...rules0];
-        const updated = await this.service.$channel.update(id, { rules });
-        _inf(NS, `> updated =`, $U.json(updated));
+        const rules = [...($org.rules || []), ...rules0];
+        const model = await this.service.$channel.update(id, { rules });
+        _inf(NS, `> updated =`, $U.json(model));
 
         //* returns.
-        return updated;
+        return this.asView(model, { isLocal });
     };
 }
 

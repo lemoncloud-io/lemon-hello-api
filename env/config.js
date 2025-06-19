@@ -131,6 +131,16 @@ const CONF = (serverless) => {
             kmsKey: '*',                                        // KMS key-id
             bucket: 'growing-hello-www',                        // Name of S3 public bucket.
         },
+        epyt: {
+            name: 'epyt-app',
+            runtime: 'nodejs18.x',                              // Node is powered by the V8 JavaScript Engine (used in Chromium)
+            region: 'ap-northeast-2',
+            env: 'epyt.yml',                                    // environment file
+            securityGroupIds: undefined,                        // securityGroupIds in VPC
+            subnetIds: undefined,                               // subnetIds in VPC
+            kmsKey: '*',                                        // KMS key-id
+            bucket: 'epyt-hello-www',                           // Name of S3 public bucket.
+        },
         none: {
             name: 'none-app',
             runtime: 'nodejs18.x',                              // Node is powered by the V8 JavaScript Engine (used in Chromium)
