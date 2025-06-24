@@ -193,6 +193,7 @@ export class HelloAPIController extends GeneralWEBController {
      * Send data to SQS
      *
      * ```sh
+     * $ http POST :8000/hello/0/sqs type=hello id=10001 cmd=dynamo body='{"name": "from-sqs"}'
      * $ http POST :8000/hello/0/sqs \  
         service=eureka-hello-api \
         type=hello \
