@@ -8,11 +8,11 @@
  *
  * @copyright (C) lemoncloud.io 2024 - All Rights Reserved. (https://eureka.codes)
  */
-import { $T, $U, _log, NextHandler, GeneralWEBController, NextContext } from 'lemon-core';
+import { $T, $U, _log, NextHandler, GeneralWEBController, NextContext, $info } from 'lemon-core';
 import { Model, TestModel } from '../service/hello-model';
 import { HelloService } from '../service/hello-service';
 import { ALBNextHandler } from 'lemon-core/dist/cores/lambda/lambda-alb-handler';
-import { PostSnsBody, PostSqsBody, MessagePayload, SnsPayload } from '../service/views';
+import { PostSnsBody, PostSqsBody, MessagePayload } from '../service/views';
 const NS = $U.NS('hello', 'yellow'); // NAMESPACE TO BE PRINTED.
 
 /**
@@ -170,6 +170,7 @@ export class HelloAPIController extends GeneralWEBController {
      *
      * ```sh
      * $ http POST :8000/hello/100001/dynamo body='{"name":"test"}'
+     * $ http :8000/hello/100001/dynamo name=test hello=world
      */
     public doPostDynamo: NextHandler = async (id, param, body, context) => {
         const errScope = `doPostDynamo(${this.type()}/${id ?? ''})`;
@@ -181,7 +182,7 @@ export class HelloAPIController extends GeneralWEBController {
      * Read data from DynamoDB
      *
      * ```sh
-     * $ http GET :8000/hello/0/dynamo
+     * $ http :8000/hello/100001/dynamo
      */
     public doGetDynamo: NextHandler = async (id, param, body, context) => {
         const errScope = `doGetDynamo(${this.type()}/${id ?? ''})`;
@@ -202,7 +203,14 @@ export class HelloAPIController extends GeneralWEBController {
     public doPostSqs: NextHandler = async (id, param, body: PostSqsBody, context) => {
         const errScope = `doPostSqs(${this.type()}/${id ?? ''})`;
         _log(NS, `${errScope} ...`);
-        return this.service.$test.sendToSqs(body as MessagePayload, context);
+        const isLocal = context?.domain === 'localhost';
+        // WARN! `service` is ONLY possible in local environment.
+        const service = isLocal ? $T.S2(body?.service, $info().service) : $info().service;
+        const $body = $T.onlyDefined<MessagePayload>({
+            ...(body as MessagePayload),
+            service,
+        });
+        return this.service.$test.sendToSqs($body, context);
     };
     /**
      * Send data to SNS
@@ -213,7 +221,14 @@ export class HelloAPIController extends GeneralWEBController {
     public doPostSns: NextHandler = async (id, param, body: PostSnsBody, context) => {
         const errScope = `doPostSns(${this.type()}/${id ?? ''})`;
         _log(NS, `${errScope} ...`);
-        return this.service.$test.sendToSns(body as MessagePayload, context);
+        const isLocal = context?.domain === 'localhost';
+        // WARN! `service` is ONLY possible in local environment.
+        const service = isLocal ? $T.S2(body?.service, $info().service) : $info().service;
+        const $body = $T.onlyDefined<MessagePayload>({
+            ...(body as MessagePayload),
+            service,
+        });
+        return this.service.$test.sendToSns($body, context);
     };
 }
 
