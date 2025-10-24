@@ -166,9 +166,13 @@ export class HelloAPIController extends GeneralWEBController {
      * ```sh
      * # post message to slack/general
      * $ echo '{"text":"hello"}' | http ':8888/hello/public/slack'
-     * $ echo '{"text":"hello"}' | http ':8888/hello/alarm/slack'
+     * # message to specific channel
+     * $ echo '{"text":"hello"}' | http ':8888/hello/<channel>/slack'
+     *
+     * # message to `public` channel.
      * $ cat data/slack.json | http ':8888/hello/public/slack'
      * $ cat data/error-report.json | http ':8888/hello/public/slack'
+     * $ cat data/image-slack.json | http ':8888/hello/public/slack'
      *
      * # use sample
      * $ cat data/error-hello.json | http ':8888/hello/public/slack'

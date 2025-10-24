@@ -790,7 +790,7 @@ export class HelloService extends CoreService<Model, ModelType> {
                     $T;
                     return L;
                 }, []);
-                if (matched.length > 0) {
+                if (matched?.length > 0) {
                     return {
                         ...body,
                         attachments: matched,
