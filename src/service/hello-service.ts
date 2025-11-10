@@ -717,7 +717,7 @@ export class HelloService extends CoreService<Model, ModelType> {
                 channel = channel || body?.channel || 'public';
                 paths = paths || [];
                 parent = parent ? parent : await _channel(channel);
-                _log(NS, `>> route(${channel})`);
+                _inf(NS, `> route(${channel}/${paths?.length ?? 0}).parent :=`, $U.json(parent));
 
                 //* check of end-of-routing
                 if (paths?.includes(channel)) {
@@ -813,6 +813,8 @@ export class HelloService extends CoreService<Model, ModelType> {
                         ...$msg,
                         channel: target?.channel || channel,
                     };
+                    _inf(NS, `>> route-target[${channel}] =`, $U.json(target));
+                    _inf(NS, `>> message[${message?.channel}] =`, $U.json(message));
                     if (endpoint?.startsWith('http')) {
                         const sent = await this.service.postMessage(endpoint, message).catch<PostResponse>(e => {
                             _err(NS, `! err.send:${channel} =`, e);

@@ -8,6 +8,7 @@ default_env: &default_env
   TS: 1                   # time-stamp in line
   NAME: 'epyt'            # profile name.
   SLACK_PUBLIC: ''
+  MY_S3_BUCKET: epyt-hello-www
 
 #-----------------------------------
 # local development configuration.
