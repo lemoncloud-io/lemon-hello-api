@@ -1,0 +1,38 @@
+#-----------------------------------
+# Lemon Basic Environment Variables.
+#-----------------------------------
+# default
+default_env: &default_env
+  LS: 0                   # log silence.
+  LC: 1                   # line-coloring
+  TS: 1                   # time-stamp in line
+  NAME: 'clipbiz'            # profile name.
+  SLACK_PUBLIC: ''
+  MY_S3_BUCKET: clipbiz-hello-www
+
+#-----------------------------------
+# local development configuration.
+local:
+  <<: *default_env
+  # STAGE: 'local'
+  # MY_DYNAMO_TABLE: lemon-hello-table-dev      # use `serverless-v2.yml`` config
+
+  #! override as prod environ.
+  STAGE: '!production'
+  MY_DYNAMO_TABLE: lemon-hello-table            # use `serverless-v2.yml`` config
+  NS: SS
+
+#-----------------------------------
+# development server
+dev:
+  <<: *default_env
+  STAGE: 'develop'
+
+#-----------------------------------
+# production with AWS deploy
+prod:
+  <<: *default_env
+  STAGE: 'production'
+  NS: SS
+  TS: 0
+
