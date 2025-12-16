@@ -285,7 +285,7 @@ export class HelloService extends CoreService<Model, ModelType> {
         if (isUseS3 && isSlackPostBody(message)) {
             const attachment = attachments[0];
             const pretext = $T.S(attachment.pretext, '');
-            const title = $T.S(attachment.title, '');
+            const title = $T.S(attachment.title ?? attachment?.text, ''); // title can be null.
             const color = $T.S(attachment.color, 'green');
             const thumb_url = attachment.thumb_url ? attachment.thumb_url : undefined;
             const image_url = attachment.image_url ? attachment.image_url : undefined;
