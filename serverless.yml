@@ -8,7 +8,7 @@ service: lemon-hello-api
 frameworkVersion: "3"
 
 plugins:
-  - serverless-offline
+  # - serverless-offline
   - serverless-aws-documentation
   - serverless-prune-plugin
   - serverless-plugin-log-retention
@@ -28,8 +28,8 @@ custom:
   #------------------------------------------------
   # serverless-offline
   #------------------------------------------------
-  serverless-offline:
-    port: 8888
+  # serverless-offline:
+  #   port: 8888
   #------------------------------------------------
   # Documentation
   #   - https://github.com/9cookies/serverless-aws-documentation
