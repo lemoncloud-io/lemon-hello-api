@@ -78,7 +78,7 @@
         "plato": "plato -r -d complexity dist"
     },
     "dependencies": {
-        "lemon-core": "^3.2.17"
+        "lemon-core": "^4.1.15"
     },
     "devDependencies": {
         "@cruglobal/serverless-merge-config": "^1.1.0",
