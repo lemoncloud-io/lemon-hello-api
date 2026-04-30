@@ -141,6 +141,16 @@ const CONF = (serverless) => {
             kmsKey: '*',                                        // KMS key-id
             bucket: 'epyt-hello-www',                           // Name of S3 public bucket.
         },
+        tbpm: {
+            name: 'tbpm-app',
+            runtime: 'nodejs18.x',                              // Node is powered by the V8 JavaScript Engine (used in Chromium)
+            region: 'ap-northeast-2',
+            env: 'tbpm.yml',                                    // environment file
+            securityGroupIds: undefined,                        // securityGroupIds in VPC
+            subnetIds: undefined,                               // subnetIds in VPC
+            kmsKey: '*',                                        // KMS key-id
+            bucket: 'tbpm-hello-www',                           // Name of S3 public bucket.
+        },
         none: {
             name: 'none-app',
             runtime: 'nodejs18.x',                              // Node is powered by the V8 JavaScript Engine (used in Chromium)
