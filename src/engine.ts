@@ -6,6 +6,7 @@
  * @author      Steve Jung <steve@lemoncloud.io>
  * @date        2024-11-27 initial version with `lemon-core#3.2.10`
  * @date        2026-10-30 v5: `PERF: > loaded engine` line for `perf:lambda` (lemon-core#5.0.11).
+ * @date        2026-10-30 security review H-2: SNS/SQS drop protocol messages outside local mode (`protocol-guard`).
  *
  * @copyright (C) lemoncloud.io 2024 - All Rights Reserved. (https://eureka.codes)
  */
@@ -23,6 +24,11 @@ const $alb = $lambda.alb;
 
 //* Loading API Service of NextDecoder
 import $hello from './api/hello-api'; //NOTE - it should be `NextDecoder`.
+import { guardProtocol } from './service/protocol-guard';
+
+//* H-2: hello takes no protocol message (`x-protocol-service`) on SNS/SQS in Lambda (confused deputy via `callback`).
+guardProtocol($sns, 'sns');
+guardProtocol($sqs, 'sqs');
 
 //* register sub handlers, and listeners.
 $web.addController($hello);

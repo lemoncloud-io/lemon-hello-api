@@ -5,6 +5,7 @@
  *
  * @author      Steve Jung <steve@lemoncloud.io>
  * @date        2024-11-27 initial version with `lemon-core#3.2.10`
+ * @date        2026-10-30 security review C-1: `readFromDynamo()`/`saveToDynamo()` local mode only, no `@` id.
  *
  * @copyright (C) lemoncloud.io 2024 - All Rights Reserved. (https://eureka.codes)
  */
@@ -15,6 +16,25 @@ import { MessagePayload } from './types';
 import { SlackService } from './slack-service';
 import { SlackChannelModel, StorageSupportable } from './slack-types';
 const NS = $U.NS('hello', 'blue'); // NAMESPACE TO BE PRINTED.
+
+/**
+ * true if the id is reserved for an internal record. (`@<channel>` holds the channel config w/ `token`)
+ */
+export const isReservedId = (id: string): boolean => `${id ?? ''}`.startsWith('@');
+
+/**
+ * throw `404 NOT FOUND` for a reserved id. (404: no report, no hint that the record exists)
+ */
+export const assertNotReserved = (id: string): void => {
+    if (isReservedId(id)) throw new Error(`404 NOT FOUND - id:${id} is reserved`);
+};
+
+/**
+ * throw `404 NOT FOUND` outside local mode. (C-1: test/debug routes are not served in Lambda)
+ */
+export const assertLocalOnly = (errScope: string): void => {
+    if (!$U.isLocalMode()) throw new Error(`404 NOT FOUND - ${errScope} is local only`);
+};
 
 /**
  * class: `HelloService`
@@ -132,6 +152,9 @@ export class MyTestManager extends MyCoreManager<TestModel, HelloService> {
      * Save data into DynamoDB
      */
     public saveToDynamo = async (id: string, data: GeneralItem) => {
+        //* C-1: local mode only, never a reserved record.
+        assertLocalOnly(`saveToDynamo(${id ?? ''})`);
+        assertNotReserved(id);
         const res = await this.save(id, data);
         return { res };
     };
@@ -139,6 +162,9 @@ export class MyTestManager extends MyCoreManager<TestModel, HelloService> {
      * Read data from DynamoDB
      */
     public readFromDynamo = async (id: string) => {
+        //* C-1: local mode only, never a reserved record.
+        assertLocalOnly(`readFromDynamo(${id ?? ''})`);
+        assertNotReserved(id);
         const res = await this.getModelById(id);
         return { res };
     };

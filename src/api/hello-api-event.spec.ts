@@ -6,6 +6,7 @@
  *
  * @author      Steve Jung <steve@lemoncloud.io>
  * @date        2026-10-30 v5: SNS error-report fan-out contract (lemon-core#5.0.11).
+ * @date        2026-10-30 security review H-1: the test hosts are allowed by env `CHANNEL_ENDPOINT_HOSTS`.
  *
  * @copyright (C) lemoncloud.io 2026 - All Rights Reserved. (https://eureka.codes)
  */
@@ -14,6 +15,7 @@ import { HelloAPIController } from './hello-api';
 import { HelloService } from '../service/hello-service';
 import { SlackService } from '../service/slack-service';
 import { SlackChannelModel, StorageSupportable } from '../service/slack-types';
+import { CHANNEL_ENDPOINT_HOSTS } from '../service/channel-policy';
 
 //* in-memory channel storage (same contract as the DynamoDB one in `HelloService`).
 const memoryChannels = () =>
@@ -85,13 +87,17 @@ const ERROR_REPORT = {
 
 describe('hello-api error-report path (SNS -> slack/chatic)', () => {
     const $org = LambdaSNSHandler.REPORT_ERROR;
-    //* never publish a report of our own while testing.
+    const $hosts = process.env[CHANNEL_ENDPOINT_HOSTS];
+    //* never publish a report of our own while testing. allow the test hosts (H-1).
     beforeEach(() => {
         LambdaSNSHandler.REPORT_ERROR = false;
+        process.env[CHANNEL_ENDPOINT_HOSTS] = 'slack.example.com,chat.example.com';
     });
-    //* restore the shared flag.
+    //* restore the shared flag and the env.
     afterEach(() => {
         LambdaSNSHandler.REPORT_ERROR = $org;
+        if ($hosts === undefined) delete process.env[CHANNEL_ENDPOINT_HOSTS];
+        else process.env[CHANNEL_ENDPOINT_HOSTS] = $hosts;
     });
 
     it('routes an error report via `public` rules to the chatic channel (webhook payload)', async () => {

@@ -5,15 +5,18 @@
  *
  * @author      Steve Jung <steve@lemoncloud.io>
  * @date        2024-11-27 initial version with `lemon-core#3.2.10`
+ * @date        2026-10-30 security review: dynamo/sqs/sns local-only (C-1, H-2), channel masking/allow-list (H-1), BUFF cap (L-3).
  *
  * @copyright (C) lemoncloud.io 2024 - All Rights Reserved. (https://eureka.codes)
  */
-import { expect2, loadJsonSync, $U, $info } from 'lemon-core';
+import { expect2, loadJsonSync, $U, $info, GETERR } from 'lemon-core';
 import { HelloAPIController } from './hello-api';
 import * as $service from '../service/hello-service.spec';
 import { SlackService } from '../service/slack-service';
 import { SlackChannelModel, StorageSupportable } from '../service/slack-types';
 import { HelloService } from '../service/hello-service';
+import { CHANNEL_ENDPOINT_HOSTS } from '../service/channel-policy';
+import $defService from '../service/hello-service';
 
 import { app } from '../express';
 import request from 'supertest';
@@ -44,15 +47,20 @@ const inLocalMode = async <T>(fn: () => Promise<T>): Promise<T> => {
 describe('hello-controller', () => {
     const $pack = loadJsonSync('package.json');
 
-    //* make sure each test starts outside local mode.
+    //* make sure each test starts outside local mode, w/ the test hosts allowed.
     const $mode = process.env.LOCAL_MODE;
+    const $hosts = process.env[CHANNEL_ENDPOINT_HOSTS];
     beforeEach(() => {
         delete process.env.LOCAL_MODE;
+        process.env[CHANNEL_ENDPOINT_HOSTS] = 'example.com,slack.example.com';
     });
     //* restore the env of the runner.
     afterEach(() => {
+        jest.restoreAllMocks();
         if ($mode === undefined) delete process.env.LOCAL_MODE;
         else process.env.LOCAL_MODE = $mode;
+        if ($hosts === undefined) delete process.env[CHANNEL_ENDPOINT_HOSTS];
+        else process.env[CHANNEL_ENDPOINT_HOSTS] = $hosts;
     });
 
     // basic test
@@ -109,15 +117,11 @@ describe('hello-controller', () => {
             },
             { domain: 'localhost' },
         );
-        expect2(saved).toEqual({
-            channel: id,
-            endpoint: 'https://example.com/hello/chat-send?channelId=C001',
-            stereo: 'chatic',
-            token: 'super-secret-1234',
-        });
+        //* H-1: the save response is masked outside local mode too. (same as the read)
+        const masked = { channel: id, endpoint: 'https://exam', stereo: 'chatic', token: '****1234' };
+        expect2(saved).toEqual(masked);
 
         //* read outside local mode -> endpoint/token masked. (existing endpoint convention)
-        const masked = { channel: id, endpoint: 'https://exam', stereo: 'chatic', token: '****1234' };
         expect2(await controller.doGetChannel(id, {}, undefined, { domain: 'test.com' })).toEqual(masked);
 
         //* v5: `domain: 'localhost'` is only a request value and grants nothing -> still masked.
@@ -149,13 +153,13 @@ describe('hello-controller', () => {
         await controller.doPostChannel(
             'public',
             {},
-            { endpoint: 'http://slack.example.com', rules: [{ pattern: '/./', copyTo: id }] },
+            { endpoint: 'https://slack.example.com', rules: [{ pattern: '/./', copyTo: id }] },
             { domain: 'localhost' },
         );
         await controller.doPostSlack('0', {}, { attachments: [{ title: 'T' }] }, { domain: 'localhost' });
         expect2(() => sent.map(N => N.endpoint)).toEqual([
             'https://example.com/hello/chat-send?channelId=C001',
-            'http://slack.example.com',
+            'https://slack.example.com',
         ]);
         expect2(() => sent[0].message, 'stereo').toEqual({ stereo: 'webhook' });
 
@@ -165,7 +169,7 @@ describe('hello-controller', () => {
         expect2(() => sent.map(N => N.endpoint)).toEqual(['https://example.com/hello/chat-send?channelId=C001']);
     });
 
-    it('should take `body.service` of sqs/sns only in local mode', async () => {
+    it('should serve sqs/sns only in local mode, and take `body.service` there (H-2)', async () => {
         //* stub manager: record the payload instead of sending to AWS.
         const calls: { kind: string; service: string }[] = [];
         const $test = {
@@ -179,13 +183,14 @@ describe('hello-controller', () => {
         const self = $info().service;
         const body = { service: 'other-api', type: 'hello', id: '1', cmd: 'dynamo' };
 
-        //* outside local mode -> always this service, even with `domain: 'localhost'`.
-        await controller.doPostSqs('0', {}, body, { domain: 'localhost' });
-        await controller.doPostSns('0', {}, body, { domain: 'localhost' });
-        expect2(() => calls.splice(0)).toEqual([
-            { kind: 'sqs', service: self },
-            { kind: 'sns', service: self },
-        ]);
+        //* outside local mode -> 404, nothing sent (even with `domain: 'localhost'`).
+        expect2(await controller.doPostSqs('0', {}, body, { domain: 'localhost' }).catch(GETERR)).toEqual(
+            '404 NOT FOUND - doPostSqs(hello/0) is local only',
+        );
+        expect2(await controller.doPostSns('0', {}, body, { domain: 'localhost' }).catch(GETERR)).toEqual(
+            '404 NOT FOUND - doPostSns(hello/0) is local only',
+        );
+        expect2(() => calls.splice(0)).toEqual([]);
 
         //* local mode -> `body.service` is honoured (no `service` -> this service).
         await inLocalMode(() => controller.doPostSqs('0', {}, body, {}));
@@ -194,5 +199,131 @@ describe('hello-controller', () => {
             { kind: 'sqs', service: 'other-api' },
             { kind: 'sns', service: self },
         ]);
+    });
+
+    it('should serve dynamo only in local mode, never for reserved `@` ids (C-1)', async () => {
+        //* stub manager: record the storage calls.
+        const calls: string[] = [];
+        const $test = {
+            readFromDynamo: async (id: string) => calls.push(`read:${id}`) && { res: { id } },
+            saveToDynamo: async (id: string, data: any) => calls.push(`save:${id}`) && { res: { id, ...data } },
+        };
+        const controller = new HelloAPIController({ $test } as unknown as HelloService);
+
+        //* Lambda (not local) -> 404 w/o a storage call.
+        expect2(await controller.doGetDynamo('@error', {}, null, {}).catch(GETERR)).toEqual(
+            '404 NOT FOUND - doGetDynamo(hello/@error) is local only',
+        );
+        expect2(await controller.doGetDynamo('x', {}, null, {}).catch(GETERR)).toEqual(
+            '404 NOT FOUND - doGetDynamo(hello/x) is local only',
+        );
+        expect2(await controller.doPostDynamo('x', {}, { name: 'n' }, {}).catch(GETERR)).toEqual(
+            '404 NOT FOUND - doPostDynamo(hello/x) is local only',
+        );
+        expect2(() => calls).toEqual([]);
+
+        //* local mode -> works for a normal id, still 404 for `@` ids.
+        expect2(await inLocalMode(() => controller.doGetDynamo('x', {}, null, {}))).toEqual({ res: { id: 'x' } });
+        expect2(await inLocalMode(() => controller.doPostDynamo('x', {}, { name: 'n' }, {}))).toEqual({
+            res: { id: 'x', name: 'n' },
+        });
+        expect2(await inLocalMode(() => controller.doGetDynamo('@error', {}, null, {})).catch(GETERR)).toEqual(
+            '404 NOT FOUND - id:@error is reserved',
+        );
+        expect2(await inLocalMode(() => controller.doPostDynamo('@error', {}, {}, {})).catch(GETERR)).toEqual(
+            '404 NOT FOUND - id:@error is reserved',
+        );
+        expect2(() => calls).toEqual(['read:x', 'save:x']);
+    });
+
+    it('should give 404 on `GET /hello/@error/dynamo` via http w/o a storage read (C-1)', async () => {
+        //* the default controller's service: spy on its storage.
+        const read = jest.spyOn($defService.$test.storage, 'read');
+        const res1 = await request(app).get(`/hello/${encodeURIComponent('@error')}/dynamo`);
+        const res2 = await request(app).get(`/hello/x/dynamo`);
+        expect2(() => [res1.status, res2.status]).toEqual([404, 404]);
+        expect2(() => res1.text.includes('meta$')).toEqual(false);
+        expect2(() => read.mock.calls.length).toEqual(0);
+    });
+
+    it('should reject a reserved `@` id on the channel and slack routes', async () => {
+        const controller = new HelloAPIController({ $slack: {} } as unknown as HelloService);
+        expect2(await controller.doGetChannel('@error', {}, undefined, {}).catch(GETERR)).toEqual(
+            '404 NOT FOUND - id:@error is reserved',
+        );
+        expect2(await controller.doPostChannel('@x', {}, { name: 'x' }, {}).catch(GETERR)).toEqual(
+            '404 NOT FOUND - id:@x is reserved',
+        );
+        expect2(await controller.doPostSlack('@x', {}, { text: 'x' }, {}).catch(GETERR)).toEqual(
+            '404 NOT FOUND - id:@x is reserved',
+        );
+    });
+
+    it('should validate endpoint host and rules when saving a channel (H-1, L-2)', async () => {
+        const saved: any[] = [];
+        const $slack = {
+            default: async (id: string) => ({ channel: id }),
+            $channel: { save: async (id: string, model: any) => saved.push(model) && model },
+        };
+        const controller = new HelloAPIController({ $slack } as unknown as HelloService);
+        expect2(
+            await controller.doPostChannel('c1', {}, { endpoint: 'https://evil.example.net/x' }, {}).catch(GETERR),
+        ).toEqual('400 INVALID ENDPOINT - host not allowed @doPostChannel(hello/c1)');
+        expect2(
+            await controller.doPostChannel('c1', {}, { endpoint: 'http://example.com/x' }, {}).catch(GETERR),
+        ).toEqual('400 INVALID ENDPOINT - host not allowed @doPostChannel(hello/c1)');
+        expect2(await controller.doPostChannel('c1', {}, { rules: [{ pattern: '/(/' }] }, {}).catch(GETERR)).toEqual(
+            '400 INVALID RULE - rules[0].pattern is not a valid regex @doPostChannel(hello/c1)',
+        );
+        expect2(() => saved).toEqual([]);
+
+        //* clearing the endpoint (`''`) is allowed.
+        expect2(await controller.doPostChannel('c1', {}, { endpoint: '' }, {})).toEqual({
+            channel: 'c1',
+            endpoint: '',
+        });
+    });
+
+    it('should accept the stored host of the same channel when `CHANNEL_ENDPOINT_HOSTS` is unset (H-1)', async () => {
+        delete process.env[CHANNEL_ENDPOINT_HOSTS];
+        const saved: any[] = [];
+        const stored: { [id: string]: any } = { c1: { endpoint: 'https://chat.example.net/old?channelId=C1' } };
+        const $slack = {
+            channel: async (id: string) => stored[id] || null,
+            default: async (id: string) => ({ channel: id, ...stored[id] }),
+            $channel: { save: async (id: string, model: any) => saved.push(model) && model },
+        };
+        const controller = new HelloAPIController({ $slack } as unknown as HelloService);
+        //* same host as stored -> ok (an operator updates rules/token of an existing chatic channel).
+        const ok = await controller.doPostChannel(
+            'c1',
+            {},
+            { endpoint: 'https://chat.example.net/new?channelId=C2', token: 'tk-0001' },
+            {},
+        );
+        expect2(() => ok).toEqual({ channel: 'c1', endpoint: 'https://chat', token: '****0001' });
+        //* other host, or no stored channel -> 400.
+        expect2(
+            await controller.doPostChannel('c1', {}, { endpoint: 'https://other.example.net/x' }, {}).catch(GETERR),
+        ).toEqual('400 INVALID ENDPOINT - host not allowed @doPostChannel(hello/c1)');
+        expect2(
+            await controller.doPostChannel('c2', {}, { endpoint: 'https://chat.example.net/x' }, {}).catch(GETERR),
+        ).toEqual('400 INVALID ENDPOINT - host not allowed @doPostChannel(hello/c2)');
+        expect2(() => saved.length).toEqual(1);
+    });
+
+    it('should cap the demo buffer (100 items, name <= 200 chars) (L-3)', async () => {
+        const controller = new HelloAPIController({} as unknown as HelloService);
+        //* a long name is cut to 200 chars.
+        const one = await controller.doPost('subscribe', {}, { name: 'x'.repeat(500) }, {});
+        expect2(() => one.name.length).toEqual(200);
+        //* many posts keep at most 100 items (the oldest go first).
+        for (let i = 0; i < 150; i++) await controller.doPost('subscribe', {}, { name: `n${i}` }, {});
+        const { list } = await controller.doList('', {}, null, {});
+        expect2(() => list.length).toEqual(100);
+        expect2(() => list[list.length - 1].name).toEqual('n149');
+        //* put keeps the cap on `name`, and only takes `name`.
+        const put = await controller.doPut('0', {}, { name: 'y'.repeat(300), big: 'z' }, {});
+        expect2(() => [put.name.length, put.big]).toEqual([200, undefined]);
     });
 });

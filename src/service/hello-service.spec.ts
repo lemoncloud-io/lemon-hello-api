@@ -5,6 +5,7 @@
  *
  * @author      Steve Jung <steve@lemoncloud.io>
  * @date        2024-11-27 initial version with `lemon-core#3.2.10`
+ * @date        2026-10-30 security review: the opt-in E2E expects 404 for `dynamo`/`sqs`/`sns` (local only now).
  *
  * @copyright (C) lemoncloud.io 2024 - All Rights Reserved. (https://eureka.codes)
  */
@@ -186,61 +187,24 @@ describe('model-manager in service', () => {
         if (!sigConfig) return;
         const proxy = createSigV4Proxy(name, endpoint, sigConfig);
 
-        //* STEP 1: DynamoDB에 "원본" 데이터 Save → 검증 (POST /hello/<id>/dynamo)
+        //* security review C-1, H-2 (2026-10-30): `dynamo`, `sqs`, `sns` are local only -> the deployed API answers 404.
+        //* (the old E2E saved/read DynamoDB and sent protocol messages via SQS/SNS; it runs only in local mode now.)
         const id = '100001';
-        const initialData = { name: 'original' };
-        const expected = {
-            _id: 'TT:test:100001',
-            id: '100001',
-            name: 'original',
-            ns: 'TT',
-            type: 'test',
-        };
-
-        const resSave: any = await proxy.doProxy('POST', 'hello', `${id}/dynamo`, undefined, initialData);
-        // 응답 예시: { res: { _id: '100001', name: 'original' } }
-        expect2(resSave.res, '!createdAt,!deletedAt,!updatedAt').toEqual(expected);
-
-        //* STEP 2: DynamoDB에서 방금 저장한 값 Read → 검증 (GET /hello/<id>/dynamo)
-        const resRead1: any = await proxy.doProxy('GET', 'hello', `${id}/dynamo`);
-        expect2(resRead1.res, '!createdAt,!deletedAt,!updatedAt').toEqual(expected);
-
-        //* STEP 3: SQS로 "dynamo 업데이트" 메시지 발행 (POST /hello/<id>/sqs)
-        //    body: { service, stage, type, mode, id, cmd, body: { name: 'from-sqs' } }
-        const payload = {
-            service: 'lemon-hello-api',
-            stage: 'dev',
-            type: 'hello',
-            mode: 'POST',
-            id,
-            cmd: 'dynamo',
-            body: { name: 'from-sqs' },
-        };
-
-        const resSqs: any = await proxy.doProxy('POST', 'hello', `${id}/sqs`, undefined, payload);
-        // 반환 예시: { messageId: 'abcdef-...' }
-
-        //* STEP 4: SQS 구독자가 메시지를 받아서 Dynamo 업데이트 처리될 때까지 잠시 대기
-        await new Promise(r => setTimeout(r, 5000));
-
-        //* STEP 5: DynamoDB에서 "SQS를 통해 업데이트된 값" Read → 검증
-        const resRead2: any = await proxy.doProxy('GET', 'hello', `${id}/dynamo`);
-        expect2(resRead2.res, '!createdAt,!deletedAt,!updatedAt').toEqual({ ...expected, name: 'from-sqs' });
-
-        //* STEP 6: SNS로 "dynamo 업데이트" 메시지 발행 (POST /hello/<id>/sns)
-        //    body: { target, subject, payload: { service, stage, type, mode, id, cmd, body: { name: 'from-sns' } } }
-
-        const resSns: any = await proxy.doProxy('POST', 'hello', `${id}/sns`, undefined, {
-            ...payload,
-            body: { name: 'from-sns' },
-        });
-        // 반환 예시: { messageId: 'uvwxyz-...' }
-
-        //* STEP 7: SNS 구독자가 메시지를 받아서 Dynamo 업데이트 처리될 때까지 잠시 대기
-        await new Promise(r => setTimeout(r, 5000));
-
-        //* STEP 8: DynamoDB에서 "SNS를 통해 업데이트된 값" 최종 Read → 검증 (GET /hello/<id>/dynamo)
-        const resRead3: any = await proxy.doProxy('GET', 'hello', `${id}/dynamo`);
-        expect2(resRead3.res, '!createdAt,!deletedAt,!updatedAt').toEqual({ ...expected, name: 'from-sns' });
+        const payload = { service: 'lemon-hello-api', stage: 'dev', type: 'hello', mode: 'POST', id, cmd: 'dynamo' };
+        const calls: [string, string, any][] = [
+            ['POST', `${id}/dynamo`, { name: 'original' }],
+            ['GET', `${id}/dynamo`, undefined],
+            ['GET', `${encodeURIComponent('@error')}/dynamo`, undefined],
+            ['POST', `${id}/sqs`, payload],
+            ['POST', `${id}/sns`, payload],
+        ];
+        for (const [mode, path, body] of calls) {
+            //* the error text of the proxy carries the status.
+            const res = await proxy.doProxy(mode as any, 'hello', path, undefined, body).then(
+                () => 'OK',
+                e => GETERR(e),
+            );
+            expect2(() => `${mode} ${path} ${`${res}`.includes('404') ? 404 : res}`).toEqual(`${mode} ${path} 404`);
+        }
     });
 });
