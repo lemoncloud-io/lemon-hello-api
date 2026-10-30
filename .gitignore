@@ -2,7 +2,7 @@
 .serverless
 .serverless/
 dist/
-sample/
+# sample/
 
 # Logs
 logs
