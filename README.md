@@ -41,6 +41,8 @@ lemon-core 서비스는 처리하지 않은 예외를 SNS로 보낸다. 이 서�
 | `src/service/hello-model.ts` | `TestModel`과 필드 목록 `$FIELD` | 개발자 |
 | `docs/lambda-tools.md` | Lambda 도구(lemon-core `lemon-*` 명령)의 이 서비스 사용법 | 개발자 |
 | `scripts/deepmerge-safe/` | 개발 전용 `deepmerge` 대체본(`overrides`, jest 29의 `jest-config`용). 고친 판이 나오면 지운다. | 거의 안 고침 |
+| `pack.config.json` | `lemon-lambda-pack` 설정(소스 허용 목록, 런타임 경로, `handler.lambda`) | 개발자 |
+| `deploy.config.example.json` | `lemon-lambda-deploy` `code` 모드 예시. 값은 모두 자리표시자다. 실제 설정은 `.artifacts/`(git 무시)에 둔다. | 개발자 |
 | `data/` | 더미 데이터(`dummy-table.yml`). Lambda 패키지에 들어간다. | 개발자 |
 | `sample/` | SNS 메시지 예시(`error-1.json`, `slack-1.json`) | 참고용 |
 | `swagger/documentation.yml` | `serverless-aws-documentation` 설정 | 개발자 |
@@ -133,6 +135,8 @@ flowchart LR
 | `npm run lambda:invoke -- ...` | 배포된 함수 호출(`lemon-lambda-invoke`) | [docs/lambda-tools.md](docs/lambda-tools.md) |
 | `npm run lambda:logs -- ...` | CloudWatch 로그 조회·추적(`lemon-lambda-logs`) | [docs/lambda-tools.md](docs/lambda-tools.md). SNS 알림 로그는 `--fn backend` |
 | `npm run perf:lambda -- ...` | 반복 호출, cold/warm 시간 요약(`lemon-lambda-perf`) | [docs/lambda-tools.md](docs/lambda-tools.md) |
+| `npm run lambda:pack` | Docker에서 검증된 Lambda ZIP을 `.artifacts/lambda/`에 만든다(`lemon-lambda-pack`) | AWS 불필요. lemon-core 5.0.15에서는 `scripts/deepmerge-safe/`(link) 때문에 snapshot 단계에서 멈춘다. 다음 lemon-core 판(PR #263)에서 풀린다. [docs/lambda-tools.md](docs/lambda-tools.md#pack-and-offline-deploy-plan) |
+| `npm run lambda:deploy -- --config <파일> --artifact <pack 출력>` | pack 출력 검증 + 오프라인 배포 계획 출력(`lemon-lambda-deploy`, `code` 모드) | AWS 불필요. `--apply`는 쓰지 않는다(스택 이관 전). 배포는 계속 `sls deploy` |
 
 **사람만 실행** — 에이전트는 사람이 명시적으로 시킬 때만 돌린다.
 
@@ -196,7 +200,7 @@ npm run perf:lambda -- --stage dev --profile <name> --runs 5            # cold/w
 
 | 문서 | 내용 |
 |---|---|
-| [docs/lambda-tools.md](docs/lambda-tools.md) | Lambda 도구(lemon-core `lemon-*` 명령) 스크립트 표, 함수·계정, AWS SDK 패키지, 예시. 옵션·안전 규칙·exit code는 lemon-core `docs/v5/B19-bin-tools.md` |
+| [docs/lambda-tools.md](docs/lambda-tools.md) | Lambda 도구(lemon-core `lemon-*` 명령) 스크립트 표, 함수·계정, AWS SDK 패키지, pack·오프라인 배포 계획, 예시. 옵션·안전 규칙·exit code는 lemon-core `docs/v5/B19-bin-tools.md`·`B19-bin-deploy.md` |
 | [docs/security-review-2026-10-30.md](docs/security-review-2026-10-30.md) | 2026-10-30 보안 리뷰 결과표, 이번 변경, 검증, 남은 결정 |
 | [lemon-core HOW_TO_UPGRADE_V5.md](https://github.com/lemoncloud-io/lemon-core/blob/v5/HOW_TO_UPGRADE_V5.md) | lemon-core v4 → v5 업그레이드 가이드 |
 
