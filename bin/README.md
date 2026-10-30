@@ -21,9 +21,9 @@ Nothing here reads `env/*.yml`, `env/config.js`, or the `custom:` / `environment
 
 ## Accounts
 
-This service is deployed per AWS account (`package.json` scripts `*.ssocio`, `*.muzly`, `*.epyt`, and the default profile).
+This service has two deploy profiles in `package.json`: the default `none` (scripts `deploy`, `info`, `logs`, …; no `--aws-profile`, so the shell's AWS credentials pick the account) and `lemon` (scripts `*.lemon`, with `--aws-profile lemon`).
 Pick the account with `--profile <name>` and check the identity line (account last 4 digits) before you read anything.
-Stages per account follow the `package.json` scripts: `ssocio` has `prod` only; `muzly` and `epyt` have `dev` and `prod` (`info.epyt` and `logs.epyt` read `prod`). A `prod` target needs `--stage prod --confirm-stage prod`, and only on an explicit human instruction.
+Stages per profile follow the `package.json` scripts: both profiles have `dev` and `prod` deploy scripts (`deploy` / `deploy.prod`, `deploy.lemon` / `deploy.lemon.prod`); `pack.lemon`, `info.lemon`, `logs.lemon`, and `remove.lemon` use `dev`. A `prod` target needs `--stage prod --confirm-stage prod`, and only on an explicit human instruction.
 
 ## Credentials
 
