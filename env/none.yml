@@ -6,14 +6,16 @@ default_env: &default_env
   LS: 0                   # log silence.
   LC: 1                   # line-coloring
   TS: 1                   # time-stamp in line
-  NAME: 'none'           # profile name.
+  NAME: ''                # profile name to load AWS credentials. (default: default)
 
 #-----------------------------------
 # local development configuration.
 local:
   <<: *default_env
   STAGE: 'local'
-  MY_DYNAMO_TABLE: LemonHelloTest
+
+  # For Dev.
+  MY_DYNAMO_TABLE: lemon-hello-table-dev
 
 #-----------------------------------
 # development server
