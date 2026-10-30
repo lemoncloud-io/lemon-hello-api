@@ -7,11 +7,9 @@
  *
  *
  * @author      Steve Jung <steve@lemoncloud.io>
- * @date        2019-07-31 support ECMA 2016.
- * @date        2019-08-09 optimized with `lemon-core#1.1.1`
- * @date        2019-11-26 optimized with `lemon-core#2.0.0`
+ * @date        2024-11-27 initial version with `lemon-core#3.2.10`
  *
- * @copyright (C) lemoncloud.io 2019 - All Rights Reserved.
+ * @copyright (C) lemoncloud.io 2024 - All Rights Reserved. (https://eureka.codes)
  */
 /** ********************************************************************************************************************
  *  Loading API Services.
@@ -36,23 +34,17 @@ export const express = () => {
  *  MAIN RUNNER
  *
  * # Usage
- * - required to run `$ npm run express.lemon`
+ * - required to run `$ npm run express`
  *
  * ```sh
  * # run express in local
  * $ node .
- * # batch run from 1 to 2 page.
- * $ node . -ep forms -sid lemon -cmd run -opt 'dummy=1' -ipp 1 -page 1~2
  * ```
+ *
+ * - v5: the `lemon-core/dist/exec-cli` batch runner is gone (HOW_TO_UPGRADE_V5 § 12).
  ** *******************************************************************************************************************/
 if (typeof require !== 'undefined' && require.main === module) {
-    // console.log('! argv =', process.argv);
-    if (process.argv.length <= 2) {
-        const $express = express();
-        $express.createServer();
-    } else {
-        process.env['LS'] = '1';
-        const run = require('lemon-core/dist/exec-cli').default;
-        run();
-    }
+    //* start the local express server.
+    const $express = express();
+    $express.createServer();
 }

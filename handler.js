@@ -5,11 +5,9 @@
  *
  *
  * @author      Steve Jung <steve@lemoncloud.io>
- * @date        2019-07-31 cleanup for ts support.
- * @date        2019-08-09 optimized with `lemon-core#1.0.1`
- * @date        2019-11-26 optimized with `lemon-core#2.0.0`
+ * @date        2024-11-27 initial version with `lemon-core#3.2.10`
  *
- * @copyright (C) lemoncloud.io 2019 - All Rights Reserved.
+ * @copyright (C) lemoncloud.io 2024 - All Rights Reserved. (https://eureka.codes)
  */
 /** ********************************************************************************************************************
  *  Serverless API Handlers
@@ -22,16 +20,16 @@ require('source-map-support').install();
 // COMMON ENVIRONMENT LOADER
 const $env = process.env || {}; // NOTE! - serverless may initialize environment with opt.
 
-//* SETUP TIMEZONE @2019/03/14
+//*SETUP TIMEZONE @2019/03/14
 $env.TZ = 'Asia/Seoul';
 
-//* TARGET SOURCE FOLDER.
+//*TARGET SOURCE FOLDER.
 const SRC = $env.SRC || './dist/';
 
-//* load configuration.
+//*load configuration.
 const engine = require(`${SRC}index`).engine;
 const $engine = engine();
-if (!$engine || !$engine.lambda) throw new Error('.lambda is required! check lemon-core#2.0.0.');
+if (!$engine || !$engine.lambda) throw new Error('.lambda (function) is required! check lemon-core#3.2.10');
 
-//* export as serverless handlers.
+//*export as serverless handlers.
 module.exports = $engine;
