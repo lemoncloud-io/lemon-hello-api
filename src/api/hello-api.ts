@@ -6,13 +6,17 @@
  * @author      Steve Jung <steve@lemoncloud.io>
  * @date        2024-11-27 initial version with `lemon-core#3.2.10`
  * @date        2026-10-30 v5: local-only branches use `$U.isLocalMode()` (lemon-core#5.0.11).
+ * @date        2026-10-30 security review: dynamo/sqs/sns local only (C-1, H-2), no `@` ids, channel masking and
+ *                          allow-list (H-1), rule check (L-2), demo buffer cap (L-3), masked logs (L-4).
  *
  * @copyright (C) lemoncloud.io 2024 - All Rights Reserved. (https://eureka.codes)
  */
 import $cores, { $T, $U, _log, _inf, NextHandler, NextContext } from 'lemon-core';
 import { GeneralWEBController, $info, onlyDefined, LambdaALBHandler } from 'lemon-core';
 import { Model, TestModel } from '../service/hello-model';
-import $service, { HelloService } from '../service/hello-service';
+import $service, { HelloService, assertLocalOnly, assertNotReserved } from '../service/hello-service';
+import { assertEndpoint, endpointStatus, isEnforced, validateRules } from '../service/channel-policy';
+import { maskSecrets } from '../service/log-mask';
 import { SlackResponse, SlackMessage, SlackTransformer } from '../service/slack-service';
 import { PostSnsBody, PostSqsBody, MessagePayload } from '../service/views';
 import { RouteRule, SlackChannelModel } from '../service/slack-types';
@@ -20,6 +24,14 @@ const NS = $U.NS('hello', 'yellow'); // NAMESPACE TO BE PRINTED.
 
 //* v5: ALB handler type from the root class (no `lemon-core/dist/*` deep import; removed in v6).
 type ALBNextHandler = Parameters<LambdaALBHandler['setHandler']>[0];
+
+/** L-3: max items of the demo buffer (`BUFF`). the oldest goes first when full. */
+export const BUFF_MAX = 100;
+/** L-3: max length of `name` in the demo buffer. a longer one is cut. */
+export const NAME_MAX = 200;
+
+//* clean and cut a `name` of the demo buffer. (clears new-lines)
+const asName = (name: any): string => $T.S2(name, '').trim().substring(0, NAME_MAX);
 
 /**
  * class: `HelloAPIController`
@@ -94,7 +106,9 @@ export class HelloAPIController extends GeneralWEBController {
         _log(NS, `${errScope} ...`);
         const node = await this.doGet(id, null, null, context);
         const i = $U.N(node?.id, 0);
-        this.BUFF[i] = { ...node, ...body };
+        //* L-3: take only `name` (cut), never other fields of the body.
+        const name = body?.name !== undefined ? asName(body?.name) : node?.name;
+        this.BUFF[i] = { ...node, name };
         return this.modelAsView(this.BUFF[i]);
     };
 
@@ -114,7 +128,9 @@ export class HelloAPIController extends GeneralWEBController {
         const i = $U.N(id, 0);
         if (i) throw new Error(`@id[${id}] (number) is invalid - ${errScope}`);
         if (!body?.name) throw new Error(`.name (string) is required - ${errScope}`);
-        const name = $T.S2(body?.name, '').trim(); // clear new-lines
+        const name = asName(body?.name); // clear new-lines, cut to `NAME_MAX`.
+        //* L-3: keep at most `BUFF_MAX` items (drop the oldest first).
+        while (this.BUFF.length >= BUFF_MAX) this.BUFF.shift();
         const model: TestModel = { name, _id: `${this.BUFF.length}` };
         this.BUFF.push(model);
 
@@ -166,6 +182,7 @@ export class HelloAPIController extends GeneralWEBController {
         const errScope = `doPostSlack(${this.type()}/${id ?? ''})`;
         _inf(NS, `${errScope} ...`);
         id = id === '0' ? null : $T.S2(id);
+        assertNotReserved(id); //* C-1: `@<id>` is a reserved record, never a channel name.
 
         // STEP.0 validate parameters.
         // const direct = !!$U.N(param?.direct, param?.direct === '' ? 1 : 0);
@@ -174,7 +191,7 @@ export class HelloAPIController extends GeneralWEBController {
         // STEP.2 prepare slack message via body.
         const message: SlackMessage =
             body && typeof body === 'object' ? body : { text: `${body}`, attachments: undefined };
-        _log(NS, '> message :=', $U.json(message));
+        _log(NS, '> message :=', $U.json(maskSecrets(message)));
 
         // STEP.3 send to slack. (no channel falls back to `body.channel`, then `public` so its routing rules apply)
         const channel: string = id ? id : $T.S2(message?.channel).trim() || 'public';
@@ -195,7 +212,7 @@ export class HelloAPIController extends GeneralWEBController {
     public doPostEvent: NextHandler = async (id, $param, $body, $ctx) => {
         const errScope = `doPostEvent(${this.type()}/${id ?? ''})`;
         _inf(NS, `${errScope} ...`);
-        $body && _log(NS, `> body[${id}]=`, typeof $body, $U.json($body));
+        $body && _log(NS, `> body[${id}]=`, typeof $body, $U.json(maskSecrets($body))); //* L-4: reporters' headers.
 
         //* extract the 1st key name of object.
         const _1st = (o: any) => {
@@ -215,7 +232,7 @@ export class HelloAPIController extends GeneralWEBController {
 
         //* transform to slack-body..
         const { channel, body } = await Promise.resolve(transform({ subject, data: $body, context: $ctx }));
-        _log(NS, `> body[<${typeof channel}>${channel}] =`, $U.json(body));
+        _log(NS, `> body[<${typeof channel}>${channel}] =`, $U.json(maskSecrets(body)));
 
         // send to slack.
         return this.doPostSlack(channel, { ...$param }, body, $ctx);
@@ -236,21 +253,45 @@ export class HelloAPIController extends GeneralWEBController {
         _log(NS, `${errScope} ...`);
         id = id === '0' ? null : $T.S2(id);
         if (!id) throw new Error(`@id (string) is required - ${errScope}`);
-        _log(NS, `> body =`, $U.json(body));
+        assertNotReserved(id); //* C-1: `@<id>` is a reserved record.
+        _log(NS, `> body =`, $U.json(maskSecrets(body))); //* L-4: no `token`/full `endpoint` in logs.
         const isGet = !body;
 
         // mask a secret token for non-local response. ex) 'super-secret' -> '****cret'
         const _maskToken = (token: string): string => (token ? `****${token.slice(-4)}` : token);
 
         const isLocal = $U.isLocalMode(); //* v5 B5: runtime local mode, never from `context.domain`.
+        //* H-1: the response view outside local mode — `endpoint` 12 chars, `token` last 4, never a raw `meta$`.
+        const _asView = (model: SlackChannelModel & { meta$?: any }) =>
+            model && typeof model === 'object' && !isLocal
+                ? onlyDefined({
+                      ...model,
+                      meta$: undefined,
+                      endpoint: typeof model.endpoint === 'string' ? model.endpoint.substring(0, 12) : model.endpoint,
+                      token: _maskToken(model.token),
+                  })
+                : model;
+
+        //* H-1, L-2: check the write before any write (a read of the stored endpoint only if the env is unset).
+        if (!isGet) {
+            const endpoint = body?.endpoint !== undefined ? $T.S2(body?.endpoint) : undefined;
+            //* unset env: the host already stored for this channel is accepted (read only when needed).
+            if (endpoint && endpointStatus(endpoint) !== 'allowed') {
+                const $stored = isEnforced() ? null : await this.service.$slack.channel(id);
+                assertEndpoint(endpoint, errScope, $stored?.endpoint);
+            }
+            //* the same `pattern` value as the model below (`$T.S2`). a non-array `rules` is ignored as before.
+            if (Array.isArray(body?.rules))
+                validateRules(
+                    (body.rules as any[]).map(N => ({ pattern: $T.S2(N?.pattern) })),
+                    errScope,
+                );
+        }
+
         const $org = await this.service.$slack.default(id);
         if (isGet) {
             if (!$org) throw new Error(`404 NOT FOUND - no channel data @${errScope}`);
-            return {
-                ...$org,
-                endpoint: !isLocal ? $org?.endpoint?.substring(0, 12) : $org?.endpoint,
-                token: !isLocal ? _maskToken($org?.token) : $org?.token,
-            };
+            return _asView($org);
         }
 
         // build model to update.
@@ -274,7 +315,8 @@ export class HelloAPIController extends GeneralWEBController {
         });
 
         // update (or delete)
-        return await this.service.$slack.$channel.save(id, body?.channel === '' ? null : { ...$org, ...model });
+        const $saved = await this.service.$slack.$channel.save(id, body?.channel === '' ? null : { ...$org, ...model });
+        return _asView($saved);
     };
 
     /**
@@ -316,7 +358,9 @@ export class HelloAPIController extends GeneralWEBController {
     public doPostDynamo: NextHandler = async (id, param, body, context) => {
         const errScope = `doPostDynamo(${this.type()}/${id ?? ''})`;
         _log(NS, `${errScope} ...`);
+        assertLocalOnly(errScope); //* C-1: test route, not served in Lambda.
         if (!id) throw new Error(`@id (string) is required - ${errScope}`);
+        assertNotReserved(id); //* C-1: never a reserved record (`@<channel>`).
         return this.service.$test.saveToDynamo(id, body);
     };
 
@@ -329,6 +373,8 @@ export class HelloAPIController extends GeneralWEBController {
     public doGetDynamo: NextHandler = async (id, param, body, context) => {
         const errScope = `doGetDynamo(${this.type()}/${id ?? ''})`;
         _log(NS, `${errScope} ...`);
+        assertLocalOnly(errScope); //* C-1: test route, not served in Lambda (it returned the raw record).
+        assertNotReserved(id); //* C-1: never a reserved record (`@<channel>` has `meta$` w/ `token`).
         return this.service.$test.readFromDynamo(id);
     };
 
@@ -347,9 +393,10 @@ export class HelloAPIController extends GeneralWEBController {
     public doPostSqs: NextHandler = async (id, param, body: PostSqsBody, context) => {
         const errScope = `doPostSqs(${this.type()}/${id ?? ''})`;
         _log(NS, `${errScope} ...`);
-        const isLocal = $U.isLocalMode(); //* v5 B5: runtime local mode, never from `context.domain`.
-        // WARN! `service` is ONLY possible in local environment.
-        const service = isLocal ? $T.S2(body?.service, $info().service) : $info().service;
+        //* H-2: a protocol self-test; hello drops protocol messages in Lambda, so serve it in local mode only.
+        assertLocalOnly(errScope);
+        // `service` is honoured (local mode only, see above).
+        const service = $T.S2(body?.service, $info().service);
         const $body = $T.onlyDefined<MessagePayload>({
             ...(body as MessagePayload),
             service,
@@ -366,9 +413,10 @@ export class HelloAPIController extends GeneralWEBController {
     public doPostSns: NextHandler = async (id, param, body: PostSnsBody, context) => {
         const errScope = `doPostSns(${this.type()}/${id ?? ''})`;
         _log(NS, `${errScope} ...`);
-        const isLocal = $U.isLocalMode(); //* v5 B5: runtime local mode, never from `context.domain`.
-        // WARN! `service` is ONLY possible in local environment.
-        const service = isLocal ? $T.S2(body?.service, $info().service) : $info().service;
+        //* H-2: a protocol self-test; hello drops protocol messages in Lambda, so serve it in local mode only.
+        assertLocalOnly(errScope);
+        // `service` is honoured (local mode only, see above).
+        const service = $T.S2(body?.service, $info().service);
         const $body = $T.onlyDefined<MessagePayload>({
             ...(body as MessagePayload),
             service,

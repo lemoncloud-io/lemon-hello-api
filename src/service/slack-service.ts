@@ -6,17 +6,24 @@
  * @author      Steve Jung <steve@lemoncloud.io>
  * @date        2025-10-24 optimized from `lemon-hello-api`
  * @date        2026-10-30 v5: `postMessage()` uses WHATWG `URL` (Node 24).
+ * @date        2026-10-30 security review: endpoint allow-list at send (H-1), `postMessage()` timeout (L-1),
+ *                          regex rules compiled once (L-2), masked log lines (L-4).
  *
  * @copyright (C) lemoncloud.io 2025 - All Rights Reserved. (https://eureka.codes)
  */
 import $cores, { $info, $T, $U, _err, _inf, _log, GETERR, NextContext } from 'lemon-core';
 import { AWSS3Service, SlackAttachment, SlackPostBody } from 'lemon-core';
 import { asChaticPayload } from './chatic-transformer';
+import { checkSendEndpoint, compilePattern, isRegexForm } from './channel-policy';
+import { maskEndpoint, maskSecrets } from './log-mask';
 import { RouteRule, SlackChannelModel, SlackResponse, StorageSupportable } from './slack-types';
 const NS = $U.NS('slack', 'blue'); // NAMESPACE TO BE PRINTED.
 
 //* import dependency
 import https from 'https';
+
+/** timeout of one outbound POST (ms). the request is aborted after this. (L-1) */
+export const POST_TIMEOUT_MS = 10000;
 
 /**
  * interface: `SlackMessage`
@@ -139,6 +146,13 @@ export class SlackService {
     public hello = () => `slack-service:${this.$channel?.hello() ?? '-'}`;
 
     /**
+     * log one warn line (overridable in tests).
+     */
+    public logWarn = (line: string): void => {
+        _inf(NS, line);
+    };
+
+    /**
      * get channel by id
      * - can return null if not found.
      */
@@ -236,13 +250,12 @@ export class SlackService {
     /** test if pattern is matched */
     public match(body: SlackMessage, rule: RouteRule): SlackMessage {
         const pattern = `${rule?.pattern || ''}`;
+        //* L-2: `/.../` is compiled once (no `g` flag); an invalid pattern is no match (never throws).
+        const re = isRegexForm(pattern) ? compilePattern(pattern) : null;
         const _test = (text: string): boolean => {
             if (!pattern || typeof text !== 'string') return false;
             if (pattern.startsWith('#')) return text.includes(pattern);
-            if (pattern.startsWith('/') && pattern.endsWith('/')) {
-                const re = new RegExp(pattern.substring(1, pattern.length - 2), 'g');
-                return re.test(text);
-            }
+            if (isRegexForm(pattern)) return re ? re.test(text) : false;
             //* default is word matching
             if (text.includes(pattern)) return true;
             return text.split(' ').includes(pattern);
@@ -297,7 +310,7 @@ export class SlackService {
         const endpoint = target?.endpoint || parent?.endpoint;
         const channel = target?.channel ?? parent?.channel;
         const stereo = target?.stereo || parent?.stereo;
-        _log(NS, `>> parent =`, $U.json({ ...parent, token: parent?.token ? '***' : undefined }));
+        _log(NS, `>> parent =`, $U.json(maskSecrets(parent)));
 
         const asBool = (a: any): boolean => (a === undefined || a === null || a === '' ? undefined : !!a);
         const isDirect = !direct && endpoint?.startsWith('https://hooks.slack.com');
@@ -318,8 +331,13 @@ export class SlackService {
         });
 
         //* send via endpoint.
-        const _send = async () => {
+        const _send = async (): Promise<SlackResponse> => {
             if (endpoint?.startsWith('http://') || endpoint?.startsWith('https://')) {
+                //* H-1: `https:` to an allowed host (stored or config endpoint). unset env: an unlisted host warns only.
+                if (!checkSendEndpoint(endpoint, this.logWarn)) {
+                    _inf(NS, `WARN! endpoint not allowed:${channel ?? ''} =`, maskEndpoint(endpoint));
+                    return { statusCode: 400, statusMessage: `400 INVALID ENDPOINT - host not allowed @${errScope}` };
+                }
                 //* `chatic` channel - convert to `{content, stereo, token}`. (target channel is in the endpoint url)
                 const isChatic = stereo === 'chatic';
                 const token = target?.token || parent?.token;
@@ -455,9 +473,10 @@ export class SlackService {
      * @param {*} message       Object or String.
      */
     public postMessage = async (endpoint: string, message: any): Promise<SlackResponse> => {
-        _log(NS, `> postMessage = endpoint[${endpoint}]`);
+        //* L-4: never log the full endpoint or the `token` in the body.
+        _log(NS, `> postMessage = endpoint[${maskEndpoint(endpoint)}]`);
         message = typeof message == 'object' && message instanceof Promise ? await message : message;
-        _log(NS, `> message = `, $U.json(message));
+        _log(NS, `> message = `, $U.json(maskSecrets(message)));
 
         //* v5: WHATWG `URL` instead of `url.parse()` (Node 24 runtime warning DEP0169). same host/path/query.
         const target = new URL(endpoint);
@@ -470,6 +489,13 @@ export class SlackService {
             },
         };
         return new Promise((resolve, reject) => {
+            //* L-1: settle once; the timer aborts a hanging request after `POST_TIMEOUT_MS`.
+            let timer: ReturnType<typeof setTimeout> = null;
+            const done = (fn: () => void) => {
+                if (timer) clearTimeout(timer);
+                timer = null;
+                fn();
+            };
             const postReq = https.request(target, options, res => {
                 const chunks: any[] = [];
                 res.setEncoding('utf8');
@@ -479,15 +505,18 @@ export class SlackService {
                     const statusCode = res.statusCode || 200;
                     const statusMessage = res.statusMessage || '';
                     const result = { body, statusCode, statusMessage };
-                    _log(NS, `> post(${endpoint}) =`, $U.json(result));
-                    if (statusCode < 400) {
-                        resolve(result);
-                    } else {
-                        reject(result);
-                    }
+                    _log(NS, `> post(${maskEndpoint(endpoint)}) =`, $U.json(result));
+                    done(() => (statusCode < 400 ? resolve(result) : reject(result)));
                 });
                 return res;
             });
+            //* a request error (dns, connect, abort) rejects. (no unhandled `error` event)
+            postReq.on('error', e => done(() => reject(e)));
+            timer = setTimeout(() => {
+                const e = new Error(`504 TIMEOUT - postMessage(${target.hostname}) after ${POST_TIMEOUT_MS} ms`);
+                done(() => reject(e));
+                postReq.destroy(e);
+            }, POST_TIMEOUT_MS);
             postReq.write(body);
             postReq.end();
         });
@@ -590,7 +619,7 @@ export class SlackService {
                 ? subject.split('/', 2)[1]
                 : (data.data && data.data.channel) || data.channel;
             const message = data.message || data.error;
-            _log(`>> data[${channel || ''}] =`, $U.json(data));
+            _log(`>> data[${channel || ''}] =`, $U.json(maskSecrets(data)));
             const service = (() => {
                 const str = $T.S(data?.service);
                 return str.indexOf('://') > 0 ? str.substring(str.indexOf('://') + 3) : str;
@@ -606,7 +635,7 @@ export class SlackService {
             _log(NS, `buildCommonSlackForm(${subject})...`);
             const $data: PayloadOfReportSlack = { ...data };
             subject = `${subject || ''}`;
-            _log(NS, `> raw-data[${subject}] =`, $U.json($data));
+            _log(NS, `> raw-data[${subject}] =`, $U.json(maskSecrets($data)));
 
             //* extract data.
             const channel = subject.indexOf('/') > 0 ? subject.split('/', 2)[1] : $data.channel || '';

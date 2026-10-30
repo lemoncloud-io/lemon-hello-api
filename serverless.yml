@@ -126,10 +126,11 @@ provider:
   # Lambda function's IAM Role here
   iamRoleStatements:
     # Basic setting without VPC configuration.
+    #NOTE - security review L-5 (2026-10-30): no `lambda:InvokeFunction` (hello drops protocol messages, so no
+    #       `callback` execute; a JWT `api/<svc>` check via protocol fails safe as `valid: false`), and
+    #       no `SNS:GetEndpointAttributes` (not used).
     - Effect: Allow
       Action:
-        - lambda:InvokeFunction
-        - SNS:GetEndpointAttributes
         - cloudwatch:PutMetricData
       Resource: "*"
     # IAM/STS - For VPC, Use static ARN Name for 'lemon-hello-api'.
