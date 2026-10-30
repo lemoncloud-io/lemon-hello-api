@@ -1,6 +1,8 @@
 # lemon-hello-api
 
-플랫폼 서비스의 에러 리포트와 슬랙 알림을 받아 슬랙과 DoU(chatic) 채팅방으로 보내는 서비스다.
+LemonCloud의 hello 서비스 대표 샘플이다.
+플랫폼 서비스의 에러 리포트와 슬랙 알림을 받아 슬랙과 DoU(chatic) 채팅방으로 보낸다(에러 리포트 SNS → 슬랙·chatic 팬아웃).
+형제 저장소 `eureka-hello-api`와 코드가 같다. 다른 것은 이름(`lemon-hello-api`)과 배포 프로필뿐이다.
 lemon-core 서비스는 처리하지 않은 예외를 SNS로 보낸다. 이 서비스의 `backend` 함수가 그 SNS를 받는다.
 채널 설정의 `rules`가 목적지를 고른다. 채널의 `stereo`가 보내는 형식을 정한다.
 이 README는 사람과 AI 에이전트의 진입점이다. 경로·명령·검증·금지 사항을 실제 파일 기준으로 적는다.
@@ -14,7 +16,9 @@ lemon-core 서비스는 처리하지 않은 예외를 SNS로 보낸다. 이 서�
 | 테스트 | jest `^27.5.1` + ts-jest (`src/**/*.spec.ts`). `bin/`은 `node:test` |
 | 프레임워크 | `lemon-core` `^5.0.11`. lemon-model은 lemon-core를 통해 온다. 루트 이름은 `lemon-core`, 그 밖의 이름은 `lemon-core/model`에서 가져온다. 이 서비스는 `lemon-model`을 직접 선언하지 않는다. 로컬 express는 `lemon-devkit` `^0.2.2`가 만든다. |
 | AWS SDK | v3 (`@aws-sdk/*` `^3.1159.0`). lemon-core v5의 선택 peer 8개를 `dependencies`에 둔다. DynamoDB 클라이언트는 lemon-core에 들어 있다. |
-| 배포 | Serverless Framework v3 (`frameworkVersion: "3"`) → AWS Lambda. 계정마다 배포한다(기본, `ssocio`, `muzly`, `epyt`). |
+| 배포 | Serverless Framework v3 (`frameworkVersion: "3"`) → AWS Lambda. 배포 프로필은 둘이다: 기본(`none`)과 `lemon`. |
+| 리소스 이름 | 기존 스택의 이름을 유지한다: 테이블 `LemonHelloTest`(local·dev)·`LemonHelloTable`(prod), 큐 `lemon-hello-sqs(-dev)`, 토픽 `lemon-hello-sns(-dev)`, 버킷 기본값 `lemon-hello-www`. 정의는 `serverless.yml` `custom:`에 있다. |
+| 형제 저장소 | `eureka-hello-api`. 코드가 같다. 이름·배포 프로필만 다르다. |
 | 브랜치 | 기본 브랜치 `develop`. v5 라인은 `v5` 브랜치에 있다. |
 | 패키지 버전 | `package.json` `version` |
 
@@ -37,7 +41,7 @@ lemon-core 서비스는 처리하지 않은 예외를 SNS로 보낸다. 이 서�
 | `sample/` | SNS 메시지 예시(`error-1.json`, `slack-1.json`) | 참고용 |
 | `swagger/documentation.yml` | `serverless-aws-documentation` 설정 | 개발자 |
 | `serverless.yml` | 함수·이벤트·IAM·리소스(DynamoDB 테이블, SQS 큐, SNS 토픽, S3 버킷) | 사람 검토 필수 |
-| `env/` | 프로필·스테이지 설정 | **에이전트는 열지 않음** |
+| `env/` | 프로필 설정(`none.yml`, `lemon.yml`)과 `config.js`·`settings.yml` | **에이전트는 열지 않음** |
 
 ## 요청 흐름
 
@@ -117,16 +121,15 @@ flowchart LR
 
 **사람만 실행** — 에이전트는 사람이 명시적으로 시킬 때만 돌린다.
 
-| 계정 | 명령 | 스테이지 |
+| 프로필 | 명령 | 스테이지 |
 |---|---|---|
 | 기본(`profile=none`) | `deploy` / `deploy.prod`, `pack` / `pack.prod`, `info` / `info.prod`, `logs` / `logs.prod`, `remove` / `remove.prod` | dev / prod |
-| `ssocio` | `deploy.ssocio`, `pack.ssocio`, `info.ssocio`, `logs.ssocio`, `remove.ssocio` | prod |
-| `muzly` | `deploy.muzly` / `deploy.muzly.prod`, `pack.muzly`, `info.muzly`, `logs.muzly`, `remove.muzly` | dev / prod |
-| `epyt` | `deploy.epyt` / `deploy.epyt.prod`, `pack.epyt`, `info.epyt`, `logs.epyt`, `remove.epyt` | dev / prod. `pack`·`info`·`logs`·`remove`는 prod다. |
+| `lemon`(`profile=lemon`) | `deploy.lemon` / `deploy.lemon.prod`, `pack.lemon`, `info.lemon`, `logs.lemon`, `remove.lemon` | dev / prod. `pack`·`info`·`logs`·`remove`는 dev다. |
 
-- `ssocio`·`muzly`·`epyt` 명령은 `--aws-profile`을 명시한다. 다른 계정으로 잘못 가지 않게 하려는 것이다.
-- `remove.*`는 스택을 지운다. 채널 설정이 든 DynamoDB 테이블도 지워진다.
-- `logs.*`는 `logs.ssocio`만 `-f backend`다. 나머지는 `-f lambda`다. SNS로 들어온 알림은 `backend` 함수 로그에 있다.
+- `lemon` 명령은 `--aws-profile lemon`을 명시한다. 다른 계정으로 잘못 가지 않게 하려는 것이다. `pack.lemon`(`sls package`)에는 이 옵션이 없다.
+- 기본 명령은 `--aws-profile`을 쓰지 않는다. 셸의 AWS 자격 증명(`AWS_PROFILE` 등)이 대상 계정을 정한다. 돌리기 전에 대상 계정을 확인한다.
+- `remove`·`remove.*`는 스택을 지운다. 채널 설정이 든 DynamoDB 테이블도 지워진다.
+- `logs`·`logs.*`는 모두 `-f lambda`다. SNS로 들어온 알림은 `backend` 함수 로그에 있다. `npm run lambda:logs -- --fn backend`로 본다.
 
 ## 작업 검증
 
@@ -185,6 +188,6 @@ npm run perf:lambda -- --stage dev --profile <name> --runs 5            # cold/w
 
 | Version   | Description
 |--         |--
-| (v5)      | migrated to `lemon-core@^5.0.11` and Node 24 (`v5` branch). local mode by `LOCAL_MODE=1`, `bin/` harness.
+| (v5)      | migrated to `lemon-core@^5.0.11` and Node 24 (`v5` branch). local mode by `LOCAL_MODE=1`, `bin/` harness. LemonCloud sample: same code as `eureka-hello-api`, deploy profiles `none` and `lemon`.
 | 0.24.511  | optimized with `lemon-core#3.2.15`.
 | 0.24.1127 | initial version with `lemon-core#3.2.10`.
