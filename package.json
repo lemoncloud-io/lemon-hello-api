@@ -10,6 +10,7 @@
         "build": "npm run build-ts",
         "build-ts": "ttsc",
         "watch-ts": "ttsc -w",
+        "fields:types": "lemon-fields-types",
         "nodemon": "nodemon --config nodemon-main.json",
         "!start": "------ run in local development (note! ts-node seems not watch '.js' file) ----",
         "*start": "nodemon --watch src --exec ts-node --compiler typescript -r tsconfig-paths/register src/index.ts",
