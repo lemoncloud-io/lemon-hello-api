@@ -39,11 +39,10 @@
         "!remove": "----- sls remove by profile -----",
         "remove": "sls remove --param='profile=none' --stage dev",
         "remove.prod": "sls remove --param='profile=none' --stage prod",
-        "!lambda": "------- invoke the deployed lambda / watch its logs (bin/) -----",
-        "lambda:invoke": "node bin/lambda-invoke.mjs",
-        "lambda:logs": "node bin/lambda-logs.mjs",
-        "lambda:test": "node --test bin/lib/*.test.mjs",
-        "perf:lambda": "node bin/perf-lambda.mjs",
+        "!lambda": "------- invoke the deployed lambda / watch its logs (lemon-core `lemon-*` commands, HOW_TO_UPGRADE_V5 § 19) -----",
+        "lambda:invoke": "lemon-lambda-invoke",
+        "lambda:logs": "lemon-lambda-logs",
+        "perf:lambda": "lemon-lambda-perf",
         "!test": "------- run self-test with jest -----",
         "test": "LS=1 jest --config=jest.config.json",
         "test:watch": "ENV=none LS=1 jest --config=jest.config.json --watchAll",
@@ -60,7 +59,7 @@
         "@aws-sdk/client-sqs": "^3.1159.0",
         "@aws-sdk/client-sts": "^3.1159.0",
         "@aws-sdk/credential-providers": "^3.1159.0",
-        "lemon-core": "^5.0.11"
+        "lemon-core": "^5.0.15"
     },
     "devDependencies": {
         "@aws-sdk/client-cloudwatch-logs": "^3.1159.0",
@@ -77,7 +76,6 @@
         "eslint-config-prettier": "^8.5.0",
         "eslint-plugin-prettier": "^4.0.0",
         "jest": "^27.5.1",
-        "lemon-devkit": "^0.2.2",
         "lint-staged": "^13.1.0",
         "nodemon": "^2.0.20",
         "prettier": "^2.6.2",
