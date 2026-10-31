@@ -1,0 +1,14 @@
+{
+    "schemaVersion": 1,
+    "project": "lemon-hello-api",
+    "stage": "dev",
+    "stack": "lemon-hello-api-dev",
+    "migrationRepo": "../../eureka-deploy-api",
+    "migrationRevision": "66d1e91a60a240765d44dedfdab73a92af6abd51",
+    "region": "ap-northeast-2",
+    "account": "123456789012",
+    "profile": "replace-profile",
+    "endpoint": "https://example123.execute-api.ap-northeast-2.amazonaws.com/dev",
+    "artifactBucket": "123456789012-deploy-artifacts",
+    "timeoutMs": 1800000
+}

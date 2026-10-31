@@ -8,30 +8,36 @@ Options, output, credentials, safety rules (strict options, stage guard, identit
 
 -   `HOW_TO_UPGRADE_V5.md` § 19 — script mapping and optional peers.
 -   `docs/v5/B19-bin-tools.md` — `lemon-lambda-invoke`, `lemon-lambda-logs`, `lemon-lambda-perf`.
--   `docs/v5/B19-bin-deploy.md` — `lemon-lambda-pack`, `lemon-lambda-deploy`.
+-   `docs/v5/B19-bin-deploy.md` — `lemon-lambda-pack`, `lemon-lambda-deploy`, `lemon-lambda-migrate`, `lemon-lambda-deploy-dev`.
+-   `docs/v5/B24-migration-targets.md` — the reviewed migration targets (this service's dev stack is one since 5.0.16).
 
 This page keeps only what is specific to this service. The tests of the tools are in lemon-core (`npm test` there); this repository has no `lambda:test` script any more.
 
 ## Scripts
 
-| Script          | lemon-core bin        | Does                                                                            |
-| --------------- | --------------------- | ------------------------------------------------------------------------------- |
-| `lambda:invoke` | `lemon-lambda-invoke` | Invoke the deployed function with a generated event (web, cron, SNS, SQS, raw). |
-| `lambda:logs`   | `lemon-lambda-logs`   | Print or follow the function's CloudWatch logs.                                 |
-| `perf:lambda`   | `lemon-lambda-perf`   | Invoke several times and summarize cold / warm timings.                         |
-| `lambda:pack`   | `lemon-lambda-pack`   | Build a verified Lambda ZIP in Docker into `.artifacts/lambda/`. No AWS access. |
-| `lambda:deploy` | `lemon-lambda-deploy` | Verify a pack output and print the offline deploy plan. No AWS access.          |
+| Script              | lemon-core bin            | Does                                                                                               |
+| ------------------- | ------------------------- | -------------------------------------------------------------------------------------------------- |
+| `lambda:invoke`     | `lemon-lambda-invoke`     | Invoke the deployed function with a generated event (web, cron, SNS, SQS, raw).                    |
+| `lambda:logs`       | `lemon-lambda-logs`       | Print or follow the function's CloudWatch logs.                                                    |
+| `perf:lambda`       | `lemon-lambda-perf`       | Invoke several times and summarize cold / warm timings.                                            |
+| `lambda:pack`       | `lemon-lambda-pack`       | Build a verified Lambda ZIP in Docker into `.artifacts/lambda/`. No AWS access.                    |
+| `lambda:deploy`     | `lemon-lambda-deploy`     | Verify a pack output and print the offline deploy plan. No AWS access.                             |
+| `lambda:migrate`    | `lemon-lambda-migrate`    | Move the dev Serverless stack to the deploy service, one phase at a time. Offline plan by default. |
+| `lambda:deploy:dev` | `lemon-lambda-deploy-dev` | Dev-only `code` deploy of a pack to the migrated dev functions. Offline plan by default.           |
 
-This service is deployed with the Serverless Framework (`sls` scripts in `package.json`). `sls deploy` stays the deploy path.
-`lambda:pack` and `lambda:deploy` only prepare and plan a deploy. See [Pack and offline deploy plan](#pack-and-offline-deploy-plan).
+The Serverless Framework is not installed and no script calls `sls` ([serverless.md](serverless.md)).
+dev moves to the deploy service with `lambda:migrate`, then takes code with `lambda:deploy:dev` ([lambda-migrate.md](lambda-migrate.md)).
+prod is still a Serverless stack and is not a reviewed migration target yet.
 
 ## What the tools read in this repository
 
 The tools run from the service root (`process.cwd()`; npm runs a script from the package root). They also take `--cwd <dir>`.
 
 -   `serverless.yml`: only the top-level `service:` line (`lemon-hello-api`). The function name is `<service>-<stage>-<fn>` and the log group `/aws/lambda/<name>`.
+-   `lambda:migrate` and `lambda:deploy:dev` read only their `--config` file (and the pack output). The migration reads the live stack, not `serverless.yml`.
 
 Nothing reads `env/*.yml`, `env/config.js`, or the `custom:` / `environment:` blocks of `serverless.yml`.
+The local server (lemon-core `buildExpress()`, not a `lemon-*` tool) reads the `http` events of `serverless.yml` for its routes. That is why the file stays.
 
 lemon-core is a runtime dependency, so its `bin/` files are part of `node_modules/lemon-core` in the deployed package. They are never loaded by `handler.js`.
 
@@ -44,9 +50,10 @@ lemon-core is a runtime dependency, so its `bin/` files are part of `node_module
 
 ## Accounts and stages
 
-The `package.json` deploy scripts use two deploy profiles: the default one (`deploy`, `info`, `logs`, … — no `--aws-profile`, so the shell's AWS credentials pick the account) and the `*.lemon` scripts (with an explicit `--aws-profile`).
+This repository has no deploy-profile scripts any more. Without `--profile`, the shell's AWS credentials pick the account.
 Pick the account with `--profile <name>` and check the identity line (account last 4 digits) before you read anything.
-Both profiles have `dev` and `prod` deploy scripts. A `prod` target needs `--stage prod --confirm-stage prod`, and only on an explicit human instruction.
+A `prod` target needs `--stage prod --confirm-stage prod`, and only on an explicit human instruction.
+The migration and dev deploy configs carry their own `account` and `profile`; the wrapper checks the account with STS before it runs a phase.
 
 ## AWS SDK packages
 
@@ -61,13 +68,15 @@ The AWS SDK packages are optional peers of lemon-core. `--help` and `--dry` need
 
 ## Pack and offline deploy plan
 
-The two tools prepare a deploy through the deploy service. They do not deploy this service.
+The two tools prepare a deploy through the deploy service. Without `--apply` they deploy nothing.
 
-| File                         | Committed | Does                                                                                            |
-| ---------------------------- | --------- | ----------------------------------------------------------------------------------------------- |
-| `pack.config.json`           | yes       | Pack adapter: source allowlist, runtime paths (`handler.js`, `dist`, `data`), `handler.lambda`. |
-| `deploy.config.example.json` | yes       | `code` mode example. Every value is a placeholder.                                              |
-| `.artifacts/`                | no        | Pack outputs and real deploy configs. Git-ignored.                                              |
+| File                             | Committed | Does                                                                                            |
+| -------------------------------- | --------- | ----------------------------------------------------------------------------------------------- |
+| `pack.config.json`               | yes       | Pack adapter: source allowlist, runtime paths (`handler.js`, `dist`, `data`), `handler.lambda`. |
+| `deploy.config.example.json`     | yes       | `code` mode example. Every value is a placeholder.                                              |
+| `deploy.dev.config.example.json` | yes       | `lambda:deploy:dev` example (`code`, dev, with `profile`). Every value is a placeholder.        |
+| `migration.config.example.json`  | yes       | `lambda:migrate` example (hello dev target, pinned revision). Every value is a placeholder.     |
+| `.artifacts/`                    | no        | Pack outputs and real deploy configs. Git-ignored.                                              |
 
 ### Pack
 
@@ -79,17 +88,8 @@ npm run lambda:pack -- --output .artifacts/lambda/release-candidate
 -   Needs Node 24, Git and Docker. Needs no AWS credentials. Uploads nothing.
 -   It builds from a source snapshot in the Lambda image (`npm ci`, `npm run build`, production install). Host `node_modules` and `dist` are not used.
 -   The output directory has `lambda.zip` and `manifest.json`. Check `unzip -t` and the manifest `validation` block before you use the ZIP.
-
-**Known stop with lemon-core 5.0.15.** The pack stops at the snapshot step:
-
-```text
-[pack] failed: Local dependency is unsupported: node_modules/deepmerge
-```
-
-lemon-core 5.0.15 refuses every local (`file:` / `link`) package in `package-lock.json`, dev packages too. The dev-only stand-in `scripts/deepmerge-safe/` is such a link.
-The fix is in lemon-core PR #263 (v5 B24-b): the pack accepts a link whose target is inside the repository and dev-only, and keeps it out of the ZIP.
-Measured with that fix (2026-10-31, this branch): ZIP 11,328,872 bytes, 9,213 files, no `deepmerge` and no `scripts/` in the ZIP, handler export smoke passed.
-After the next lemon-core release, raise `lemon-core` here to that version. The stand-in stays, so `npm audit` stays at 12.
+-   The dev-only stand-in `scripts/deepmerge-safe/` is a local link in `package-lock.json`. Since lemon-core 5.0.16 (v5 B24-b) the pack accepts such an in-repository, dev-only link and keeps it out of the ZIP.
+-   Measured 2026-10-31 with lemon-core 5.0.16: ZIP 11,332,408 bytes, 9,213 files, `unzip -t` clean, no `deepmerge` and no `scripts/` in the ZIP, `validation` all passed (lockfile, runtime, ZIP round trip, handler export smoke).
 
 ### Offline deploy plan
 
@@ -102,15 +102,15 @@ npm run lambda:deploy -- --config .artifacts/deploy.code.json --artifact .artifa
 
 -   Without `--apply` it verifies the manifest, the ZIP hash and the file list, and prints the plan JSON. It reads no credentials and calls no network. Exit 0 = plan printed. Exit 2 = invalid local input.
 -   `code` mode only: it updates the code of the two existing functions `lambda` and `backend`. It does not change environment, runtime, handler, memory, timeout, IAM, routes or event wiring.
--   Do not use `bootstrap` mode for this service. Bootstrap converges its own table, queue, topic and routes with template defaults. It does not know this service's table name, www bucket or S3 bucket policy. It would create new resources next to the existing stack.
+-   Do not use `bootstrap` mode for this service. Bootstrap converges its own table, queue, topic and routes with template defaults. It does not know this service's table name, www bucket or S3 bucket policy. It would create new resources next to the existing stack and split the data between two tables.
 -   Checked 2026-10-31 with a copy of the example (placeholders unchanged) and the probe ZIP: exit 0, `execution: offline-plan`, `handler.lambda`, steps end with `existing functions ×2 code + verification`.
 
-### `--apply` is not usable yet
+### `--apply` only after the migration
 
-Do not pass `--apply`. In `code` mode the preflight needs both functions to exist **and** to be managed by the deploy service.
-The functions are owned by the Serverless stack `lemon-hello-api-<stage>` now. The stack must be migrated to the deploy service first.
-The migration tool (`lemon-lambda-migrate`) does not support this service until a lemon-core release adds it to its reviewed target list. This repository has no migration scripts.
-Until then, deploy with `sls deploy` (`npm run deploy*`, human only).
+In `code` mode the preflight needs both functions to exist **and** to be managed by the deploy service.
+The functions are owned by the Serverless stack `lemon-hello-api-<stage>` until that stack is migrated.
+For dev: run the `lambda:migrate` phases through `verify` first, then deploy with `lambda:deploy:dev` ([lambda-migrate.md](lambda-migrate.md)). `--apply` is human only.
+For prod: no migration target yet. Do not pass `--apply`. See [serverless.md](serverless.md).
 
 ## Examples
 
