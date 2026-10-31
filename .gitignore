@@ -2,6 +2,9 @@
 .serverless
 .serverless/
 dist/
+
+# lemon-core pack output and real deploy configs (lemon-lambda-pack / lemon-lambda-deploy)
+.artifacts/
 # sample/
 
 # Logs

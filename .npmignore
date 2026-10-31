@@ -46,9 +46,6 @@ npm-debug.log
 .babelrc
 babel.config.js
 
-# codecov
-.codecov.yml
-
 # docker
 dbuild
 dexec
