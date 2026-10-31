@@ -3,7 +3,7 @@
 .serverless/
 dist/
 
-# lemon-core pack output and real deploy configs (lemon-lambda-pack / lemon-lambda-deploy)
+# lemon-core pack output and real deploy / migration configs (lemon-lambda-pack / -deploy / -deploy-dev / -migrate)
 .artifacts/
 # sample/
 
