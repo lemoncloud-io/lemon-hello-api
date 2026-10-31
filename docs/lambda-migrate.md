@@ -100,18 +100,18 @@ npm run lambda:deploy:dev -- --config .artifacts/deploy.dev.json --artifact .art
 
 The owner authorized the dev migration. It ran once with lemon-core 5.0.16 and the pinned migration checkout, with `"runtime": "nodejs24.x"` in the private config. The live functions were on `nodejs18.x`, and `lambda:deploy:dev` needs Node 24.
 
-| Phase | Result | Time |
-| --- | --- | --- |
-| `plan` | ready, 0 warnings | 29 s |
-| `retain` | ready, 8 kept resources set to `Retain` | 34 s |
-| `remove` | ready, stack removed | 64 s |
-| `tag` | ready | 5 s |
-| `apply` | ready, old code on Node 24 | 130 s |
-| `verify` | exit 3 (`unknown`), see below | 7 s |
-| `lambda:deploy:dev --apply` | completed, new code from `2bb6162` | 21 s |
+| Phase                       | Result                                  | Time  |
+| --------------------------- | --------------------------------------- | ----- |
+| `plan`                      | ready, 0 warnings                       | 29 s  |
+| `retain`                    | ready, 8 kept resources set to `Retain` | 34 s  |
+| `remove`                    | ready, stack removed                    | 64 s  |
+| `tag`                       | ready                                   | 5 s   |
+| `apply`                     | ready, old code on Node 24              | 130 s |
+| `verify`                    | exit 3 (`unknown`), see below           | 7 s   |
+| `lambda:deploy:dev --apply` | completed, new code from `2bb6162`      | 21 s  |
 
-- **API downtime** was at most about 3 min 40 s, from the start of `remove` to the end of `apply`. Before and after, `GET /`, `/hello` and `/hello/0` returned 200 and an unknown path 403.
-- **Why `verify` stopped.** The verifier compares log groups including retention. The old 7-day retention was set outside the stack template by a Serverless plugin, so the plan had no value and `apply` used the deploy service default of 14 days. Both log groups therefore showed a difference. Every other row was the same: table identity and item count, queue, topic subscriptions, bucket, function code, handler, memory, timeout and environment keys, API identity, routes and stage, and the HTTP probes.
-- **Expected difference:** runtime `nodejs18.x` → `nodejs24.x`, excluded from the comparison by design.
-- **State left as is.** The private receipt is `unknown` and its lock remains, as this tool requires. Do not delete the lock or rerun a phase. `lambda:deploy:dev` was run without `--migration-receipt`.
-- **After the new code:** both functions run Node 24 / x86_64 with the new ZIP and the same 20 environment keys. The function logs had no error lines in the next 10 minutes. The API banner reports `lemon-core/5.0.16`.
+-   **API downtime** was at most about 3 min 40 s, from the start of `remove` to the end of `apply`. Before and after, `GET /`, `/hello` and `/hello/0` returned 200 and an unknown path 403.
+-   **Why `verify` stopped.** The verifier compares log groups including retention. The old 7-day retention was set outside the stack template by a Serverless plugin, so the plan had no value and `apply` used the deploy service default of 14 days. Both log groups therefore showed a difference. Every other row was the same: table identity and item count, queue, topic subscriptions, bucket, function code, handler, memory, timeout and environment keys, API identity, routes and stage, and the HTTP probes.
+-   **Expected difference:** runtime `nodejs18.x` → `nodejs24.x`, excluded from the comparison by design.
+-   **State left as is.** The private receipt is `unknown` and its lock remains, as this tool requires. Do not delete the lock or rerun a phase. `lambda:deploy:dev` was run without `--migration-receipt`.
+-   **After the new code:** both functions run Node 24 / x86_64 with the new ZIP and the same 20 environment keys. The function logs had no error lines in the next 10 minutes. The API banner reports `lemon-core/5.0.16`.
