@@ -2,7 +2,10 @@
 .serverless
 .serverless/
 dist/
-sample/
+
+# lemon-core pack output and real deploy / migration configs (lemon-lambda-pack / -deploy / -deploy-dev / -migrate)
+.artifacts/
+# sample/
 
 # Logs
 logs

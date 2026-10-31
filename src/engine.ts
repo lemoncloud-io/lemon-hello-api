@@ -4,33 +4,35 @@
  *
  *
  * @author      Steve Jung <steve@lemoncloud.io>
- * @date        2019-07-31 support ECMA 2016.
- * @date        2019-08-09 optimized with `lemon-core#1.0.1`
- * @date        2019-11-26 optimized with `lemon-core#2.0.0`
- * @date        2019-12-03 optimized with `lemon-core#2.0.3`
+ * @date        2024-11-27 initial version with `lemon-core#3.2.10`
+ * @date        2026-10-30 v5: `PERF: > loaded engine` line for `perf:lambda` (lemon-core#5.0.11).
+ * @date        2026-10-30 security review H-2: SNS/SQS drop protocol messages outside local mode (`protocol-guard`).
  *
- * @copyright (C) lemoncloud.io 2019 - All Rights Reserved.
+ * @copyright (C) lemoncloud.io 2024 - All Rights Reserved. (https://eureka.codes)
  */
 /** ********************************************************************************************************************
  *  start initializing `lemon-core` with global `process.env`
  ** ********************************************************************************************************************/
-import { $engine } from 'lemon-core';
+import $cores, { $engine, $U, _inf } from 'lemon-core';
 
-// Loading API Service of NextDecoder
-import $hello from './api/hello-api'; //NOTE - it should be `NextDecoder`.
-import $channel from './api/channel-api'; //NOTE - it should be `NextDecoder`.
-
-//* import the default core services.
-import $core from 'lemon-core';
-
-const $lambda = $core.cores.lambda;
+//* Lambda handlers
+const $lambda = $cores.cores.lambda;
 const $web = $lambda.web;
 const $sqs = $lambda.sqs;
 const $sns = $lambda.sns;
+const $alb = $lambda.alb;
+
+//* Loading API Service of NextDecoder
+import $hello from './api/hello-api'; //NOTE - it should be `NextDecoder`.
+import { guardProtocol } from './service/protocol-guard';
+
+//* H-2: hello takes no protocol message (`x-protocol-service`) on SNS/SQS in Lambda (confused deputy via `callback`).
+guardProtocol($sns, 'sns');
+guardProtocol($sqs, 'sqs');
 
 //* register sub handlers, and listeners.
 $web.addController($hello);
-$web.addController($channel);
+$alb.setHandler($hello.doALB);
 
 //* export with used cores services.
 export { $lambda, $web, $sqs, $sns };
@@ -38,3 +40,6 @@ export { $lambda, $web, $sqs, $sns };
 //* default exports with lambda handler.
 const lambda = async (e: any, c: any) => $lambda.lambda.handle(e, c);
 export default { $engine, lambda };
+
+//* PERF: process time when this engine module (lemon-core + all controllers) has loaded; silent with `LS=1`.
+_inf($U.NS('PERF', 'cyan'), '>', 'loaded engine', `${(process.uptime() * 1000).toFixed(1)} ms`);
