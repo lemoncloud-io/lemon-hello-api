@@ -143,6 +143,7 @@ flowchart LR
 | `npm run lambda:deploy -- --config <파일> --artifact <pack 출력>` | pack 출력 검증 + 오프라인 배포 계획 출력(`lemon-lambda-deploy`, `code` 모드) | AWS 불필요. `bootstrap` 모드는 쓰지 않는다. dev 배포는 아래 `lambda:deploy:dev` |
 | `npm run lambda:migrate -- <단계> --config .artifacts/migration.dev.json` | dev Serverless 스택을 배포 서비스로 이관한다(`lemon-lambda-migrate`). 기본은 오프라인 계획 | `--execute`는 사람만. [docs/lambda-migrate.md](docs/lambda-migrate.md) |
 | `npm run lambda:deploy:dev -- --config .artifacts/deploy.dev.json --artifact <pack 출력>` | 이관된 dev 함수 2개에 코드만 배포한다(`lemon-lambda-deploy-dev`). 기본은 오프라인 계획 | `--apply`는 사람만, 이관 `verify` 뒤에만. [docs/lambda-migrate.md](docs/lambda-migrate.md) |
+| `npm run deploy:dev` | 수동 dev 배포 한 명령(`bin/deploy-dev.sh`): pack → 계획 → `--apply` → GET `/`·`/hello/0` 확인. 기본 `dev`·`profile=lemon`, 설정 `.artifacts/deploy.code.dev.json`이 없으면 비공개 레인 폴더에서 한 번 만든다 | 사람만. `--plan-only`면 계획까지만. [docs/lambda-tools.md](docs/lambda-tools.md#manual-dev-deploy-bindeploy-devsh) |
 
 **사람만 실행** — 에이전트는 사람이 명시적으로 시킬 때만 돌린다.
 
@@ -150,6 +151,7 @@ flowchart LR
 |---|---|
 | `lambda:migrate -- <단계> ... --execute` (단계마다 따로) | dev |
 | `lambda:deploy:dev -- ... --apply` | dev (이관 `verify` 뒤) |
+| `deploy:dev` (`--plan-only` 없이) | dev (이관 `verify` 뒤) |
 | `lambda:deploy -- ... --apply` | 쓰지 않는다(dev는 `lambda:deploy:dev`, prod는 이관 대상 아님) |
 | prod 배포(`npx serverless@3.40.0`, [docs/serverless.md](docs/serverless.md)) | prod (이관 전) |
 
