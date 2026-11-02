@@ -71,3 +71,10 @@ typings/
 
 # next.js build output
 .next
+
+# pack publish staging (lemon-lambda-pack --publish)
+.pack-publish-*/
+# git worktrees of this repo (agent lanes)
+.wt/
+# nested git worktrees of this repo (agent lanes)
+.claude/worktrees/
