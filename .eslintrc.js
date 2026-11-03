@@ -23,7 +23,24 @@ module.exports = {
                         message: 'v5 B16: import from lemon-core (root) or lemon-core/model instead.',
                     },
                 ],
-                patterns: ['lemon-model/*'],
+                patterns: [
+                    {
+                        group: ['lemon-model/*'],
+                    },
+                    //* v5 B36: the `src/cores/` copy is removed; its names come from lemon-core (root).
+                    {
+                        group: [
+                            './cores',
+                            './cores/*',
+                            '../cores',
+                            '../cores/*',
+                            '**/cores',
+                            '**/cores/*',
+                            '!lemon-core/**',
+                        ], //* lemon-core's own deep paths stay allowed (HOW_TO § 3)
+                        message: 'v5 B36: the cores copy is removed - import from lemon-core (root) instead.',
+                    },
+                ],
             },
         ],
     },
