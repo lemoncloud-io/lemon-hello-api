@@ -160,6 +160,7 @@ flowchart LR
 - 2026-10-30 보안 변경은 `CHANNEL_ENDPOINT_HOSTS` 없이 배포해도 chatic 발송을 멈추지 않는다. 목록 밖 호스트는 경고 로그만 남긴다.
 - 배포 뒤 env 파일의 스테이지마다 `CHANNEL_ENDPOINT_HOSTS`(chatic 웹훅 호스트, 쉼표 목록)를 넣기를 권한다. 넣으면 허용 목록이 전체 적용된다. 먼저 `backend` 로그에서 `endpoint host not in allow-list` 줄의 호스트를 확인한다.
 - 이관 `remove` 단계(`--confirm-stack lemon-hello-api-dev`)는 Serverless 스택을 지운다. API 중단이 시작된다. 앞 단계 `retain`이 테이블·버킷을 남긴다. `retain` 없이 스택을 지우면 채널 설정이 든 DynamoDB 테이블도 지워진다.
+- prod를 v5로 옮기기 전에 채널 설정을 옮긴다. v5는 옛 `channel`·`target` 레코드를 읽지 않고 `@<채널>` 레코드만 읽는다. `SLACK_<채널>` env 폴백이 그동안 발송을 잇는다. [docs/lambda-migrate.md](docs/lambda-migrate.md#channel-settings-migration-before-prod)
 - SNS로 들어온 알림은 `backend` 함수 로그에 있다. `npm run lambda:logs -- --fn backend`로 본다.
 
 ## 작업 검증
