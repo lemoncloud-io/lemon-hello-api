@@ -115,3 +115,39 @@ The owner authorized the dev migration. It ran once with lemon-core 5.0.16 and t
 -   **Expected difference:** runtime `nodejs18.x` → `nodejs24.x`, excluded from the comparison by design.
 -   **State left as is.** The private receipt is `unknown` and its lock remains, as this tool requires. Do not delete the lock or rerun a phase. `lambda:deploy:dev` was run without `--migration-receipt`.
 -   **After the new code:** both functions run Node 24 / x86_64 with the new ZIP and the same 20 environment keys. The function logs had no error lines in the next 10 minutes. The API banner reports `lemon-core/5.0.16`.
+
+## Channel settings migration (before prod)
+
+v5 reads channel settings from one place only: the `test` record `@<channel>`, field `meta$` (`SlackChannelModel` in `src/service/slack-types.ts`, read and saved in `src/service/hello-service.ts`).
+The `develop` line kept them in other records: type `channel` (`ChannelModel`, looked up by channel name) and type `target` (`TargetModel`).
+v5 does not read those records, and there is no compatibility reader on purpose. Which old records matter, and their values, need the prod table and an owner decision.
+lemon dev already runs v5 (2026-10-31). The open item is the existing prod table before prod moves to v5.
+
+What still works without a migration:
+
+-   **Endpoint fallback.** `SlackService.default()` uses config `SLACK_<CHANNEL>` when `@<channel>` has no `endpoint`, and every send has `public` as its parent. Keeping `SLACK_<CH>` in the stage's env file keeps delivery going. The env values are the owner's.
+-   **Not covered by the fallback:** `rules`, `useS3`, `stereo` and `token`. Routing rules of an old `channel` record are lost until `@<ch>` is saved.
+-   **Encrypted env values.** The old code KMS-decrypted any `SLACK_*` value that did not start with `http`. lemon-core v5 config decrypts only values that start with `*`. Check the form of the prod values before relying on the fallback.
+
+Steps (human, per channel, `public` first):
+
+1. Read the old `channel` record of the channel from the prod table (fields in the table below). Do not paste values into code, docs, logs or PRs.
+2. Save it as `@<ch>`: `POST /hello/{ch}/channel` (`aws_iam`, README "HTTP 라우트" table) with `endpoint`, `rules`, and `name`/`channel`/`useS3`/`stereo` if set. The write is a merge, so `rules` can come later. `endpoint` must be an allowed host (`hooks.slack.com`, `CHANNEL_ENDPOINT_HOSTS`, or the host already stored for that channel while the env is unset). A save without `endpoint` stores the current `SLACK_<CH>` fallback endpoint as well.
+3. Check with `GET /hello/{ch}/channel`: the response is masked (`endpoint` first 12 chars, `token` last 4). Compare `rules` with the old record.
+4. Remove `SLACK_<CH>` from the env file only after every channel that uses it reads back from `@<ch>`.
+
+Schema map (old `develop` → v5 `@<ch>.meta$`):
+
+| Old (`develop`)                            | v5                                                             | Note                                                                                  |
+| ------------------------------------------ | -------------------------------------------------------------- | ------------------------------------------------------------------------------------- |
+| `channel` record `id`                      | record id `@<ch>`                                              | `meta$.id` is not set by `POST`                                                       |
+| `ChannelModel.channel`                     | `meta$.channel`                                                | same meaning (slack channel to redirect to)                                           |
+| `ChannelModel.name`                        | `meta$.name`                                                   |                                                                                       |
+| `ChannelModel.endpoint`                    | `meta$.endpoint`                                               | allow-list on write                                                                   |
+| `ChannelModel.rules[]` (`RouteRule`)       | `meta$.rules[]` (`RouteRule`)                                  | `pattern`, `copyTo`, `moveTo`, `color` kept; `pattern` 200 chars max and must compile |
+| `RouteRule.forward` (id of a `target`)     | not saved by `POST`                                            | used for routing in neither version                                                   |
+| `ChannelModel.useS3` (number)              | `meta$.useS3` (boolean)                                        | `POST` turns it into a boolean                                                        |
+| `Model.stereo` (any string)                | `meta$.stereo`                                                 | `''`, `slack` or `chatic` only                                                        |
+| (none)                                     | `meta$.token`                                                  | new, for `chatic` channels                                                            |
+| `target` record (`TargetModel`, `id` only) | (none)                                                         | nothing to migrate                                                                    |
+| env `SLACK_<CH>`, then `SLACK_PUBLIC`      | config `SLACK_<CH>`, then `@public` / `SLACK_PUBLIC` as parent | see the fallback above                                                                |
