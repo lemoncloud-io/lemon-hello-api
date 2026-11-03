@@ -3,125 +3,46 @@
  * - common service for `hello`
  *
  *
- * @author      Tyler <tyler@lemoncloud.io>
- * @date        2020-06-10 refactor with api
- * @date        2020-06-23 optimized with lemon-core#2.2.1
  * @author      Steve Jung <steve@lemoncloud.io>
- * @date        2022-09-08 supports database w/ manager
- * @date        2022-09-13 support route by channel's rules.
+ * @date        2024-11-27 initial version with `lemon-core#3.2.10`
+ * @date        2026-10-30 security review C-1: `readFromDynamo()`/`saveToDynamo()` local mode only, no `@` id.
  *
- * @copyright (C) 2020 LemonCloud Co Ltd. - All Rights Reserved.
+ * @copyright (C) lemoncloud.io 2024 - All Rights Reserved. (https://eureka.codes)
  */
-// eslint-disable-next-line @typescript-eslint/no-unused-vars
-import { $U, $T, _log, _inf, _err, $info, loadJsonSync } from 'lemon-core';
-import {
-    APIService,
-    SlackAttachment,
-    AWSKMSService,
-    AWSS3Service,
-    AWSSNSService,
-    SlackPostBody,
-    CoreManager,
-    CoreService,
-    NextContext,
-    NUL404,
-} from 'lemon-core';
-import { CallbackSlackData, CallbackPayload } from '../common/types';
-import { $FIELD, ChannelModel, Model, ModelType, RouteRule, TargetModel, TestModel } from './hello-model';
-
-//* import dependency
-import https from 'https';
-import AWS from 'aws-sdk';
-import url from 'url';
-const NS = $U.NS('HLLS', 'blue'); // NAMESPACE TO BE PRINTED.
+import $cores, { $T, $U, _log, NextContext, $protocol, NUL404 } from 'lemon-core';
+import { CoreManager, CoreService, GeneralItem, AWSS3Service } from 'lemon-core';
+import { $FIELD, Model, ModelType, TestModel } from './hello-model';
+import { MessagePayload } from './types';
+import { SlackService } from './slack-service';
+import { SlackChannelModel, StorageSupportable } from './slack-types';
+const NS = $U.NS('hello', 'blue'); // NAMESPACE TO BE PRINTED.
 
 /**
- * record-data
+ * true if the id is reserved for an internal record. (`@<channel>` holds the channel config w/ `token`)
  */
-export interface RecordData<T = any, U = any> {
-    subject?: string;
-    data?: T;
-    context?: U;
-}
+export const isReservedId = (id: string): boolean => `${id ?? ''}`.startsWith('@');
 
 /**
- * notification-param
+ * throw `404 NOT FOUND` for a reserved id. (404: no report, no hint that the record exists)
  */
-export interface NotificationParam {
-    service?: string;
-    stage?: string;
-    event?: string;
-    type?: string;
-    data?: { accountId?: string; provider?: string };
-}
+export const assertNotReserved = (id: string): void => {
+    if (isReservedId(id)) throw new Error(`404 NOT FOUND - id:${id} is reserved`);
+};
 
 /**
- * bind-param-of-slack
+ * throw `404 NOT FOUND` outside local mode. (C-1: test/debug routes are not served in Lambda)
  */
-export interface BindParamOfSlack {
-    pretext?: string;
-    title?: string;
-    text?: string;
-    fields?: string[];
-    color?: string;
-    username?: string;
-}
-
-/**
- * param-to-slack
- */
-export interface ParamToSlack {
-    channel?: string;
-    body?: SlackPostBody;
-}
-
-/**
- * payload of message from SNS.
- * see `doReportSlack()` in `lemon-core`.
- */
-export interface PayloadOfReportSlack {
-    channel: string;
-    service: string;
-    // eslint-disable-next-line @typescript-eslint/ban-types
-    param: {};
-    body: SlackPostBody;
-    context: {
-        stage: string;
-        apiId: string;
-        resourcePath: string;
-        identity: string;
-        domainPrefix: string;
-    };
-}
-
-export interface PostResponse {
-    body: string;
-    statusCode: number;
-    statusMessage: string;
-}
-
-/**
- * information for fetching random image.
- */
-export interface ImageInfo {
-    type: string;
-    imageUrl: string;
-}
+export const assertLocalOnly = (errScope: string): void => {
+    if (!$U.isLocalMode()) throw new Error(`404 NOT FOUND - ${errScope} is local only`);
+};
 
 /**
  * class: `HelloService`
  * - catch `report-error` via SNS, then save into S3 and post to slack.
  */
 export class HelloService extends CoreService<Model, ModelType> {
-    protected $channels: any = {};
-
-    public readonly $kms: AWSKMSService;
-    public readonly $sns: AWSSNSService;
-    public readonly $s3s: AWSS3Service;
-
     public readonly $test: MyTestManager;
-    public readonly $channel: MyChannelManager;
-    public readonly $target: MyTargetManager;
+    public readonly $slack: SlackService;
 
     /**
      * default constructor w/ optional parameters.
@@ -129,774 +50,43 @@ export class HelloService extends CoreService<Model, ModelType> {
      * @param tableName target table-name, or dummy `.yml` file.
      * @param params optional parameters.
      */
-    public constructor(tableName?: string, params?: { kms?: AWSKMSService; sns?: AWSSNSService; s3?: AWSS3Service }) {
+    public constructor(tableName?: string) {
         super(tableName);
         _log(NS, `HelloService(${this.tableName}, ${this.NS})...`);
-        this.$kms = params?.kms ?? new AWSKMSService();
-        this.$sns = params?.sns ?? new AWSSNSService();
-        this.$s3s = params?.s3 ?? new AWSS3Service();
-
         this.$test = new MyTestManager(this);
-        this.$channel = new MyChannelManager(this);
-        this.$target = new MyTargetManager(this);
+
+        type MyModel = TestModel<SlackChannelModel>;
+        // support s3 to store large message body.
+        const _s3 = (): AWSS3Service => {
+            const EP = $U.env('MY_S3_BUCKET');
+            if (EP) return $cores.cores.aws.s3;
+            return null;
+        };
+        // support for slack data.
+        const _db = (thiz: HelloService) =>
+            new (class MyChannel implements StorageSupportable<SlackChannelModel> {
+                public hello = () => `hello-service-channel-storage`;
+                public async read(id: string): Promise<SlackChannelModel> {
+                    const data = await thiz.$test.retrieve(`@${id}`).catch<MyModel>(NUL404);
+                    if (data?.meta$) return data.meta$;
+                    return null;
+                }
+                public async save(id: string, data?: SlackChannelModel): Promise<SlackChannelModel> {
+                    if (data === null) return (await thiz.$test.delete(`@${id}`, true)) as SlackChannelModel;
+                    const $org = await this.read(id);
+                    const meta$ = { ...$org, ...data };
+                    const result = await thiz.$test.save(`@${id}`, { meta$ });
+                    return result?.meta$;
+                }
+            })();
+        // initialize slack service.
+        this.$slack = new SlackService(_db(this), { $s3s: _s3() });
     }
 
     /**
      * hello.
      */
     public hello = () => `hello-service`;
-
-    /**
-     * POST message to hookUrl.
-     *
-     * @param {*} hookUrl       URL
-     * @param {*} message       Object or String.
-     */
-    public postMessage = async (hookUrl: string, message: any): Promise<PostResponse> => {
-        _log(NS, `> postMessage = hookUrl[${hookUrl}]`);
-        message = typeof message == 'object' && message instanceof Promise ? await message : message;
-        _log(NS, `> message = `, $U.json(message));
-
-        //TODO - improve `url.parse()` due to deprecated.
-        const options: any = url.parse(hookUrl);
-        const body = (typeof message == 'string' ? message : JSON.stringify(message)) || '';
-        options.method = 'POST';
-        options.headers = {
-            'Content-Type': 'application/json; charset=utf-8',
-            'Content-Length': Buffer.byteLength(body),
-        };
-        return new Promise((resolve, reject) => {
-            const postReq = https.request(options, res => {
-                const chunks: any[] = [];
-                res.setEncoding('utf8');
-                res.on('data', chunk => chunks.push(chunk));
-                res.on('end', () => {
-                    const body = chunks.join('');
-                    const statusCode = res.statusCode || 200;
-                    const statusMessage = res.statusMessage || '';
-                    const result = { body, statusCode, statusMessage };
-                    _log(NS, `> post(${hookUrl}) =`, $U.json(result));
-                    if (statusCode < 400) {
-                        resolve(result);
-                    } else {
-                        reject(result);
-                    }
-                });
-                return res;
-            });
-            postReq.write(body);
-            postReq.end();
-        });
-    };
-
-    /**
-     * store channel map in cache
-     *
-     * @param name channel name (= 'public')
-     * @param defName (optional) default name if not found
-     * @param options.prefix (optional) prefix name of target environment key.
-     * @returns URL address to post
-     */
-    public loadSlackChannel = async (
-        name: string,
-        options?: {
-            defName?: string;
-            prefix?: string;
-            /** flag to throw if not found */
-            throwable?: boolean;
-        },
-    ): Promise<string> => {
-        name = name || 'public';
-        const defName = options?.defName || '';
-        const prefix = options?.prefix ?? 'SLACK';
-        const throwable = options?.throwable ?? true;
-
-        const DELIM = prefix ? '_' : '';
-        const ENV_NAME = `${prefix}${DELIM}${name}`.toUpperCase();
-        const DEF_NAME = defName ? `${prefix}${DELIM}${defName}`.toUpperCase() : '';
-        const _find = (name: string): string => (name ? `${this.$channels[name] || process.env?.[name] || ''}` : '');
-
-        // const webhook_name = this.$channels[ENV_NAME] || $env[ENV_NAME] || '';
-        // const webhook_default = this.$channels[DEF_NAME] || $env[DEF_NAME] || '';
-        // const webhook = webhook_name || webhook_default;
-        const webhook = (_find(ENV_NAME) || _find(DEF_NAME) || '').trim();
-        _inf(NS, `> webhook[${name}] :=`, webhook);
-        if (throwable && !webhook) throw new Error(`@env[${ENV_NAME}] is not found!`);
-
-        //* decrypt if required.
-        return Promise.resolve(webhook)
-            .then(_ => {
-                if (_ && !_.startsWith('http')) {
-                    return this.$kms.decrypt(_).then(_ => {
-                        const url = `${_}`.trim();
-                        this.$channels[ENV_NAME] = url;
-                        return url;
-                    });
-                }
-                return _;
-            })
-            .then(_ => {
-                if (!(_ && _.startsWith('http'))) {
-                    if (throwable)
-                        throw new Error(`404 NOT FOUND - Channel:${name}, Hook:${webhook?.substring(0, 100)}`);
-                }
-                return _;
-            });
-    };
-
-    /**
-     * process the request of subscription-confirmation
-     */
-    public getSubscriptionConfirmation = async (param: { snsMessageType: string; subscribeURL: string }) => {
-        _log(NS, `getSubscriptionConfirmation()...`);
-        // Send HTTP GET to subscribe URL in request for subscription confirmation
-        if (param?.snsMessageType === 'SubscriptionConfirmation' && param.subscribeURL) {
-            const uri = new URL(param.subscribeURL);
-            const path = `${uri.pathname || ''}`;
-            const search = `${uri.search || ''}`;
-            const api = new APIService('web', `${uri.origin}${path == '/' ? '' : path}`);
-            const res = await api.doGet(null, null, search.startsWith('?') ? search.substring(1) : search);
-            _log(NS, `> subscribe =`, $U.json(res));
-            return 'OK';
-        }
-        return 'PASS';
-    };
-
-    /**
-     * convert object to json string.
-     */
-    public asText = (data: any) => {
-        const keys = (data && Object.keys(data)) || [];
-        return keys.length > 0 ? JSON.stringify(data) : '';
-    };
-
-    /**
-     * save message data into S3.
-     */
-    public saveMessageToS3 = async (message: SlackPostBody | any, isUseS3?: boolean) => {
-        _log(NS, `saveMessageToS3()...`);
-        const SLACK_PUT_S3 = $U.env('SLACK_PUT_S3', '1') as string;
-        isUseS3 = isUseS3 ?? !!$U.N(SLACK_PUT_S3, 0);
-        const attachments: SlackAttachment[] = message?.attachments || [];
-        const isSlackPostBody = (message: any): message is SlackPostBody =>
-            Array.isArray(attachments) && attachments.length > 0;
-
-        //* if put to s3, then filter attachments
-        if (isUseS3 && isSlackPostBody(message)) {
-            const attachment = attachments[0];
-            const pretext = $T.S(attachment.pretext, '');
-            const title = $T.S(attachment.title, '');
-            const color = $T.S(attachment.color, 'green');
-            const thumb_url = attachment.thumb_url ? attachment.thumb_url : undefined;
-            const image_url = attachment.image_url ? attachment.image_url : undefined;
-            _log(NS, `> title[${pretext}] =`, title);
-            const saves = { ...message };
-            saves.attachments = attachments.map((N: any) => {
-                //* convert internal data.
-                N = { ...N }; // copy.
-                const text = typeof N.text === 'string' ? N.text : `${N.text || ''}`;
-                try {
-                    if (text.startsWith('{') && text.endsWith('}')) N.text = JSON.parse(N.text);
-                    if (N.text && N.text['stack-trace'] && typeof N.text['stack-trace'] == 'string')
-                        N.text['stack-trace'] = N.text['stack-trace'].split('\n');
-                } catch (e) {
-                    _err(NS, '> WARN! ignored =', e);
-                }
-                return N;
-            });
-
-            //* choose the icon.
-            // eslint-disable-next-line prettier/prettier
-            const MOONS =
-                ':new_moon:,:waxing_crescent_moon:,:first_quarter_moon:,:moon:,:full_moon:,:waning_gibbous_moon:,:last_quarter_moon:,:waning_crescent_moon:'.split(
-                    ',',
-                );
-            const now = this.current ? new Date(this.current) : new Date();
-            let hour = now.getHours() + now.getMinutes() / 60.0 + 1.0;
-            hour = hour >= 24 ? hour - 24 : hour;
-            const tag = MOONS[Math.floor((MOONS.length * hour) / 24)];
-            const json = $U.json(saves);
-            const bucket = this.$s3s.bucket();
-
-            // _log(NS, `> json =`, json);
-            return this.$s3s
-                .putObject(json)
-                .then(res => {
-                    const { Bucket, Key, Location } = res;
-                    _inf(NS, `> uploaded[${Bucket}/${Key}] =`, $U.json(res));
-                    const link = Location;
-                    //* change btwn title & pretext.
-                    const _pretext = title?.startsWith('error-report') ? title : pretext;
-                    const text = title?.startsWith('error-report') ? pretext : title;
-                    const tag0 = `${text}`.startsWith('#error') ? ':rotating_light:' : '';
-                    message.attachments = [
-                        {
-                            pretext: _pretext,
-                            text: `<${link}|${tag0 || tag || '*'}> ${text}`,
-                            color,
-                            mrkdwn: true,
-                            mrkdwn_in: ['pretext', 'text'],
-                            thumb_url,
-                            image_url,
-                        },
-                    ];
-                    return message;
-                })
-                .catch(e => {
-                    _err(NS, 'WARN! internal.err =', e);
-                    message.attachments.push({
-                        pretext: `**WARN** internal error in \`lemon-hello-api\` to \`${bucket}\``,
-                        color: 'red',
-                        title: `${e.message || e.reason || e.error || e}: ${e.stack || ''}`,
-                    });
-                    return message;
-                });
-        }
-        return message;
-    };
-
-    /**
-     * transform to slack message.
-     * @param body see `notifyLoginEvent()` of `lemon-accounts-api/oauth-api`
-     */
-    public buildSlackNotification = (body: any, color?: string) => {
-        _log(NS, `buildSlackNotification()...`);
-        body = body || {};
-        // Publish notification on Slack public channel
-        let pretext = '';
-        let title = '';
-        color = `${color || '#12B5E9'}`;
-        if (body.type === 'oauth') {
-            const data = body.data || {};
-            const $ctx = body.context || {};
-            const $acc = body.Account || {};
-            const accountId = `${data.accountId || ''}`;
-            const provider = `${data.provider || ''}`;
-            const clientIp = `${data.context?.clientIp || $ctx?.clientIp || ''}`;
-            const who =
-                provider && $acc?.name
-                    ? `${provider}/${$acc?.name}`
-                    : $acc?.name
-                    ? `${$acc?.name}`
-                    : provider && accountId.startsWith(provider)
-                    ? accountId
-                    : `${provider}/${accountId}`;
-            title = `#${body?.event || 'oauth'}(\`${body.stage}\`) of \`${who}\` via \`${clientIp}\``;
-            color = `${body?.color || '#FFC300'}`; // yellow style.
-            if (body && typeof body == 'object') body._source = __filename;
-        } else if (body?.mail && body?.notificationType) {
-            const subject = `mail/${body?.notificationType}`;
-            const type = body?.bounce?.bounceType || '';
-            const sub = (body?.bounce?.bouncedRecipients && body?.bounce?.bouncedRecipients[0]?.emailAddress) || '';
-            pretext = `\`#notification\` at lemon-hello-api`;
-            title = `[${subject}] event received as \`${type}/${sub}\`.`;
-        } else if (body?.subject !== undefined && body?.data !== undefined) {
-            const subject = body?.subject || Object.keys(body?.data)[0] || '';
-            pretext = `\`#notification\` at lemon-hello-api`;
-            title = `[${subject}] event received.`;
-        } else {
-            pretext = `\`#notification\` at lemon-hello-api`;
-            title = `[${body.event || ''}] event received from \`${body.service}/${body.stage}\`.`;
-        }
-
-        return this.packageWithChannel('public')(pretext, title, this.asText(body), [], color);
-    };
-
-    /**
-     * build simple form for alarm
-     */
-    public buildAlarmForm = async (
-        { subject, data, context }: RecordData,
-        options?: { hasRecord?: boolean },
-    ): Promise<ParamToSlack> => {
-        _log(`buildAlarmForm(${subject})...`);
-        const hasRecord = options?.hasRecord ?? true;
-        data = data || {};
-        const record = $U.json({ subject, data, context });
-        _log(`> data[${subject}] =`, record);
-
-        const AlarmName = data.AlarmName || '';
-        const AlarmDescription = data.AlarmDescription || '';
-
-        //*  build fields.
-        const Fields: any[] = [];
-        const pop_to_fields = (param: string, short = true) => {
-            short = short === undefined ? true : short;
-            const [name, nick] = param.split('/', 2);
-            const val = data[name];
-            if (val !== undefined && val !== '') {
-                Fields.push({
-                    title: nick || name,
-                    value: typeof val === 'object' ? JSON.stringify(val) : val,
-                    short,
-                });
-            }
-            delete data[name];
-        };
-        pop_to_fields('AlarmName', false);
-        pop_to_fields('AlarmDescription');
-        pop_to_fields('AWSAccountId');
-        pop_to_fields('NewStateValue');
-        pop_to_fields('NewStateReason', false);
-        pop_to_fields('StateChangeTime');
-        pop_to_fields('Region');
-        pop_to_fields('OldStateValue');
-        pop_to_fields('Trigger', false);
-
-        const pretext = `Alarm: ${AlarmName}`;
-        const title = AlarmDescription || '';
-        const text = this.asText(data);
-        const fields = Fields;
-
-        //* add original data into fields. (for later debug)
-        if (hasRecord) fields.push({ title: '#record', value: record });
-
-        return this.packageDefaultChannel({ pretext, title, text, fields });
-    };
-
-    /**
-     * build simple form for delivery failure of SNS
-     */
-    public buildDeliveryFailure = async ({ subject, data, context }: RecordData): Promise<ParamToSlack> => {
-        _log(`buildDeliveryFailure(${subject})...`);
-        data = data || {};
-        const record = $U.json({ subject, data, context });
-        _log(`> data[${subject}] =`, record);
-
-        const FailName = data.EventType || '';
-        const FailDescription = data.FailureMessage || '';
-        const EndpointArn = data.EndpointArn || '';
-
-        //*  build fields.
-        const Fields: any[] = [];
-        const pop_to_fields = (param: string, short = true) => {
-            short = short === undefined ? true : short;
-            const [name, nick] = param.split('/', 2);
-            const val = data[name];
-            if (val !== undefined && val !== '' && nick !== '') {
-                Fields.push({
-                    title: nick || name,
-                    value: typeof val === 'object' ? JSON.stringify(val) : val,
-                    short,
-                });
-            }
-            delete data[name];
-        };
-        pop_to_fields('EventType/'); // clear this
-        pop_to_fields('FailureMessage/'); // clear this
-        pop_to_fields('FailureType');
-        pop_to_fields('DeliveryAttempts/'); // DeliveryAttempts=1
-        pop_to_fields('Service/'); // Service=SNS
-        pop_to_fields('MessageId');
-        pop_to_fields('EndpointArn', false);
-        pop_to_fields('Resource', false);
-        pop_to_fields('Time/', false); // clear this
-
-        const pretext = `SNS: ${FailName}`;
-        const title = FailDescription || '';
-        // const text = asText(data);
-        const text = `For more details, run below. \n\`\`\`aws sns get-endpoint-attributes --endpoint-arn "${EndpointArn}"\`\`\``;
-        const fields = Fields;
-
-        const message = { pretext, title, text, fields };
-
-        //* add original data into fields. (for later debug)
-        message.fields.push({ title: '#record', value: record });
-
-        //* get the endpoint-attributes
-        const SNS = new AWS.SNS();
-        const result = await SNS.getEndpointAttributes({ EndpointArn })
-            .promise()
-            .then(_ => {
-                _log(NS, '> EndpointAttributes=', _);
-                const Attr = (_ && _.Attributes) || {};
-                message.fields.push({ title: 'Enabled', value: Attr.Enabled || '', short: true });
-                message.fields.push({ title: 'CustomUserData', value: Attr.CustomUserData || '', short: true });
-                message.fields.push({ title: 'Token', value: Attr.Token || '', short: false });
-                return message;
-            })
-            .catch(e => {
-                _err(NS, '!ERR EndpointAttributes=', e);
-                return message;
-            });
-
-        // package default.
-        return this.packageDefaultChannel(result);
-    };
-
-    /**
-     * SES Email Event Notification.
-     */
-    public buildSESEmailEvent = async ({
-        subject,
-        data,
-        context,
-    }: RecordData<{ data?: string }>): Promise<ParamToSlack> => {
-        _log(`buildSESEmailEvent(${subject})...`);
-
-        const $data = typeof data?.data === 'string' ? JSON.parse(data.data) : data.data || {};
-        const $mail = $data?.mail || {};
-        const _find = (name: string, def = ''): string =>
-            $mail?.headers?.find((N: any) => N.name?.toLowerCase() === name)?.value || def;
-
-        if (!$mail?.source) throw new Error(`@mail.source (string) is required!`);
-        // if ($mail?.source) throw new Error(`@source[${$mail.source}] is invalid!`);
-
-        const frm = _find('from', $mail?.source || '-');
-        const _to = _find('to', 'no recipient');
-        const pretext = `[\`${$data?.eventType ?? '-'}\`] ${subject} from \`${frm}\``;
-        const title = `SES: ${_find('subject', 'no subject')} To \`${_to}\``;
-        const text = $U.json({ subject, $data, context });
-        const fields: any[] = [];
-
-        const message = { pretext, title, text, fields };
-        return this.packageDefaultChannel(message);
-    };
-
-    /**
-     * build simple form for error-report
-     */
-    public buildErrorForm = async ({ subject, data, context }: RecordData): Promise<ParamToSlack> => {
-        _log(`buildErrorForm(${subject})...`);
-        data = data || {};
-        subject = `${subject || ''}`;
-
-        //* get error reason.
-        const channel = subject.indexOf('/')
-            ? subject.split('/', 2)[1]
-            : (data.data && data.data.channel) || data.channel;
-        const message = data.message || data.error;
-        _log(`>> data[${channel || ''}] =`, $U.json(data));
-        const service = (() => {
-            const str = $T.S(data?.service);
-            return str.indexOf('://') > 0 ? str.substring(str.indexOf('://') + 3) : str;
-        })();
-        const title = service ? `error-report: \`${service}\`` : 'error-report';
-
-        return this.packageWithChannel(channel)(message, title, this.asText(data), []);
-    };
-
-    /**
-     * build simple form for callback
-     */
-    public buildCallbackForm = ({ subject, data, context }: RecordData): ParamToSlack => {
-        _log(`buildCallbackForm(${subject})...`);
-        subject = `${subject || ''}`;
-        const $body: CallbackPayload = data || {};
-        _log(`> data[${subject}] =`, $U.json($body));
-
-        //* restrieve service & cmd
-        const $data: CallbackSlackData = $body.data || {};
-        const channel = subject.indexOf('/') > 0 ? subject.split('/', 2)[1] : $data && $data.channel;
-        const service = ($body && $body.service) || '';
-        const cmd = ($data && $data.cmd) || '';
-        const title = ($data && $data.title) || (!service ? `callback-report` : `#callback ${service}/${cmd}`);
-
-        return this.packageWithChannel(`${channel || ''}`)('', title, this.asText($body), [], '#B71BFF');
-    };
-
-    /**
-     * transform to slack-body from SNS Payload.
-     */
-    public buildCommonSlackForm = ({ subject, data, context }: RecordData<PayloadOfReportSlack>): ParamToSlack => {
-        _log(NS, `buildCommonSlackForm(${subject})...`);
-        const $data: PayloadOfReportSlack = { ...data };
-        subject = `${subject || ''}`;
-        _log(NS, `> raw-data[${subject}] =`, $U.json($data));
-
-        //* extract data.
-        const channel = subject.indexOf('/') > 0 ? subject.split('/', 2)[1] : $data.channel || '';
-        const service = `${$data.service || ''}`;
-        const body = $data.body;
-
-        //* add additional attachment about caller context
-        if (!channel.startsWith('!') && context && body?.attachments && Array.isArray(body?.attachments)) {
-            body.attachments.push({
-                pretext: service,
-                fields: [
-                    {
-                        title: 'context',
-                        value: context ? $U.json(context) : '',
-                    },
-                ],
-            });
-        }
-
-        //* returns.
-        return { channel, body };
-    };
-
-    /**
-     * post to slack channel(default is public).
-     */
-    public packageWithChannel =
-        (channel: string) =>
-        (
-            pretext = '',
-            title = '',
-            text = '',
-            fields: (string | { title: string; value: string })[] = [],
-            color = '',
-            username = '',
-        ): ParamToSlack => {
-            _log(NS, `packageWithChannel(${channel})...`);
-            channel = `${channel || 'public'}`;
-            color = `${color || '#FFB71B'}`;
-            username = `${username || 'hello-alarm'}`;
-            _log(NS, `> param[${channel}] =`, $U.json({ pretext, title, color, username }));
-            const { service, version, stage } = $info();
-
-            //* build attachment.
-            const ts = Math.floor(new Date().getTime() / 1000);
-            const fields2 = fields.map((field, i) =>
-                typeof field === 'string'
-                    ? { title: `${field || ''}`.split('/')[0] || `${i + 1}`, value: field }
-                    : { ...(field as any) },
-            );
-            const footer = `${service}/${stage}#${version}`;
-            const attachment = { username, color, pretext, title, text, ts, fields: fields2, footer };
-
-            //* build body for slack, and call
-            const body = { attachments: [attachment] };
-            return { channel, body };
-        };
-
-    /**
-     * post to slack default channel.
-     */
-    public packageDefaultChannel = ({ pretext, title, text, fields, color, username }: BindParamOfSlack) => {
-        _log(NS, `packageDefaultChannel()...`);
-        return this.packageWithChannel('')(
-            pretext || '',
-            title || '',
-            text || '',
-            fields || [],
-            color || '',
-            username || '',
-        );
-    };
-
-    /**
-     * route handler for slack-body per each request-context.
-     *
-     * @param context the current request-context.
-     * @param options (optional) running options.
-     */
-    public $routes = (
-        context: NextContext,
-        options?: {
-            /** flag to send directly to endpoint w/o saving S3 */
-            direct?: boolean;
-        },
-    ) => {
-        _log(NS, `! route.context =`, $U.json(context));
-
-        //* local cache of channel-model
-        const channels: { [key: string]: ChannelModel } = {};
-        const _channel = async (name: string): Promise<ChannelModel> => {
-            if (channels[name] !== undefined) return channels[name];
-            const model = await this.$channel.find(name).catch(NUL404);
-            channels[name] = model;
-            return model;
-        };
-        //* main handler...
-        return new (class {
-            public constructor(protected service: HelloService) {}
-            /** say hello */
-            public hello = () => `route-handler/${this.service.hello()}`;
-            /** last response of send() */
-            public lastResponse: PostResponse = null;
-
-            /** route the slack body to target */
-            public route = async (
-                body: SlackPostBody,
-                channel?: string,
-                paths?: string[],
-                parent?: ChannelModel,
-            ): Promise<number> => {
-                channel = channel || body?.channel || 'public';
-                paths = paths || [];
-                parent = parent ? parent : await _channel(channel);
-                _inf(NS, `> route(${channel}/${paths?.length ?? 0}).parent :=`, $U.json(parent));
-
-                //* check of end-of-routing
-                if (paths?.includes(channel)) {
-                    return this.send(body, channel, parent);
-                }
-
-                //* apply rules.
-                let sent = 0;
-                const $ch = await _channel(channel);
-                const rules = $ch?.rules || [];
-                for (const i in rules) {
-                    const rule = rules[i];
-                    _log(NS, `>> rule[${channel}:${i}] =`, $U.json(rule));
-                    const matched = this.match(body, rule);
-                    if (matched) {
-                        _log(NS, `>> match[${channel}:${i}] =`, $U.json(matched));
-                        //- duplicate also to other channel
-                        if (rule.copyTo && !paths.includes(rule.copyTo)) {
-                            paths.push(rule.copyTo);
-                            sent += await this.route(matched, rule.copyTo, [...paths], parent);
-                        }
-                        //- forward to specific channel
-                        if (rule.moveTo && !paths.includes(rule.moveTo)) {
-                            paths.push(rule.moveTo);
-                            sent += await this.route(matched, rule.moveTo, [...paths], parent);
-                            // break here.
-                            return sent;
-                        }
-                    }
-                }
-
-                //* send via this channel.
-                if (channel && !paths.includes(channel)) {
-                    paths.push(channel);
-                    sent += await this.route(body, channel, [...paths], parent);
-                }
-
-                //* returns.
-                return sent;
-            };
-
-            /** test if pattern is matched */
-            public match = (body: SlackPostBody, rule: RouteRule): SlackPostBody => {
-                const pattern = `${rule?.pattern || ''}`;
-                const _test = (text: string): boolean => {
-                    if (!pattern || typeof text !== 'string') return false;
-                    if (pattern.startsWith('#')) return text.includes(pattern);
-                    if (pattern.startsWith('/') && pattern.endsWith('/')) {
-                        const re = new RegExp(pattern.substring(1, pattern.length - 2), 'g');
-                        return re.test(text);
-                    }
-                    //* default is word matching
-                    if (text.includes(pattern)) return true;
-                    return text.split(' ').includes(pattern);
-                };
-                const matched = body.attachments?.reduce<SlackAttachment[]>((L, N) => {
-                    if (
-                        (N?.text && _test(N.text)) ||
-                        (N?.title && _test(N.title)) ||
-                        (N?.pretext && _test(N.pretext)) ||
-                        (N?.footer && _test(N.footer)) ||
-                        false
-                    ) {
-                        if (rule.color) {
-                            L.push({ ...N, color: rule.color });
-                        } else {
-                            L.push(N);
-                        }
-                    }
-                    $T;
-                    return L;
-                }, []);
-                if (matched?.length > 0) {
-                    return {
-                        ...body,
-                        attachments: matched,
-                    };
-                }
-                return;
-            };
-
-            /** process per each channel */
-            public send = async (body: SlackPostBody, channel: string, parent: ChannelModel): Promise<number> => {
-                _inf(NS, `>> route.send(${body?.channel || ''}, ${channel || ''})`);
-                const direct = options?.direct ?? false;
-                const asBool = (a: any): boolean => (a === undefined || a === null || a === '' ? undefined : !!a);
-                if (body && channel) {
-                    const target = await _channel(channel);
-                    const endpoint = target?.endpoint || parent?.endpoint;
-                    const isUseS3 = !direct && endpoint?.startsWith('https://hooks.slack.com');
-                    const $msg = isUseS3 ? await this.service.saveMessageToS3(body, asBool(target?.useS3)) : body;
-                    const message: SlackPostBody = {
-                        ...$msg,
-                        channel: target?.channel || channel,
-                    };
-                    _inf(NS, `>> route-target[${channel}] =`, $U.json(target));
-                    _inf(NS, `>> message[${message?.channel}] =`, $U.json(message));
-                    if (endpoint?.startsWith('http')) {
-                        const sent = await this.service.postMessage(endpoint, message).catch<PostResponse>(e => {
-                            _err(NS, `! err.send:${channel} =`, e);
-                            return null;
-                        });
-                        _log(NS, `>> sent:${channel} =`, $U.json(sent));
-                        this.lastResponse = sent;
-                        return sent?.statusCode == 200 ? 1 : 0;
-                    }
-                }
-                return 0;
-            };
-        })(this);
-    };
-
-    /**
-     * determine to post directly.
-     */
-    public determinePostDirectly = (id: string, param: any): [string, boolean] => {
-        const channel = id.startsWith('!') ? id.substring(1) : id;
-        const hasForce = id.startsWith('!');
-        const direct = !!$U.N(param.direct, param.direct === '' ? 1 : hasForce ? 1 : 0);
-        return [channel, direct];
-    };
-
-    /**
-     * build the slack message body to post the image.
-     */
-    public makeSlackBody = async (url: string): Promise<SlackPostBody> => {
-        const slackImageForm = loadJsonSync('./data/image-slack.json');
-        if (typeof slackImageForm !== 'object') throw new Error('@slackImageForm is required - load failed');
-
-        if (!slackImageForm.attachments) throw new Error('.attachment (slackImageForm) is required');
-        if (!url.startsWith('https://cdn2')) throw new Error(`@url[${url}] is invalid - not supported`);
-        slackImageForm.attachments[0].image_url = url;
-
-        return slackImageForm;
-    };
-
-    /**
-     * https://thecatapi.com/
-     * fetch random image url from TheDogApi or TheCatApi
-     */
-    public fetchRandomImageUrl = async (imageInfo: ImageInfo): Promise<string> => {
-        _log(NS, `fetchRandomImageUrl()....`);
-        const { imageUrl } = imageInfo;
-
-        const options: any = url.parse(imageUrl);
-        options.method = 'GET';
-        return new Promise((resolve, reject) => {
-            const getReq = https.request(options, res => {
-                const chunks: any = [];
-                res.setEncoding('utf8');
-                res.on('data', chunk => chunks.push(chunk));
-                res.on('end', () => {
-                    const statusCode = res.statusCode;
-                    const body = JSON.parse(chunks.join(''));
-                    const imageUrl = body[0].url;
-                    if (statusCode < 400) resolve(imageUrl);
-                    else
-                        reject(new Error(`@imageUrl[${imageUrl}] (string) is invalid - ${imageUrl} are not supported`));
-                });
-            });
-            getReq.on('error', reject);
-            getReq.write('');
-            getReq.end();
-        });
-    };
-
-    /**
-     * determines the target URL based on the keyword.
-     */
-    public asImageInfo = (body: any): ImageInfo => {
-        const keyword = $T.S(body?.keyword, 'cat');
-        if (!['dog', 'cat'].includes(keyword))
-            throw new Error(`.keyword[${keyword}] (string) is invalid - not supported`);
-        const targetUrl = {
-            type: keyword,
-            imageUrl: `https://api.the${keyword}api.com/v1/images/search`,
-        };
-        return targetUrl;
-    };
 }
 
 /**
@@ -914,13 +104,6 @@ export class MyCoreManager<T extends Model, S extends CoreService<T, ModelType>>
 
     /** say hello */
     public hello = () => `${this.storage.hello()}`;
-
-    // override `super.onBeforeSave()`
-    public onBeforeSave(model: T, origin: T): T {
-        //NOTE! - not possible to change name in here.
-        if (origin && origin.name) delete model.name;
-        return model;
-    }
 
     /**
      * get model by id
@@ -955,33 +138,6 @@ export class MyCoreManager<T extends Model, S extends CoreService<T, ModelType>>
         if (this.$unique) return this.$unique.findOrCreate(name);
         throw new Error(`400 NOT SUPPORT - ${this.type}:#${name}`);
     };
-
-    /**
-     * update name of model
-     * - save the origin id into `stereo` property.
-     *
-     * @param model target model
-     * @param name  new name of model.
-     */
-    public updateName = async (model: T, name: string): Promise<T> => {
-        if (!this.validateName(name)) throw new Error(`@name (${name || ''}) is not valid!`);
-        if (this.$unique) {
-            // STEP.1 try to update loockup 1st.
-            const $map = await this.$unique.updateLookup(model, name);
-            _log(NS, `> lookup[${model.id}].res =`, $U.json($map));
-
-            // STEP.3 update the name of origin.
-            const $upt: Model = { name };
-            const updated = await this.storage.update(model.id, $upt as T);
-            _log(NS, `> update[${model.id}].res =`, $U.json(updated));
-
-            // FINAL. returns the updated model
-            model.name = name;
-            model.updatedAt = updated.updatedAt || model.updatedAt;
-            return model;
-        }
-        throw new Error(`400 NOT SUPPORT - ${this.type}:#${name}`);
-    };
 }
 
 /**
@@ -992,40 +148,100 @@ export class MyTestManager extends MyCoreManager<TestModel, HelloService> {
     public constructor(parent: HelloService) {
         super('test', parent, $FIELD.test, 'name');
     }
-}
+    /**
+     * Save data into DynamoDB
+     */
+    public saveToDynamo = async (id: string, data: GeneralItem) => {
+        //* C-1: local mode only, never a reserved record.
+        assertLocalOnly(`saveToDynamo(${id ?? ''})`);
+        assertNotReserved(id);
+        const res = await this.save(id, data);
+        return { res };
+    };
+    /**
+     * Read data from DynamoDB
+     */
+    public readFromDynamo = async (id: string) => {
+        //* C-1: local mode only, never a reserved record.
+        assertLocalOnly(`readFromDynamo(${id ?? ''})`);
+        assertNotReserved(id);
+        const res = await this.getModelById(id);
+        return { res };
+    };
 
-/**
- * class: `MyChannelManager`
- * - manager for channel-model.
- */
-export class MyChannelManager extends MyCoreManager<ChannelModel, HelloService> {
-    public constructor(parent: HelloService) {
-        super('channel', parent, $FIELD.channel);
-    }
+    /**
+     * Send data to SQS using protocolService.enqueue()
+     */
+    public sendToSqs = async (params: MessagePayload, context: NextContext) => {
+        const errScope = `sendToSqs(${params?.type}/${params?.id}/${params?.cmd})`;
+        _log(NS, `${errScope} ...`);
 
-    /** transform the input data into `route-rule` */
-    public asRule = (data: RouteRule): RouteRule => {
-        const rule: RouteRule = {
-            pattern: $T.S2(data?.pattern, '', ' ').trim(),
+        // validation
+        if (!params?.service) throw new Error(`.service (string) is requried - ${errScope}`);
+        if (!params?.type) throw new Error(`.type is required - ${errScope}`);
+
+        // 1) target/protocol 생성
+        const target = this.buildTarget(params);
+
+        // 2) protocol 객체 생성
+        const prot = $protocol(context, target);
+
+        // 3) enqueue 호출 (SQS 발송)
+        const messageId = await prot.enqueue(
+            $T.onlyDefined(params), // param
+            $T.onlyDefined(params.body), // body
+            params?.mode, // mode
+            undefined, // callback
+            undefined, // delaySeconds
+        );
+
+        return { messageId };
+    };
+
+    /**
+     * Send data to SNS using protocolService.notify()
+     */
+    public sendToSns = async (params: MessagePayload, context: NextContext): Promise<{ messageId: string }> => {
+        const errScope = `sendToSns(${params?.type}/${params?.id}/${params?.cmd})`;
+        _log(NS, `${errScope} ...`);
+
+        // validation
+        if (!params?.service) throw new Error(`.service is required - ${errScope}`);
+        if (!params?.type) throw new Error(`.type is required - ${errScope}`);
+
+        // 1) target/protocol 생성
+        const target = this.buildTarget(params);
+
+        // 2) protocol 객체 생성
+        const prot = $protocol(context, target);
+
+        // 3) notify 호출 (SNS 발송)
+        const messageId = await prot.notify(
+            $T.onlyDefined(params.param), // param
+            $T.onlyDefined(params.body), // body
+            params?.mode, // mode
+            undefined, // callback
+        );
+
+        return { messageId };
+    };
+
+    /**
+     * Build target string with params
+     */
+    public buildTarget = (params: MessagePayload) => {
+        const errScope = `buildTarget(${params?.type}/${params?.id}/${params?.cmd})`;
+        const _S2 = (name: string, required = true) => {
+            const s = $T.S2((params as any)?.[name]);
+            if (!s && required) throw new Error(`.${name} (string) is required - ${errScope}`);
+            return s;
         };
-        if (data.copyTo !== undefined) rule.copyTo = $T.S2(data?.copyTo, '', ' ').trim();
-        if (data.moveTo !== undefined) rule.moveTo = $T.S2(data?.moveTo, '', ' ').trim();
-        if (data.color !== undefined) rule.color = $T.S2(data?.color, '', ' ').trim();
-        if (data.forward !== undefined) rule.forward = $T.S2(data?.forward, '', ' ').trim();
-
-        return rule;
+        const [service, type, _id, cmd] = [_S2('service'), _S2('type'), _S2('id'), _S2('cmd', false)];
+        const path = `/${type}/${_id}` + (cmd ? `/${cmd}` : '');
+        const target = `//${service}${path}`;
+        return target;
     };
 }
 
-/**
- * class: `MyTargetManager`
- * - manager for target-model.
- */
-export class MyTargetManager extends MyCoreManager<TargetModel, HelloService> {
-    public constructor(parent: HelloService) {
-        super('target', parent, $FIELD.target);
-    }
-}
-
-//* export default
+//*export default
 export default new HelloService();

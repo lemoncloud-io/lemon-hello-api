@@ -1,21 +1,22 @@
 /**
- * `account-models.ts`
+ * `hello-models.ts`
  * - model definitions..
  *
- * @author      Steve Jung <steve@lemoncloud.io>
- * @date        2022-09-08 supports database w/ manager
  *
- * @copyright (C) 2022 LemonCloud Co Ltd. - All Rights Reserved.
+ * @author      Steve Jung <steve@lemoncloud.io>
+ * @date        2024-11-27 initial version with `lemon-core#3.2.10`
+ *
+ * @copyright (C) lemoncloud.io 2024 - All Rights Reserved. (https://eureka.codes)
  */
-//NOTE - must use `lemon-model` to publish w/o `lemon-core`.
-import { CoreModel } from 'lemon-model';
+//NOTE - v5: lemon-model comes through lemon-core (`CoreModel` is a root name; HOW_TO_UPGRADE_V5 § 16).
+import { CoreModel } from 'lemon-core';
 import { keys } from 'ts-transformer-keys';
 
 /**
  * type: `ModelType`
  * - use this type to make pkey per data.
  */
-export type ModelType = 'test' | 'channel' | 'target';
+export type ModelType = 'test';
 
 /**
  * class: `Model`
@@ -24,22 +25,21 @@ export type ModelType = 'test' | 'channel' | 'target';
  * see https://github.com/kimamula/ts-transformer-keys
  *  - keys() 실행 에러 해결을 위해서 `$ npm install --save-dev typescript ttypescript`, 후 tsc -> ttsc로 변경함!.
  */
-export interface Model extends CoreModel<ModelType> {
-    /**
-     * stereo: stereo-type in common type.
-     */
-    stereo?: string;
-    /**
-     * name: readable name instead of id
-     */
-    name?: string;
-}
+export type Model = CoreModel<ModelType>;
 
 /**
  * type: `TestModel`
  * - internal test model.
  */
-export interface TestModel extends Model {
+export interface TestModel<T = any> extends Model {
+    /**
+     * id of model
+     */
+    id?: string;
+    /**
+     * stereo-type of model
+     */
+    stereo?: string;
     /**
      * name
      */
@@ -47,94 +47,16 @@ export interface TestModel extends Model {
     /**
      * internal test count
      */
-    test?: number;
+    count?: number;
+    /**
+     * metadata in some format.
+     */
+    meta$?: T;
+
     /**
      * (readonly) view.
      */
     readonly Model?: Model; // inner Object.
-}
-
-/**
- * type: `RouteRule`
- *
- *
- * @see SlackPostBody
- */
-export interface RouteRule {
-    /** regular express to match */
-    pattern: string;
-
-    /**
-     * copy contents to target channel.
-     * - duplicate the attachments
-     * - ignored if it is in same channel
-     * ex) A -> A + B
-     */
-    copyTo?: string;
-
-    /**
-     * move channel to other one.
-     * - change the `.channel` in `SlackPostBody`
-     * ex) A -> B
-     */
-    moveTo?: string;
-
-    /** override `color` of `SlackAttachment` */
-    color?: string;
-
-    /**
-     * forward the input message to other
-     * = id of `TargetModel`
-     */
-    forward?: string;
-}
-
-/**
- * type: `ChannelModel`
- * - describe the rule flow by slack channel.
- */
-export interface ChannelModel extends Model {
-    /**
-     * = slack channel name
-     * (default would be `public`)
-     */
-    id?: string;
-
-    /**
-     * (optional) redirected channel name to use in slack.
-     * - `.id` is the default.
-     */
-    channel?: string;
-
-    /** (optional) readable name of this channel */
-    name?: string;
-
-    /**
-     * route rules in sequence.
-     */
-    rules?: RouteRule[];
-
-    /**
-     * target address (URL)
-     */
-    endpoint?: string;
-
-    /**
-     * flag of using S3 to save in JSON.
-     * - see `saveMessageToS3()`
-     */
-    useS3?: number;
-}
-
-/**
- * type: `TargetModel`
- * - describe the target information.
- */
-export interface TargetModel extends Model {
-    /**
-     * = slack channel name
-     */
-    id?: string;
 }
 
 /**
@@ -152,9 +74,7 @@ export const filterFields = (fields: string[], base: string[] = []) =>
             [...base],
         );
 
-//* extended fields set of sub-class.
+//*extended fields set of sub-class.
 export const $FIELD = {
     test: filterFields(keys<TestModel>()),
-    channel: filterFields(keys<ChannelModel>()),
-    target: filterFields(keys<TargetModel>()),
 };

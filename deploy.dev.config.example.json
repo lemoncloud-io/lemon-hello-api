@@ -1,0 +1,12 @@
+{
+    "schemaVersion": 1,
+    "mode": "code",
+    "project": "lemon-hello-api",
+    "stage": "dev",
+    "region": "ap-northeast-2",
+    "account": "123456789012",
+    "profile": "replace-profile",
+    "endpoint": "https://example123.execute-api.ap-northeast-2.amazonaws.com/dev",
+    "artifactBucket": "123456789012-deploy-artifacts",
+    "keyPrefix": "lemon-hello-api/dev"
+}

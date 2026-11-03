@@ -13,6 +13,7 @@
  * @date        2019-12-19 optimized for `lemon-core#v2`
  * @date        2022-05-24 optimized for `lemon-core#3.1.1` w/ serverless 3.16
  * @date        2022-08-17 optimized for `nodejs18`
+ * @date        2026-10-30 optimized for `nodejs24`
  *
  * @copyright (C) lemoncloud.io 2019 - All Rights Reserved.
  */
@@ -20,138 +21,22 @@ const CONF = (serverless) => {
     // console.log('serverless=', serverless);
     console.log('Loading config settings...');
     return {
-        lemon: {
-            name: 'lemon-app',
-            runtime: 'nodejs18.x',                              // Node is powered by the V8 JavaScript Engine (used in Chromium)
-            region: 'ap-northeast-2',
-            env: 'lemon.yml',                                   // environment file
-            securityGroupIds: ['sg-08770106971509def'],         // securityGroup : `lemon-services-api`
-            subnetIds: ['subnet-0a53bcd7f3d256ce4', 'subnet-0ee4d1ca5eb964fc5'],   // subnetIds in VPC
-            kmsKey: '*',                                        // KMS key-id
-            bucket: 'lemon-hello-www',                          // Name of S3 public bucket.
-        },
-        colover: {
-            name: 'colover-app',
-            runtime: 'nodejs18.x',                              // Node is powered by the V8 JavaScript Engine (used in Chromium)
-            region: 'ap-northeast-2',
-            env: 'colover.yml',                                 // environment file
-            securityGroupIds: ['sg-0c88604df5c54cdf5'],         // securityGroupIds `lemon-services-api`
-            subnetIds: ['subnet-0175de29eed1a711d', 'subnet-06abf950037203c42'],  // subnetIds `private-2a/2b`
-            kmsKey: '*',                                        // KMS key-id
-            bucket: 'colover-hello-www',                        // Name of S3 public bucket.
-        },
-        ssocio: {
-            name: 'ssocio-app',
-            runtime: 'nodejs18.x',                              // Powered by the V8 JavaScript Engine (used in Chromium)
-            region: 'ap-northeast-2',
-            env: 'ssocio.yml',                                  // environment file
-            securityGroupIds: ['sg-0b0fb4d4bd885c7cd'],         // securityGroupIds `lemon-services`
-            subnetIds: ['subnet-0fcfaad965a2dc997', 'subnet-03a5987eac7caa520'], // subnetIds `subnet-private-2a/2c`
-            kmsKey: '*',                                        // KMS key-id
-            bucket: 'ssocio-hello-wwww',                        // Name of S3 public bucket.
-        },
-        neuro: {
-            name: 'neuro-app',
-            runtime: 'nodejs18.x',                              // Powered by the V8 JavaScript Engine (used in Chromium)
-            region: 'ap-northeast-2',
-            env: 'neuro.yml',                                   // environment file
-            securityGroupIds: ['sg-0da963f5f12eba4e6'],         // securityGroupIds `lemon-services`
-            subnetIds: ['subnet-04d5ffaa589f60cd4', 'subnet-06698f4be777605e6'], // subnetIds `subnet-private-2a/2c`
-            kmsKey: '*',                                        // KMS key-id
-            bucket: 'neuro-hello-wwww',                         // Name of S3 public bucket.
-        },
-        mediagen: {
-            name: 'mediagen-app',
-            runtime: 'nodejs16.x',                              // Node is powered by the V8 JavaScript Engine (used in Chromium)
-            region: 'ap-northeast-2',
-            env: 'mediagen.yml',                                // environment file
-            securityGroupIds: undefined,                        // securityGroupIds in VPC
-            subnetIds: undefined,                               // subnetIds in VPC
-            kmsKey: '*',                                        // KMS key-id
-            bucket: 'mediagen-hello-lemon',                     // Name of S3 public bucket.
-        },
-        securenet: {
-            name: 'securenet-app',
-            runtime: 'nodejs16.x',                              // Node is powered by the V8 JavaScript Engine (used in Chromium)
-            region: 'ap-northeast-2',
-            env: 'securenet.yml',                               // environment file
-            // if use sg, then need of VPC endpoints like execute-api, sns, sqs, kms, dynamo, lambda
-            securityGroupIds: ['sg-02e027483a5170ac0'],         // securityGroupIds `lemon-services-api`
-            subnetIds: ['subnet-079c03645eea08ef9','subnet-033ae02c19314dc30'], // subnetIds `public-2a/2b`
-            kmsKey: '*',                                        // KMS key-id
-            bucket: 'securenet-hello-lemon',                    // Name of S3 public bucket.
-        },
-        jober: {
-            name: 'jober-app',
-            runtime: 'nodejs18.x',                              // Node is powered by the V8 JavaScript Engine (used in Chromium)
-            region: 'ap-northeast-2',
-            env: 'jober.yml',                                   // environment file
-            securityGroupIds: undefined,                        // securityGroupIds in VPC
-            subnetIds: undefined,                               // subnetIds in VPC
-            kmsKey: '*',                                        // KMS key-id
-            bucket: 'jober-hello-wwww',                         // Name of S3 public bucket.
-        },
-        comics: {
-            name: 'comics-app',
-            runtime: 'nodejs18.x',                              // Node is powered by the V8 JavaScript Engine (used in Chromium)
-            region: 'ap-northeast-2',
-            env: 'comics.yml',                                  // environment file
-            securityGroupIds: undefined,                        // securityGroupIds in VPC
-            subnetIds: undefined,                               // subnetIds in VPC
-            kmsKey: '*',                                        // KMS key-id
-            bucket: 'comics-hello-wwww',                        // Name of S3 public bucket.
-        },
-        adam: {
-            name: 'adam-app',
-            runtime: 'nodejs18.x',                              // Node is powered by the V8 JavaScript Engine (used in Chromium)
-            region: 'ap-northeast-2',
-            env: 'adam.yml',                                    // environment file
-            securityGroupIds: undefined,                        // securityGroupIds in VPC
-            subnetIds: undefined,                               // subnetIds in VPC
-            kmsKey: '*',                                        // KMS key-id
-            bucket: 'adam-hello-www',                           // Name of S3 public bucket.
-        },
-        alarmo: {
-            name: 'alarmo-app',
-            runtime: 'nodejs18.x',                              // Node is powered by the V8 JavaScript Engine (used in Chromium)
-            region: 'ap-northeast-2',
-            env: 'alarmo.yml',                                  // environment file
-            securityGroupIds: undefined,                        // securityGroupIds in VPC
-            subnetIds: undefined,                               // subnetIds in VPC
-            kmsKey: '*',                                        // KMS key-id
-            bucket: 'alarmo-hello-www',                         // Name of S3 public bucket.
-        },
-        growing: {
-            name: 'growing-app',
-            runtime: 'nodejs18.x',                              // Node is powered by the V8 JavaScript Engine (used in Chromium)
-            region: 'ap-northeast-2',
-            env: 'growing.yml',                                 // environment file
-            securityGroupIds: undefined,                        // securityGroupIds in VPC
-            subnetIds: undefined,                               // subnetIds in VPC
-            kmsKey: '*',                                        // KMS key-id
-            bucket: 'growing-hello-www',                        // Name of S3 public bucket.
-        },
-        epyt: {
-            name: 'epyt-app',
-            runtime: 'nodejs18.x',                              // Node is powered by the V8 JavaScript Engine (used in Chromium)
-            region: 'ap-northeast-2',
-            env: 'epyt.yml',                                    // environment file
-            securityGroupIds: undefined,                        // securityGroupIds in VPC
-            subnetIds: undefined,                               // subnetIds in VPC
-            kmsKey: '*',                                        // KMS key-id
-            bucket: 'epyt-hello-www',                           // Name of S3 public bucket.
-        },
         none: {
             name: 'none-app',
-            runtime: 'nodejs18.x',                              // Node is powered by the V8 JavaScript Engine (used in Chromium)
+            runtime: 'nodejs24.x',                              // Node is powered by the V8 JavaScript Engine (used in Chromium)
+            region: 'ap-northeast-2',                           // AWS Region to deploy.
+            env: 'none.yml',                                    // Environment definitions.
+            bucket: '',                                         // Name of S3 bucket. (must be unique across all accounts)
+        },
+        lemon: {
+            name: 'lemon-app',
+            runtime: 'nodejs24.x',
             region: 'ap-northeast-2',
-            env: 'none.yml',                                    // environment file
-            securityGroupIds: undefined,                        // securityGroupIds in VPC
-            subnetIds: undefined,                               // subnetIds in VPC
-            kmsKey: undefined,                                  // KMS key-id
+            env: 'lemon.yml',                                   // Environment definitions.
+            bucket: 'lemon-hello-www',
         },
     };
 }
 
-//! export
+// export as `CONF`
 exports = module.exports = { CONF }

@@ -1,0 +1,8 @@
+{
+  "name": "deepmerge-safe",
+  "version": "4.3.1-safe.0",
+  "description": "Dev-only stand-in for deepmerge (no upstream fix for GHSA-gcqx-w48m-w2h4); wired via package.json overrides for jest-config",
+  "main": "index.js",
+  "private": true,
+  "license": "MIT"
+}

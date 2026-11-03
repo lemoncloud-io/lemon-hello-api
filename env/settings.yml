@@ -1,0 +1,93 @@
+# lemon-hello-api env settings
+# - default settings used across most projects
+
+#==============================================
+# environ
+#==============================================
+environ:
+  LS:
+    isRequired: 1
+    type: boolean
+    defaultValue: 0
+    description: 'Hide logs (0: disabled, 1: enabled)'
+    redeploy: 1
+  LC:
+    isRequired: 1
+    type: boolean
+    defaultValue: 1
+    description: 'Enable log coloring (0: disabled, 1: enabled)'
+    redeploy: 1
+  TS:
+    isRequired: 1
+    type: boolean
+    defaultValue: 1
+    description: 'Include timestamp in logs (0: disabled, 1: enabled)'
+    redeploy: 1
+  NAME:
+    isRequired: 1
+    type: string
+    defaultValue: temp
+    description: 'Project profile name - e.g., lemon'
+    isHidden: 1
+  STAGE:
+    isRequired: 1
+    type: string
+    options:
+      - develop
+      - production
+    defaultValue: develop
+    description: 'Deployment stage'
+    isHidden: 1
+    immutable: 1
+  MY_DYNAMO_TABLE:
+    isRequired: 0
+    type: string
+    description: 'Name of the DynamoDB table to use for integration'
+    immutable: 1
+  SQS_ENDPOINT:
+    isRequired: 0
+    type: string
+    description: 'SQS endpoint or configuration to integrate'
+    immutable: 1
+
+#==============================================
+# config
+#==============================================
+config:
+  name:
+    isRequired: 1
+    type: string
+    defaultValue: temp
+    description: 'Name for project identification'
+    isHidden: 1
+  runtime:
+    isRequired: 1
+    type: string
+    options:
+      - nodejs18.x
+      - nodejs22.x
+      - nodejs24.x
+    defaultValue: nodejs18.x
+    description: 'Runtime environment'
+    immutable: 1
+  region:
+    isRequired: 1
+    type: string
+    defaultValue: ap-northeast-2
+    description: 'AWS region'
+    immutable: 1
+  env:
+    isRequired: 1
+    type: string
+    defaultValue: temp.yml
+    description: 'Name of the env file; should match the project name'
+    isHidden: 1
+  stage:
+    isRequired: 1
+    type: string
+    options:
+      - dev
+      - prod
+    defaultValue: dev
+    description: 'Deployment stage'
+    immutable: 1

@@ -2,18 +2,11 @@
     "clearMocks": true,
     "coverageDirectory": "coverage",
     "collectCoverage": true,
-    "globals": {
-        "ts-jest": {
-            "compiler": "ttypescript",
-            "tsconfig": "tsconfig.json"
-        }
-    },
-    "testRunner": "jest-jasmine2",
     "moduleFileExtensions": ["js", "jsx", "ts", "tsx"],
     "testEnvironment": "node",
     "testMatch": ["**/src/**/*.spec.+(ts|tsx|js|jsx)", "**/test/**/*.+(ts|tsx|js|jsx)"],
     "transform": {
-        "^.+\\.(ts|tsx|js|jsx)$": "ts-jest"
+        "^.+\\.(ts|tsx|js|jsx)$": ["ts-jest", { "compiler": "ttypescript", "tsconfig": "tsconfig.json" }]
     },
     "preset": "ts-jest/presets/js-with-ts"
 }

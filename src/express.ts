@@ -4,12 +4,9 @@
  *
  *
  * @author      Steve Jung <steve@lemoncloud.io>
- * @date        2019-08-09 optimized with `lemon-core#1.0.1`
- * @date        2019-11-06 add `credentials()` for loading profile.
- * @date        2019-11-26 optimized with `lemon-core#2.0.0`
- * @date        2019-12-08 added `/echo` router for testing.
+ * @date        2024-11-27 initial version with `lemon-core#3.2.10`
  *
- * @copyright (C) lemoncloud.io 2019 - All Rights Reserved.
+ * @copyright (C) lemoncloud.io 2024 - All Rights Reserved. (https://eureka.codes)
  */
 /** ****************************************************************************************************************
  *  Override Environ
@@ -22,13 +19,12 @@ import environ from 'lemon-core/dist/environ';
 const $env = environ(process);
 process.env = $env;
 
-// eslint-disable-next-line @typescript-eslint/no-unused-vars
-import { $engine, $U, _log, _inf, _err } from 'lemon-core';
-import { $web } from './engine';
+//* load the main cores.
+import $cores, { $engine, $U, _log, buildExpress } from 'lemon-core';
 const NS = $U.NS('EXPR', 'yellow');
 
-import { buildExpress } from 'lemon-core';
-import $core from 'lemon-core';
+//* build the express engine
+import { $web } from './engine';
 export const { app, createServer } = buildExpress($engine, $web);
 
 //* dynamic loading credentials by profile. (search PROFILE -> NAME)
@@ -36,13 +32,13 @@ export const credentials = async (name?: string) => {
     _log(NS, `credentials(${name})..`);
     const NAME = name || ($engine.environ('NAME', '') as string);
     const profile = $engine.environ('PROFILE', NAME) as string;
-    return $core.tools.credentials(profile);
+    return $cores.tools.asyncCredentials(profile);
 };
 
 //* load yml data via './data/<file>.yml'
 export const loadDataYml = (file: string) => {
     _log(NS, `loadDataYml(${name})..`);
-    return $core.tools.loadDataYml(file, 'data');
+    return $cores.tools.loadDataYml(file, 'data');
 };
 
 //* customize createServer().
@@ -53,7 +49,7 @@ const _createServer = () => {
      * echo request information.
      *
      * ```sh
-     * $ http POST ':8888/echo?x=y' x-head:1 a=b
+     * $ http POST ':8000/echo?x=y' x-head:1 a=b
      */
     app.post('/echo', (req: any, res: any) => {
         _log(NS, 'echo()...');
@@ -66,9 +62,9 @@ const _createServer = () => {
         res.status(200).json({ method, headers, body, param });
     });
 
-    //* create-server....
+    // create-server....
     return createServer();
 };
 
-//* default exports.
+// default exports.
 export default { app, createServer: _createServer };

@@ -1,0 +1,21 @@
+{
+    "schemaVersion": 1,
+    "runtime": "nodejs24.x",
+    "architecture": "x86_64",
+    "image": "public.ecr.aws/lambda/nodejs:24",
+    "sourcePaths": [
+        "package.json",
+        "package-lock.json",
+        "handler.js",
+        "tsconfig.json",
+        "tsconfig.build.json",
+        "src",
+        "data"
+    ],
+    "runtimePaths": ["handler.js", "dist", "data"],
+    "handler": { "file": "handler.js", "export": "lambda" },
+    "buildScript": "build",
+    "outputRoot": ".artifacts/lambda",
+    "maxZipBytes": 52428800,
+    "maxUncompressedBytes": 262144000
+}
