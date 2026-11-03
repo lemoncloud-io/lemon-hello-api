@@ -25,6 +25,7 @@ This page keeps only what is specific to this service. The tests of the tools ar
 | `lambda:migrate`    | `lemon-lambda-migrate`    | Move the dev Serverless stack to the deploy service, one phase at a time. Offline plan by default.                                            |
 | `lambda:deploy:dev` | `lemon-lambda-deploy-dev` | Dev-only `code` deploy of a pack to the migrated dev functions. Offline plan by default.                                                      |
 | `deploy:dev`        | `bin/deploy-dev.sh`       | Manual dev deploy: pack → plan → `--apply` → probe, in one command. Human-run only ([Manual dev deploy](#manual-dev-deploy-bindeploy-devsh)). |
+| `ship:check`        | `bin/ship-check.sh`       | Pre-ship leak check against a base ref: tree, protected files, leak scan, version. Read-only ([Ship check](#ship-check-binship-checksh)). |
 
 The Serverless Framework is not installed and no script calls `sls` ([serverless.md](serverless.md)).
 dev moves to the deploy service with `lambda:migrate`, then takes code with `lambda:deploy:dev` ([lambda-migrate.md](lambda-migrate.md)).
@@ -49,6 +50,27 @@ npm run deploy:dev                                   # pack → plan → apply �
 npm run deploy:dev -- --plan-only                    # pack + plan, no AWS change
 npm run deploy:dev -- --skip-pack --artifact .artifacts/lambda/dev-20261103-1200-abc1234
 npm run deploy:dev -- --ask                          # confirm before --apply
+```
+
+### Ship check (`bin/ship-check.sh`)
+
+`npm run ship:check` runs the leak check of the ship gate (S3) in one command, before a push or a PR. It is read-only: git only, no AWS, no network. It checks the git checkout of the current directory (npm runs it from the service root), so the same file works in every v5 service.
+
+| Check       | Passes when                                                                                                                                      |
+| ----------- | ------------------------------------------------------------------------------------------------------------------------------------------------ |
+| `tree`      | `git status --porcelain` is empty.                                                                                                               |
+| `protected` | `git diff <base> -- env serverless.yml serverless-vpc.yml` is empty. Only the changed file names are printed.                                    |
+| `leak-scan` | `git diff <base>` has no 12-digit number, ARN prefix, access key id, AWS host name or profile credentials line (`LEAK_RE` in the script).        |
+| `version`   | the `package.json` `"version"` line is unchanged, or exactly one new value in the dev form `5.YY.MMDD[letter]`. A prod bump is the owner's step. |
+
+-   `<base>` is `origin/v5`; `--base <ref>` picks another. Run `git fetch` first so the base is current.
+-   The leak scan reads the whole diff (headers, context, added and removed lines), like the manual gate command. It prints only the number of matching lines and the file names, never a line. Open the diff of a named file to see why.
+-   Output: one `[ship-check] PASS|FAIL <check> — <detail>` line per check, then a summary line. Account numbers and API hosts are redacted as in `deploy:dev`.
+-   Exit codes: 0 = every check passed, 1 = a check failed, 2 = usage error, not a git repository, or base ref not found.
+
+```bash
+npm run ship:check                                   # against origin/v5
+npm run ship:check -- --base origin/develop          # against another base
 ```
 
 ## What the tools read in this repository
