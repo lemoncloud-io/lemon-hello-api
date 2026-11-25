@@ -15,26 +15,27 @@ This page keeps only what is specific to this service. The tests of the tools ar
 
 ## Scripts
 
-| Script              | lemon-core bin            | Does                                                                                                                                          |
-| ------------------- | ------------------------- | --------------------------------------------------------------------------------------------------------------------------------------------- |
-| `lambda:invoke`     | `lemon-lambda-invoke`     | Invoke the deployed function with a generated event (web, cron, SNS, SQS, raw).                                                               |
-| `lambda:logs`       | `lemon-lambda-logs`       | Print or follow the function's CloudWatch logs.                                                                                               |
-| `perf:lambda`       | `lemon-lambda-perf`       | Invoke several times and summarize cold / warm timings.                                                                                       |
-| `lambda:pack`       | `lemon-lambda-pack`       | Build a verified Lambda ZIP in Docker into `.artifacts/lambda/`. No AWS access.                                                               |
-| `lambda:deploy`     | `lemon-lambda-deploy`     | Verify a pack output and print the offline deploy plan. No AWS access.                                                                        |
-| `lambda:migrate`    | `lemon-lambda-migrate`    | Move the dev Serverless stack to the deploy service, one phase at a time. Offline plan by default.                                            |
-| `lambda:deploy:dev` | `lemon-lambda-deploy-dev` | Dev-only `code` deploy of a pack to the migrated dev functions. Offline plan by default.                                                      |
-| `deploy:dev`        | `bin/deploy-dev.sh`       | Manual dev deploy: pack → plan → `--apply` → probe, in one command. Human-run only ([Manual dev deploy](#manual-dev-deploy-bindeploy-devsh)). |
+| Script              | lemon-core bin                   | Does                                                                                                                                          |
+| ------------------- | -------------------------------- | --------------------------------------------------------------------------------------------------------------------------------------------- |
+| `lambda:invoke`     | `lemon-lambda-invoke`            | Invoke the deployed function with a generated event (web, cron, SNS, SQS, raw).                                                               |
+| `lambda:logs`       | `lemon-lambda-logs`              | Print or follow the function's CloudWatch logs.                                                                                               |
+| `perf:lambda`       | `lemon-lambda-perf`              | Invoke several times and summarize cold / warm timings.                                                                                       |
+| `lambda:pack`       | `lemon-lambda-pack`              | Build a verified Lambda ZIP in Docker into `.artifacts/lambda/`. No AWS access.                                                               |
+| `lambda:deploy`     | `lemon-lambda-deploy`            | Verify a pack output and print the offline deploy plan. No AWS access.                                                                        |
+| `lambda:migrate`    | `lemon-lambda-migrate`           | Move the dev Serverless stack to the deploy service, one phase at a time. Offline plan by default.                                            |
+| `lambda:deploy:dev` | `lemon-lambda-deploy-dev`        | Dev-only `code` deploy of a pack to the migrated dev functions. Offline plan by default.                                                      |
+| `deploy:dev`        | `bin/deploy-dev.sh`              | Manual dev deploy: pack → plan → `--apply` → probe, in one command. Human-run only ([Manual dev deploy](#manual-dev-deploy-bindeploy-devsh)). |
+| `deploy:prod`       | `bin/deploy-dev.sh --stage prod` | Same for the migrated prod stage: asks before `--apply` unless `--yes`, committed clean tree only. Human-run only.                            |
 
 The Serverless Framework is not installed and no script calls `sls` ([serverless.md](serverless.md)).
 dev moves to the deploy service with `lambda:migrate`, then takes code with `lambda:deploy:dev` ([lambda-migrate.md](lambda-migrate.md)).
-prod is still a Serverless stack and is not a reviewed migration target yet.
+prod is not a reviewed migration target. It is a Serverless stack until the deploy service harness migrates it; after the migration it is deployed with `deploy:prod`.
 
 ### Manual dev deploy (`bin/deploy-dev.sh`)
 
 `npm run deploy:dev` is the one-command path for a human to ship the current checkout to the `lemon` dev stage. It wraps the same tools as the rows above and runs them in the lane order — nothing in it is new deploy logic.
 
-1. Preflight: `package.json` + `pack.config.json` present, stage `dev` only (prod stays a Serverless stack, see [serverless.md](serverless.md)), Node ≥ 24, `jq`, `aws`, `docker`, lemon-core bins installed, config in **code mode** with matching `stage` / `profile` / `project` (`project` = `package.json` `name`), `aws sts get-caller-identity` (account redacted).
+1. Preflight: `package.json` + `pack.config.json` present, stage `dev` or `prod` (`deploy:prod` asks before apply and applies only a committed, clean tree; prod is a deploy-service stage only after its migration, see [serverless.md](serverless.md)), Node ≥ 24, `jq`, `aws`, `docker`, lemon-core bins installed, config in **code mode** with matching `stage` / `profile` / `project` (`project` = `package.json` `name`), `aws sts get-caller-identity` (account redacted).
 2. Pack: `npm run lambda:pack -- --output .artifacts/lambda/dev-<time>-<sha>` (Docker). `--skip-pack --artifact <dir>` reuses an existing pack.
 3. Offline plan: `lambda:deploy --config … --artifact …` → `<artifact>/plan.dev.json`, summary printed with account / endpoint redacted. `--plan-only` stops here.
 4. Apply: a **separate** `lambda:deploy … --apply --receipt-dir .artifacts/deploy/receipts` command; the run must end `completed`. No prompt by default — `--ask` inserts a confirm step.
@@ -132,7 +133,7 @@ npm run lambda:deploy -- --config .artifacts/deploy.code.json --artifact .artifa
 In `code` mode the preflight needs both functions to exist **and** to be managed by the deploy service.
 The functions are owned by the Serverless stack `lemon-hello-api-<stage>` until that stack is migrated.
 For dev: run the `lambda:migrate` phases through `verify` first, then deploy with `lambda:deploy:dev` ([lambda-migrate.md](lambda-migrate.md)). `--apply` is human only.
-For prod: no migration target yet. Do not pass `--apply`. See [serverless.md](serverless.md).
+For prod: the same applies after the prod stack is migrated; until then do not pass `--apply`. See [serverless.md](serverless.md).
 
 ## Examples
 

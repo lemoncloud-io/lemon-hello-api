@@ -17,12 +17,12 @@
 
 ## 지금 상태
 
-| 스테이지 | 스택                   | 소유                                        | 배포 경로                                                                             |
-| -------- | ---------------------- | ------------------------------------------- | ------------------------------------------------------------------------------------- |
-| dev      | `lemon-hello-api-dev`  | Serverless → 배포 서비스로 이관 예정        | `lambda:migrate` 6단계 → `lambda:deploy:dev` ([lambda-migrate.md](lambda-migrate.md)) |
-| prod     | `lemon-hello-api-prod` | Serverless (이관 전, 검토된 이관 대상 아님) | 아래 `npx` 구성. 사람만 실행한다.                                                     |
+| 스테이지 | 스택                   | 소유                                                                | 배포 경로                                                                             |
+| -------- | ---------------------- | ------------------------------------------------------------------- | ------------------------------------------------------------------------------------- |
+| dev      | `lemon-hello-api-dev`  | Serverless → 배포 서비스로 이관 예정                                | `lambda:migrate` 6단계 → `lambda:deploy:dev` ([lambda-migrate.md](lambda-migrate.md)) |
+| prod     | `lemon-hello-api-prod` | Serverless (검토된 이관 대상 아님) → 배포 서비스 하네스로 이관 예정 | 이관 전: 아래 `npx` 구성(사람만). 이관 뒤: `deploy:prod`(`code` 모드).                |
 
-prod 이관 전에는 이 저장소에 prod 배포 스크립트가 없다. 오너가 받아들인 상태다(2026-10-31).
+prod 이관 전에는 이 저장소에 prod 배포 스크립트를 두지 않았다. 오너가 받아들인 상태였다(2026-10-31). 배포 서비스 하네스로 이관한 뒤에는 `deploy:prod`(`bin/deploy-dev.sh --stage prod`)로 배포한다.
 
 ## Serverless로 직접 실행해야 하면 (`npx`, devDependency 없음)
 
