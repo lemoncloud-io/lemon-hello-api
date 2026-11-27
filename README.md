@@ -16,7 +16,7 @@ lemon-core 서비스는 처리하지 않은 예외를 SNS로 보낸다. 이 서�
 | 테스트 | jest `^29.7.0` + ts-jest `^29.4.15` (`src/**/*.spec.ts`). ts-jest도 `ttypescript`로 컴파일한다(`keys<T>()` 변환기). Lambda 도구(`lemon-*`)의 테스트는 lemon-core에 있다. |
 | 프레임워크 | `lemon-core` `^5.0.16`. lemon-model은 lemon-core를 통해 온다. 루트 이름은 `lemon-core`, 그 밖의 이름은 `lemon-core/model`에서 가져온다. 이 서비스는 `lemon-model`을 직접 선언하지 않는다. 로컬 서버는 lemon-core `buildExpress()`의 로컬 API Gateway가 만든다(`src/express.ts`) — `serverless.yml` 라우트를 그대로 따르고, 없는 경로·메서드는 `403`이다. 앞단의 작은 내장 앱이 `src/express.ts`의 로컬 확장 라우트(`POST /echo`)를 받는다. `express`·`lemon-devkit`은 쓰지 않는다(lemon-core 5.0.15부터, HOW_TO_UPGRADE_V5 § 20). |
 | AWS SDK | v3 (`@aws-sdk/*` `^3.1159.0`). lemon-core v5의 선택 peer 8개를 `dependencies`에 둔다. DynamoDB 클라이언트는 lemon-core에 들어 있다. |
-| 배포 | Serverless Framework는 설치하지 않는다. `sls` 스크립트도 없다([docs/serverless.md](docs/serverless.md)). dev는 배포 서비스로 이관한다: `lambda:migrate` 6단계 → `lambda:deploy:dev`(`code` 모드, [docs/lambda-migrate.md](docs/lambda-migrate.md)). prod는 아직 Serverless 스택(`lemon-hello-api-prod`)이고 이관 전이다. |
+| 배포 | Serverless Framework는 설치하지 않는다. `sls` 스크립트도 없다([docs/serverless.md](docs/serverless.md)). dev는 배포 서비스로 이관한다: `lambda:migrate` 6단계 → `lambda:deploy:dev`(`code` 모드, [docs/lambda-migrate.md](docs/lambda-migrate.md)). prod는 lemon-core 이관 도구의 검토된 대상이 아니다. 배포 서비스 하네스로 이관한 뒤 `deploy:prod`(`bin/deploy-dev.sh --stage prod`)로 배포한다. 이관 전에는 Serverless 스택(`lemon-hello-api-prod`)이다. |
 | 리소스 이름 | 기존 스택의 이름을 유지한다: 테이블 `LemonHelloTest`(local·dev)·`LemonHelloTable`(prod), 큐 `lemon-hello-sqs(-dev)`, 토픽 `lemon-hello-sns(-dev)`, 버킷 기본값 `lemon-hello-www`. 정의는 `serverless.yml` `custom:`에 있다. |
 | 형제 저장소 | `eureka-hello-api`. 코드가 같다. 이름·배포 프로필만 다르다. |
 | 브랜치 | 기본 브랜치 `develop`. v5 라인은 `v5` 브랜치에 있다. |
@@ -152,8 +152,9 @@ flowchart LR
 | `lambda:migrate -- <단계> ... --execute` (단계마다 따로) | dev |
 | `lambda:deploy:dev -- ... --apply` | dev (이관 `verify` 뒤) |
 | `deploy:dev` (`--plan-only` 없이) | dev (이관 `verify` 뒤) |
-| `lambda:deploy -- ... --apply` | 쓰지 않는다(dev는 `lambda:deploy:dev`, prod는 이관 대상 아님) |
+| `lambda:deploy -- ... --apply` | 쓰지 않는다(dev는 `lambda:deploy:dev`, prod는 `deploy:prod`) |
 | prod 배포(`npx serverless@3.40.0`, [docs/serverless.md](docs/serverless.md)) | prod (이관 전) |
+| `deploy:prod` (`--plan-only` 없이) | prod (이관 `verify` 뒤, 사람이 명시할 때만) |
 
 - 설정의 `account`·`profile`이 대상 계정을 정한다. 이관 도구는 단계를 돌리기 전에 STS로 계정을 확인한다.
 - hello에는 `bootstrap` 모드를 쓰지 않는다. 새 빈 테이블을 만들어 데이터가 두 테이블로 갈라진다.

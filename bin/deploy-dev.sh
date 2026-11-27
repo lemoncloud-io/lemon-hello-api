@@ -1,7 +1,8 @@
 #!/usr/bin/env bash
-# bin/deploy-dev.sh — manual code deploy of this service to the `lemon` dev stage through the deploy service.
-# Steps: preflight → pack (Docker) → offline plan → `lemon-lambda-deploy --apply` (no prompt; `--ask` to confirm first) → probe GET / and /hello/0.
-# Only `dev` is allowed here: prod is still a Serverless stack (docs/serverless.md).
+# bin/deploy-dev.sh — manual code deploy of this service to the `lemon` dev or prod stage through the deploy service.
+# Steps: preflight → pack (Docker) → offline plan → `lemon-lambda-deploy --apply` → probe GET / and /hello/0.
+# Stages: `dev` (no prompt; `--ask` to confirm first) and `prod` (`npm run deploy:prod`; asks before --apply unless `--yes`,
+# and applies only a pack of a committed tree). Both are deploy-service functions; the code mode never changes env.
 # The service name comes from package.json, so the same file works in every v5 service.
 set -euo pipefail
 
@@ -12,21 +13,22 @@ CONFIG=""          # deploy.code.<stage>.json (real values, never committed); de
 ARTIFACT=""        # pack output directory; default: a new pack under .artifacts/lambda/
 SKIP_PACK=0        # reuse --artifact instead of packing
 PLAN_ONLY=0        # stop after the offline plan
-ASK=0              # 1 = ask before --apply (default: apply right away; use --plan-only to stop before it)
+ASK=0              # 1 = ask before --apply (dev default: apply right away; prod: always, unless --yes)
+YES=0              # 1 = --yes given (the only way to skip the prod prompt)
 
 # ---------- helpers ----------
 usage() {
     # short usage text; the header comment above holds the long form
     cat <<'EOF'
 Usage: bin/deploy-dev.sh [options]
-  --stage <name>       stage to deploy (default: dev; only dev is allowed)
+  --stage <name>       stage to deploy: dev | prod (default: dev; `npm run deploy:prod` passes prod)
   --profile <name>     AWS profile for the probe and the identity check (default: lemon; must match the config)
   --config <file>      deploy config in code mode (default: .artifacts/deploy.code.<stage>.json)
   --artifact <dir>     pack output directory to deploy (default: run a new pack)
   --skip-pack          do not pack; requires --artifact
   --plan-only          print the offline plan and stop (no AWS change)
-  --ask                ask before --apply (default: apply right away)
-  --yes                accepted for compatibility; applying without asking is already the default
+  --ask                ask before --apply (dev default: apply right away; prod asks unless --yes)
+  --yes                apply without asking (needed to skip the prod prompt)
   -h, --help           this text
 
 Config: the default .artifacts/deploy.code.<stage>.json is git-ignored. When it is missing, the script
@@ -50,7 +52,7 @@ while [ $# -gt 0 ]; do
         --skip-pack) SKIP_PACK=1; shift ;;
         --plan-only) PLAN_ONLY=1; shift ;;
         --ask) ASK=1; shift ;;
-        --yes) ASK=0; shift ;;
+        --yes) YES=1; ASK=0; shift ;;
         -h|--help) usage; exit 0 ;;
         *) die "unknown option: $1 (see --help)" ;;
     esac
@@ -65,8 +67,12 @@ command -v jq >/dev/null || die "jq not found"
 # the service name is the deploy project name (package.json `name`)
 PROJECT="$(jq -r '.name // empty' package.json)"
 [ -n "$PROJECT" ] || die "package.json has no name"
-# stage guard: the deploy service owns only the lemon dev stage
-[ "$STAGE" = "dev" ] || die "stage '$STAGE' is not deployed here. prod is a Serverless stack: see docs/serverless.md"
+# stage guard: the deploy service owns the lemon dev and prod stages
+case "$STAGE" in
+    dev) ;;
+    prod) [ "$YES" -eq 1 ] || ASK=1 ;; # prod asks before --apply unless --yes
+    *) die "stage '$STAGE' is not deployed here (dev | prod)" ;;
+esac
 # tools
 command -v node >/dev/null || die "node not found (needs Node >= 24)"
 NODE_MAJOR="$(node -p 'process.versions.node.split(".")[0]')"
@@ -116,10 +122,20 @@ CFG_PROJECT="$(jq -r '.project // empty' "$CONFIG")"
 [ "$CFG_PROJECT" = "$PROJECT" ] || die "config project '$CFG_PROJECT' is not $PROJECT"
 # credentials: read-only identity check, account number hidden
 log "identity: $(aws sts get-caller-identity --profile "$PROFILE" --query Arn --output text 2>&1 | redact)"
-# source state: a dirty tree is allowed but shown (the manifest records it)
+# source state: a dirty tree is allowed but shown (the manifest records it); prod applies a committed tree only
 GIT_SHA="$(git rev-parse --short HEAD)"
 if [ -n "$(git status --porcelain)" ]; then
+    if [ "$STAGE" = "prod" ] && [ "$PLAN_ONLY" -eq 0 ]; then
+        die "prod applies a committed tree only: commit the changes first (--plan-only works on a dirty tree)"
+    fi
     log "WARNING: working tree is dirty; the pack manifest will say dirty=true"
+fi
+BRANCH="$(git branch --show-current || true)"
+if [ "$STAGE" = "prod" ] && [ "$BRANCH" != "v5" ]; then
+    log "WARNING: prod from '${BRANCH:-detached HEAD}', not v5"
+fi
+if [ "$STAGE" = "prod" ] && [ -n "$BRANCH" ] && ! git merge-base --is-ancestor HEAD "origin/$BRANCH" 2>/dev/null; then
+    log "WARNING: HEAD is not on origin/$BRANCH (push it first, or fetch if it is pushed)"
 fi
 log "project=$PROJECT stage=$STAGE profile=$PROFILE config=$CONFIG source=$GIT_SHA ($(git branch --show-current || echo detached))"
 
@@ -137,6 +153,11 @@ fi
 # show what will be shipped
 jq -r '"artifact: runtime=\(.runtime) arch=\(.architecture) source=\(.source.gitSha[:7]) dirty=\(.source.dirty) lockfile=\(.validation.lockfile) handler=\(.validation.handlerExport)"' "$ARTIFACT/manifest.json" | sed 's/^/[deploy-dev] /'
 log "package.json in zip: $(unzip -p "$ARTIFACT/lambda.zip" package.json | jq -r '"\(.name)/\(.version) lemon-core \(.dependencies["lemon-core"])"')"
+# prod: a reused --artifact must also come from this commit, on a clean tree
+if [ "$STAGE" = "prod" ] && [ "$PLAN_ONLY" -eq 0 ]; then
+    [ "$(jq -r '.source.dirty' "$ARTIFACT/manifest.json")" = "false" ] || die "prod applies a clean pack only: $ARTIFACT was packed from a dirty tree"
+    [ "$(jq -r '.source.gitSha' "$ARTIFACT/manifest.json")" = "$(git rev-parse HEAD)" ] || die "prod applies a pack of the checked-out commit only: $ARTIFACT was packed from another commit"
+fi
 
 # ---------- offline plan ----------
 PLAN="$ARTIFACT/plan.${STAGE}.json"
@@ -150,11 +171,11 @@ if [ "$PLAN_ONLY" -eq 1 ]; then
     exit 0
 fi
 
-# ---------- confirm (opt-in) ----------
-# the apply changes AWS state; by default it runs right away, --ask inserts a prompt
+# ---------- confirm ----------
+# the apply changes AWS state; dev runs right away unless --ask, prod asks unless --yes
 if [ "$ASK" -eq 1 ]; then
-    printf '[deploy-dev] apply this plan to %s dev (profile %s)? [y/N] ' "$PROJECT" "$PROFILE"
-    read -r ANSWER
+    printf '[deploy-dev] apply this plan to %s %s (profile %s)? [y/N] ' "$PROJECT" "$STAGE" "$PROFILE"
+    read -r ANSWER || ANSWER="" # no terminal (EOF) counts as no
     case "$ANSWER" in y|Y|yes|YES) ;; *) log "aborted"; exit 1 ;; esac
 fi
 
@@ -163,7 +184,9 @@ RECEIPTS=".artifacts/deploy/receipts"
 mkdir -p "$RECEIPTS"
 log "apply (separate command from the plan) → receipts in $RECEIPTS"
 APPLY_OUT="$ARTIFACT/apply.${STAGE}.json"
-npm run -s lambda:deploy -- --config "$CONFIG" --artifact "$ARTIFACT" --apply --receipt-dir "$RECEIPTS" | tee "$APPLY_OUT" | redact | sed 's/^/[deploy-dev] /'
+if ! npm run -s lambda:deploy -- --config "$CONFIG" --artifact "$ARTIFACT" --apply --receipt-dir "$RECEIPTS" | tee "$APPLY_OUT" | redact | sed 's/^/[deploy-dev] /'; then
+    die "apply did not finish (see $APPLY_OUT). The code may already be live: npm run lambda:invoke -- --stage $STAGE --confirm-stage $STAGE --profile $PROFILE --path /"
+fi
 STATUS="$(jq -r '.status // empty' "$APPLY_OUT")"
 [ "$STATUS" = "completed" ] || die "apply status: ${STATUS:-unknown} (see $APPLY_OUT)"
 
@@ -171,6 +194,9 @@ STATUS="$(jq -r '.status // empty' "$APPLY_OUT")"
 # the service answers its name and lemon-core version on GET /
 for P in / /hello/0; do
     log "probe GET $P"
-    npm run -s lambda:invoke -- --stage "$STAGE" --profile "$PROFILE" --path "$P" 2>&1 | redact | sed 's/^/[deploy-dev]   /' | tail -6
+    # lemon-core's stage guard wants --confirm-stage on any stage but dev; the same value is accepted on dev
+    if ! npm run -s lambda:invoke -- --stage "$STAGE" --confirm-stage "$STAGE" --profile "$PROFILE" --path "$P" 2>&1 | redact | sed 's/^/[deploy-dev]   /' | tail -6; then
+        die "probe GET $P failed after a completed apply: the new code is live, check lambda:logs"
+    fi
 done
 log "done: $(jq -r '.deployId' "$APPLY_OUT") completed in $(jq -r '.durationMs' "$APPLY_OUT") ms"

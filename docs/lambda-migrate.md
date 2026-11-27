@@ -10,7 +10,7 @@ The contract is documented once, in the lemon-core repository (`v5` branch; the 
 -   [`docs/v5/B24-migration-targets.md`](https://github.com/lemoncloud-io/lemon-core/blob/v5/docs/v5/B24-migration-targets.md) — the reviewed target registry, hello's entry and state-file names, and why bootstrap mode is wrong for hello.
 
 The lemon-templates-api `docs/lambda-migrate.md` is the longer worked example of the same tools.
-This page keeps only what is specific to this service. prod is not a reviewed target: see [serverless.md](serverless.md).
+This page keeps only what is specific to this service. prod is not a reviewed target: it moves with the deploy service harness instead, then deploys with `deploy:prod`. See [serverless.md](serverless.md).
 
 ## Never use bootstrap mode for hello
 
